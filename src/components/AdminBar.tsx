@@ -25,11 +25,11 @@ export function AdminBar({
   const [verifying, setVerifying] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm('Permanently delete this stem? This cannot be undone.')) return;
+    if (!confirm('Permanently delete this stem from the database? This cannot be undone.')) return;
     setDeleting(true);
     const result = await deleteStem(stemId);
     if (result.success) {
-      addToast('Stem deleted.', 'success');
+      addToast('Stem deleted successfully.', 'success');
       onDelete(stemId);
     } else {
       addToast(`Delete failed: ${result.message}`, 'error');
@@ -39,15 +39,14 @@ export function AdminBar({
 
   const handleVerifyToggle = async () => {
     if (!uploaderId) {
-      addToast('Cannot verify: uploader has no account.', 'error');
+      addToast('Cannot verify: this stem has no associated uploader user ID.', 'error');
       return;
     }
     setVerifying(true);
-    // Toggle verified role — downgrade to 'user' or upgrade to 'verified'
     const newRole = isVerified ? 'user' : 'verified';
     const result = await updateUserRole(uploaderId, newRole);
     if (result.success) {
-      addToast(`Uploader ${isVerified ? 'un-verified' : 'verified'}.`, 'success');
+      addToast(`Uploader status updated to ${newRole}.`, 'success');
       onVerifyToggle(stemId, !isVerified);
     } else {
       addToast(`Verify failed: ${result.message}`, 'error');
@@ -56,12 +55,12 @@ export function AdminBar({
   };
 
   return (
-    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex items-center gap-1 bg-surface-raised border border-border rounded px-1 py-0.5 ml-2">
       <button
         onClick={handleVerifyToggle}
         disabled={verifying}
         title={isVerified ? 'Remove verified status' : 'Grant verified engineer status'}
-        className="p-1.5 text-verified hover:text-warm-white hover:bg-verified-dim transition-colors disabled:opacity-50"
+        className="p-1 text-verified hover:text-warm-white hover:bg-verified-dim rounded transition-colors disabled:opacity-50"
       >
         {isVerified ? (
           <ShieldOff className="w-3.5 h-3.5" />
@@ -72,8 +71,8 @@ export function AdminBar({
       <button
         onClick={handleDelete}
         disabled={deleting}
-        title="Delete stem (admin)"
-        className="p-1.5 text-error hover:text-warm-white hover:bg-error/20 transition-colors disabled:opacity-50"
+        title="Delete stem (Admin Action)"
+        className="p-1 text-error hover:text-warm-white hover:bg-error/20 rounded transition-colors disabled:opacity-50"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>

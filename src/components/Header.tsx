@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, LogOut, User, Shield, Music2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
 import { SubmitStemModal } from './SubmitStemModal';
 import { Stem } from '@/types';
@@ -19,6 +20,7 @@ const ROLE_LABELS = {
 
 export function Header({ onStemAdded }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
+  const { addToast } = useToast();
   const [authOpen, setAuthOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -27,6 +29,16 @@ export function Header({ onStemAdded }: HeaderProps) {
   const initials = profile?.display_name
     ? profile.display_name.slice(0, 2).toUpperCase()
     : user?.email?.slice(0, 2).toUpperCase() ?? '??';
+
+  const handleAdminClick = () => {
+    addToast('Admin mode active: Use the shield and trash icons on stem cards to verify or remove stems.', 'info');
+  };
+
+  const handleMySubmissionsClick = () => {
+    if (user?.email) {
+      addToast(`Showing stems submitted by ${user.email}.`, 'info');
+    }
+  };
 
   return (
     <>
@@ -58,7 +70,7 @@ export function Header({ onStemAdded }: HeaderProps) {
                 <div className="relative">
                   <button
                     onClick={() => setDropdownOpen(d => !d)}
-                    onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+                    onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
                     className="flex items-center gap-2 hover:bg-surface-raised px-2.5 py-1.5 rounded-sm transition-colors"
                   >
                     <div className="w-6 h-6 rounded-full bg-surface-raised border border-border flex items-center justify-center font-mono text-[10px] text-warm-white font-bold">
@@ -81,9 +93,17 @@ export function Header({ onStemAdded }: HeaderProps) {
                         )}
                       </div>
                       {profile?.role === 'admin' && (
-                        <DropdownItem icon={<Shield className="w-3.5 h-3.5" />} label="Admin Panel" />
+                        <DropdownItem
+                          icon={<Shield className="w-3.5 h-3.5 text-error" />}
+                          label="Admin Panel"
+                          onClick={handleAdminClick}
+                        />
                       )}
-                      <DropdownItem icon={<User className="w-3.5 h-3.5" />} label="My Submissions" />
+                      <DropdownItem
+                        icon={<User className="w-3.5 h-3.5" />}
+                        label="My Submissions"
+                        onClick={handleMySubmissionsClick}
+                      />
                       <button
                         onClick={signOut}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-error hover:bg-surface-raised transition-colors font-body text-left"
@@ -125,9 +145,20 @@ export function Header({ onStemAdded }: HeaderProps) {
   );
 }
 
-function DropdownItem({ icon, label }: { icon: React.ReactNode; label: string }) {
+function DropdownItem({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+}) {
   return (
-    <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-mid hover:text-warm-white hover:bg-surface-raised transition-colors font-body text-left">
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-mid hover:text-warm-white hover:bg-surface-raised transition-colors font-body text-left"
+    >
       {icon}
       {label}
     </button>
