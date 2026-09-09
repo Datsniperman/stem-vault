@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Lock, Eye, EyeOff, ShieldCheck, Mail, CheckCircle } from 'lucide-react';
-import { updateUsername, updateUserPassword } from '@/app/actions/stems';
+import { X, User, Lock, Eye, EyeOff } from 'lucide-react';
+import { updateUsername } from '@/app/actions/stems';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -37,14 +38,24 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     if (!username.trim()) return;
 
     setUsernameLoading(true);
-    const res = await updateUsername(username);
-    if (res.success) {
-      addToast(res.message, 'success');
-      await refreshProfile();
-    } else {
-      addToast(res.message, 'error');
+    try {
+      const res = await updateUsername(user.id, username);
+      if (res.success) {
+        // Also update Supabase auth metadata client-side
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          await supabase.auth.updateUser({
+            data: { display_name: username.trim().replace(/^@/, '') },
+          });
+        }
+        addToast(res.message, 'success');
+        await refreshProfile();
+      } else {
+        addToast(res.message, 'error');
+      }
+    } finally {
+      setUsernameLoading(false);
     }
-    setUsernameLoading(false);
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -59,15 +70,26 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
 
     setPasswordLoading(true);
-    const res = await updateUserPassword(password);
-    if (res.success) {
-      addToast(res.message, 'success');
-      setPassword('');
-      setConfirmPassword('');
-    } else {
-      addToast(res.message, 'error');
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Client unavailable');
+
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+
+      if (error) {
+        addToast(error.message, 'error');
+      } else {
+        addToast('Password updated successfully!', 'success');
+        setPassword('');
+        setConfirmPassword('');
+      }
+    } catch {
+      addToast('Failed to update password.', 'error');
+    } finally {
+      setPasswordLoading(false);
     }
-    setPasswordLoading(false);
   };
 
   return (

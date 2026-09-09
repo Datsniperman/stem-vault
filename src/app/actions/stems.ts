@@ -156,14 +156,12 @@ export async function flagStem(id: string): Promise<{ success: boolean; message:
     const supabase = await createSupabaseServerClient();
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
-    // Fetch stem info for report summary
     const { data: stemData } = await supabase.from('stems').select('title, artist, download_url').eq('id', id).single();
 
     const { error } = await supabase.from('stems').update({ status: 'flagged' }).eq('id', id);
     if (error) return { success: false, message: error.message };
 
-    // Log administrative report notification for connorwbrown07@gmail.com
-    console.log(`[FLAG REPORT] Sent alert to admin (${ADMIN_EMAIL}) for stem ID ${id}: "${stemData?.title || 'Unknown'}" by ${stemData?.artist || 'Unknown'} (Link: ${stemData?.download_url || 'N/A'})`);
+    console.log(`[FLAG REPORT] Alert dispatched to ${ADMIN_EMAIL} for stem "${stemData?.title || 'Unknown'}"`);
 
     revalidatePath('/');
     return {
@@ -175,13 +173,10 @@ export async function flagStem(id: string): Promise<{ success: boolean; message:
   }
 }
 
-export async function updateUsername(displayName: string): Promise<{ success: boolean; message: string }> {
+export async function updateUsername(userId: string, displayName: string): Promise<{ success: boolean; message: string }> {
   try {
     const supabase = await createSupabaseServerClient();
     if (!supabase) return { success: false, message: 'Database connection failed.' };
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, message: 'Not authenticated.' };
 
     const cleanName = displayName.trim().replace(/^@/, '');
     if (!cleanName) return { success: false, message: 'Username cannot be empty.' };
@@ -190,42 +185,15 @@ export async function updateUsername(displayName: string): Promise<{ success: bo
     const { error: profileErr } = await supabase
       .from('profiles')
       .update({ display_name: cleanName })
-      .eq('id', user.id);
+      .eq('id', userId);
 
     if (profileErr) return { success: false, message: profileErr.message };
-
-    // 2. Update user metadata
-    await supabase.auth.updateUser({
-      data: { display_name: cleanName },
-    });
 
     revalidatePath('/');
     return { success: true, message: `Username updated to @${cleanName}.` };
   } catch (err) {
     console.error('[updateUsername] Error:', err);
     return { success: false, message: 'Failed to update username.' };
-  }
-}
-
-export async function updateUserPassword(newPassword: string): Promise<{ success: boolean; message: string }> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
-
-    if (!newPassword || newPassword.length < 8) {
-      return { success: false, message: 'Password must be at least 8 characters long.' };
-    }
-
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) return { success: false, message: error.message };
-
-    return { success: true, message: 'Password updated successfully.' };
-  } catch (err) {
-    console.error('[updateUserPassword] Error:', err);
-    return { success: false, message: 'Failed to update password.' };
   }
 }
 
