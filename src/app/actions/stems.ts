@@ -136,15 +136,23 @@ export async function toggleStemVerification(
   isVerified: boolean
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('stems')
       .update({ is_verified: isVerified })
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
     if (error) return { success: false, message: error.message };
+    if (!data || data.length === 0) {
+      return { success: false, message: 'Update failed: Row-Level Security policy blocked update.' };
+    }
+
     revalidatePath('/');
     return { success: true, message: `Stem marked as ${isVerified ? 'verified' : 'unverified'}.` };
   } catch {
