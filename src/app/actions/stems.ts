@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { FormState, Stem, Profile } from '@/types';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { sendReportEmail } from '@/lib/email';
 
 const ADMIN_EMAIL = 'connorwbrown07@gmail.com';
 
@@ -161,12 +162,20 @@ export async function flagStem(id: string): Promise<{ success: boolean; message:
     const { error } = await supabase.from('stems').update({ status: 'flagged' }).eq('id', id);
     if (error) return { success: false, message: error.message };
 
-    console.log(`[FLAG REPORT] Alert dispatched to ${ADMIN_EMAIL} for stem "${stemData?.title || 'Unknown'}"`);
+    // Send real email notification via Resend
+    if (stemData) {
+      await sendReportEmail({
+        title: stemData.title,
+        artist: stemData.artist,
+        downloadUrl: stemData.download_url,
+        stemId: id,
+      });
+    }
 
     revalidatePath('/');
     return {
       success: true,
-      message: `Link reported. An admin notification has been dispatched to ${ADMIN_EMAIL}.`
+      message: `Link reported. Email notification sent to ${ADMIN_EMAIL}.`
     };
   } catch {
     return { success: false, message: 'Report failed.' };
