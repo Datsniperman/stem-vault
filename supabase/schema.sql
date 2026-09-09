@@ -43,6 +43,14 @@ create policy "Public viewable profiles"
 create policy "Users update own profile"
   on public.profiles for update using (auth.uid() = id);
 
+create policy "Admins update all profiles"
+  on public.profiles for update using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
+
 create policy "Users insert own profile"
   on public.profiles for insert with check (auth.uid() = id);
 
