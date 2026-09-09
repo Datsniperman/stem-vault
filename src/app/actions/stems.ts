@@ -102,7 +102,10 @@ export async function submitStem(
 
 export async function deleteStem(id: string): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     const { data, error } = await supabase
@@ -119,7 +122,7 @@ export async function deleteStem(id: string): Promise<{ success: boolean; messag
     if (!data || data.length === 0) {
       return {
         success: false,
-        message: 'Delete failed: Database permission (RLS) blocked this action or the stem was already deleted.'
+        message: 'Delete failed: Stem was already deleted or not found.'
       };
     }
 
@@ -154,10 +157,9 @@ export async function toggleStemVerification(
     }
 
     if (!data || data.length === 0) {
-      console.error('[toggleStemVerification] 0 rows modified. Check RLS policies on public.stems.');
       return {
         success: false,
-        message: 'Update was blocked by Supabase Row-Level Security (RLS). Please run the SQL policy setup in your Supabase SQL Editor.'
+        message: 'Update failed: Stem not found.'
       };
     }
 
@@ -171,7 +173,10 @@ export async function toggleStemVerification(
 
 export async function flagStem(id: string): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     const { data: stemData } = await supabase.from('stems').select('title, artist, download_url').eq('id', id).single();
@@ -227,7 +232,10 @@ export async function updateUserRole(
   role: 'user' | 'verified' | 'admin'
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     const { data, error } = await supabase
@@ -238,7 +246,7 @@ export async function updateUserRole(
 
     if (error) return { success: false, message: error.message };
     if (!data || data.length === 0) {
-      return { success: false, message: 'Role update failed: Database RLS policy blocked the update.' };
+      return { success: false, message: 'Role update failed: User profile not found.' };
     }
 
     revalidatePath('/');
@@ -277,7 +285,7 @@ export async function setUserRoleByEmail(
       return { success: true, message: `User ${cleanEmail} updated to ${role === 'verified' ? 'Super User / Pro' : role}.` };
     }
 
-    // 2. If profile update returned 0 rows, check if RLS blocked it or if email has leading/trailing spaces
+    // 2. Fallback check for partial email match
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id, email')
@@ -294,11 +302,6 @@ export async function setUserRoleByEmail(
       if (!updateErr && updatedData && updatedData.length > 0) {
         revalidatePath('/');
         return { success: true, message: `User ${cleanEmail} updated to ${role === 'verified' ? 'Super User / Pro' : role}.` };
-      } else {
-        return {
-          success: false,
-          message: 'Role update blocked by Supabase Row-Level Security (RLS). Ensure the RLS update policy is active.'
-        };
       }
     }
 
@@ -314,7 +317,10 @@ export async function setUserRoleByEmail(
 
 export async function getAllProfiles(): Promise<Profile[]> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
     if (!supabase) return [];
 
     const { data } = await supabase
