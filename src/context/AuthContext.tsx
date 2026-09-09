@@ -8,7 +8,7 @@ import {
   useCallback,
   ReactNode,
 } from 'react';
-import type { User } from '@supabase/supabase-js';
+import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { Profile } from '@/types';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
@@ -64,7 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then((res) => {
+      const session: Session | null = res.data?.session ?? null;
       setUser(session?.user ?? null);
       setAccessToken(session?.access_token ?? null);
       if (session?.user) {
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (_event: AuthChangeEvent, session: Session | null) => {
         setUser(session?.user ?? null);
         setAccessToken(session?.access_token ?? null);
         if (session?.user) {
