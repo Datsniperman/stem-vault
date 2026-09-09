@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { X, AlertCircle, Link } from 'lucide-react';
 import { submitStem } from '@/app/actions/stems';
 import { FormState, Stem } from '@/types';
@@ -27,9 +27,52 @@ interface SubmitStemModalProps {
 export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModalProps) {
   const { user } = useAuth();
   const { addToast } = useToast();
-  const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, isPending] = useActionState(submitStem, INITIAL_STATE);
   const hasHandledSuccess = useRef(false);
+
+  // Controlled form state to preserve input values on submit errors
+  const [formData, setFormData] = useState({
+    title: '',
+    artist: '',
+    download_url: '',
+    host_platform: 'Google Drive',
+    format: 'WAV (48kHz/24-bit)',
+    bpm: '',
+    key: '',
+    track_count: '',
+    uploader_handle: '',
+    description: '',
+  });
+
+  // Set default handle when user loads
+  useEffect(() => {
+    if (user?.email && !formData.uploader_handle) {
+      setFormData(prev => ({
+        ...prev,
+        uploader_handle: `@${(user.email ?? '').split('@')[0]}`,
+      }));
+    }
+  }, [user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      artist: '',
+      download_url: '',
+      host_platform: 'Google Drive',
+      format: 'WAV (48kHz/24-bit)',
+      bpm: '',
+      key: '',
+      track_count: '',
+      uploader_handle: user?.email ? `@${user.email.split('@')[0]}` : '',
+      description: '',
+    });
+  };
 
   useEffect(() => {
     if (!state.success && !state.message) return;
@@ -37,9 +80,10 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
       hasHandledSuccess.current = true;
       if (state.stem) onStemAdded(state.stem);
       addToast(state.message || 'Stems submitted to the archive.', 'success');
-      formRef.current?.reset();
+      resetForm();
       onClose();
-    } else if (!state.success && state.message && !state.errors) {
+    } else if (!state.success && state.message) {
+      // On error, show toast notification but keep formData values intact!
       addToast(state.message, 'error');
     }
   }, [state]);
@@ -112,11 +156,11 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
           )}
         </div>
 
-        <form ref={formRef} action={formAction} className="px-6 pb-6 pt-5 space-y-4 flex-1">
+        <form action={formAction} className="px-6 pb-6 pt-5 space-y-4 flex-1">
           {/* Row 1: Title + Artist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Song Title *" name="title" placeholder="e.g. Gratitude" error={state.errors?.title} />
-            <Field label="Artist *" name="artist" placeholder="e.g. Brandon Lake" error={state.errors?.artist} />
+            <Field label="Song Title *" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Gratitude" error={state.errors?.title} />
+            <Field label="Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Brandon Lake" error={state.errors?.artist} />
           </div>
 
           {/* Row 2: Cloud Link */}
@@ -124,29 +168,32 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
             label="Cloud Link *"
             name="download_url"
             type="url"
+            value={formData.download_url}
+            onChange={handleChange}
             placeholder="https://drive.google.com/…"
             error={state.errors?.download_url}
           />
 
           {/* Row 3: Platform + Format */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SelectField label="Host Platform" name="host_platform" options={HOST_PLATFORMS} />
-            <SelectField label="Audio Format" name="format" options={FORMATS} />
+            <SelectField label="Host Platform" name="host_platform" value={formData.host_platform} onChange={handleChange} options={HOST_PLATFORMS} />
+            <SelectField label="Audio Format" name="format" value={formData.format} onChange={handleChange} options={FORMATS} />
           </div>
 
           {/* Row 4: BPM + Key + Track Count */}
           <div className="grid grid-cols-3 gap-4">
-            <Field label="BPM" name="bpm" type="number" placeholder="72" inputMode="numeric" min={30} max={300} error={state.errors?.bpm} />
-            <Field label="Key" name="key" placeholder="Bb" />
-            <Field label="Track Count" name="track_count" type="number" placeholder="36" inputMode="numeric" min={1} max={128} error={state.errors?.track_count} />
+            <Field label="BPM" name="bpm" type="number" value={formData.bpm} onChange={handleChange} placeholder="72" inputMode="numeric" min={30} max={300} error={state.errors?.bpm} />
+            <Field label="Key" name="key" value={formData.key} onChange={handleChange} placeholder="Bb" />
+            <Field label="Track Count" name="track_count" type="number" value={formData.track_count} onChange={handleChange} placeholder="36" inputMode="numeric" min={1} max={128} error={state.errors?.track_count} />
           </div>
 
           {/* Row 5: Handle */}
           <Field
             label="Your Handle"
             name="uploader_handle"
+            value={formData.uploader_handle}
+            onChange={handleChange}
             placeholder="@mixguy_foh"
-            defaultValue={user?.email?.split('@')[0] ? `@${user.email.split('@')[0]}` : ''}
           />
 
           {/* Row 6: Description / Special Notes */}
@@ -159,6 +206,8 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               id="description"
               name="description"
               rows={3}
+              value={formData.description}
+              onChange={handleChange}
               placeholder="e.g. Includes live drums, click track in Bb, and organ stems. Drums split into kick, snare, toms..."
               className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors resize-none"
             />
@@ -220,13 +269,13 @@ function Field({ label, name, error, ...rest }: FieldProps) {
   );
 }
 
-interface SelectFieldProps {
+interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
   name: string;
   options: string[];
 }
 
-function SelectField({ label, name, options }: SelectFieldProps) {
+function SelectField({ label, name, options, ...rest }: SelectFieldProps) {
   return (
     <div className="space-y-1.5">
       <label htmlFor={name} className="block text-xs text-dim font-body">
@@ -235,6 +284,7 @@ function SelectField({ label, name, options }: SelectFieldProps) {
       <select
         id={name}
         name={name}
+        {...rest}
         className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber transition-colors appearance-none"
       >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
