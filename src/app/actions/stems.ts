@@ -103,11 +103,24 @@ export async function deleteStem(id: string): Promise<{ success: boolean; messag
     const supabase = await createSupabaseServerClient();
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
-    const { error } = await supabase.from('stems').delete().eq('id', id);
+    const { data, error } = await supabase
+      .from('stems')
+      .delete()
+      .eq('id', id)
+      .select();
+
     if (error) {
       console.error('[deleteStem] Supabase delete error:', error);
       return { success: false, message: error.message };
     }
+
+    if (!data || data.length === 0) {
+      return {
+        success: false,
+        message: 'Delete failed: Database permission (RLS) blocked this action or the stem was already deleted.'
+      };
+    }
+
     revalidatePath('/');
     return { success: true, message: 'Stem deleted successfully.' };
   } catch (err) {
