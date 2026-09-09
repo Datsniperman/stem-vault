@@ -1,0 +1,144 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { FormState, Stem } from '@/types';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+// ── Validation helpers ───────────────────────────────────────────────────────
+
+function isValidUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeText(value: string, maxLen = 200): string {
+  return value.trim().slice(0, maxLen).replace(/[<>]/g, '');
+}
+
+// ── Server Actions ───────────────────────────────────────────────────────────
+
+export async function submitStem(
+  prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const errors: Record<string, string> = {};
+
+  const title          = sanitizeText(formData.get('title') as string || '');
+  const artist         = sanitizeText(formData.get('artist') as string || '');
+  const downloadUrl    = (formData.get('download_url') as string || '').trim();
+  const hostPlatform   = sanitizeText(formData.get('host_platform') as string || 'Google Drive');
+  const format         = sanitizeText(formData.get('format') as string || 'WAV (48kHz/24-bit)');
+  const uploaderHandle = sanitizeText(formData.get('uploader_handle') as string || 'Anonymous', 50);
+  const keyVal         = sanitizeText(formData.get('key') as string || '', 10);
+  const rawTags        = formData.get('tags') as string || '';
+  const tags           = rawTags.split(',').map(t => sanitizeText(t, 50)).filter(Boolean).slice(0, 12);
+
+  const bpmRaw        = parseInt(formData.get('bpm') as string || '');
+  const trackCountRaw = parseInt(formData.get('track_count') as string || '');
+
+  if (!title) errors.title = 'Song title is required.';
+  if (!artist) errors.artist = 'Artist name is required.';
+  if (!downloadUrl) {
+    errors.download_url = 'Download link is required.';
+  } else if (!isValidUrl(downloadUrl)) {
+    errors.download_url = 'Must be a valid https:// URL.';
+  }
+
+  const bpm        = isNaN(bpmRaw) ? null : bpmRaw;
+  const trackCount = isNaN(trackCountRaw) ? null : trackCountRaw;
+
+  if (bpm !== null && (bpm < 30 || bpm > 300))           errors.bpm = 'BPM must be between 30 and 300.';
+  if (trackCount !== null && (trackCount < 1 || trackCount > 128)) errors.track_count = 'Track count must be between 1 and 128.';
+
+  if (Object.keys(errors).length > 0) {
+    return { success: false, message: 'Please fix the errors below.', errors };
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) {
+      return { success: false, message: 'Database connection failed.' };
+    }
+
+    // Get current user session if authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data, error } = await supabase
+      .from('stems')
+      .insert([{
+        user_id: user?.id ?? null,
+        title,
+        artist,
+        bpm,
+        key: keyVal || null,
+        track_count: trackCount,
+        format,
+        host_platform: hostPlatform,
+        download_url: downloadUrl,
+        uploader_handle: uploaderHandle || 'Anonymous',
+        tags,
+        status: 'published',
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[submitStem] Supabase error:', error);
+      return { success: false, message: `Submission failed: ${error.message}` };
+    }
+
+    revalidatePath('/');
+    return { success: true, message: 'Stems submitted to the archive.', stem: data as Stem };
+  } catch (err) {
+    console.error('[submitStem] Unexpected error:', err);
+    return { success: false, message: 'An unexpected error occurred. Please try again.' };
+  }
+}
+
+export async function deleteStem(id: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { error } = await supabase.from('stems').delete().eq('id', id);
+    if (error) return { success: false, message: error.message };
+    revalidatePath('/');
+    return { success: true, message: 'Stem deleted.' };
+  } catch {
+    return { success: false, message: 'Delete failed.' };
+  }
+}
+
+export async function flagStem(id: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { error } = await supabase.from('stems').update({ status: 'flagged' }).eq('id', id);
+    if (error) return { success: false, message: error.message };
+    revalidatePath('/');
+    return { success: true, message: 'Link reported as dead/restricted.' };
+  } catch {
+    return { success: false, message: 'Report failed.' };
+  }
+}
+
+export async function updateUserRole(
+  userId: string,
+  role: 'user' | 'verified' | 'admin'
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
+    if (error) return { success: false, message: error.message };
+    return { success: true, message: `Role updated to ${role}.` };
+  } catch {
+    return { success: false, message: 'Role update failed.' };
+  }
+}

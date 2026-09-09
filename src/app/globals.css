@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ─────────────────────────────────────────────────────── */
+@theme {
+  /* Palette */
+  --color-obsidian:      #08090B;
+  --color-surface:       #111215;
+  --color-surface-raised: #18191E;
+  --color-border:        #23252B;
+  --color-border-warm:   #2C2A26;
+  --color-amber:         #F05A00;
+  --color-amber-muted:   #FF7A1A;
+  --color-amber-dim:     rgba(240, 90, 0, 0.12);
+  --color-warm-white:    #E8E4DE;
+  --color-mid:           #9A9690;
+  --color-dim:           #5E5C58;
+  --color-error:         #D95252;
+  --color-verified:      #C4A24A;
+  --color-verified-dim:  rgba(196, 162, 74, 0.12);
+
+  /* Typography */
+  --font-display: var(--font-playfair), Georgia, 'Times New Roman', serif;
+  --font-body:    var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono:    ui-monospace, 'Courier New', monospace;
+
+  /* Animations */
+  --animate-reveal-up:    reveal-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in:      fade-in 0.25s ease-out forwards;
+  --animate-fade-slide-in: fade-slide-in 0.28s ease-out forwards;
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────────────── */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-slide-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: #08090B;
+    color: #E8E4DE;
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  button { cursor: pointer; }
+
+  *:focus-visible {
+    outline: 2px solid #F05A00;
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgba(240, 90, 0, 0.22);
+    color: #E8E4DE;
+  }
+
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #08090B; }
+  ::-webkit-scrollbar-thumb { background: #23252B; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #F05A00; }
+}
+
+/* ── Utilities ──────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Stagger delays */
+  .delay-0   { animation-delay: 0ms; }
+  .delay-80  { animation-delay: 80ms; }
+  .delay-160 { animation-delay: 160ms; }
+  .delay-240 { animation-delay: 240ms; }
+  .delay-320 { animation-delay: 320ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+}
