@@ -136,42 +136,23 @@ export async function toggleStemVerification(
   isVerified: boolean
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
-
+    const supabase = await createSupabaseServerClient();
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
-    // Verify current user is admin before toggling
-    if (supabaseServer) {
-      const { data: { user } } = await supabaseServer.auth.getUser();
-      if (user) {
-        const { data: userProfile } = await supabaseServer
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (userProfile && userProfile.role !== 'admin') {
-          return { success: false, message: 'Only admins can toggle Pro Session status.' };
-        }
-      }
-    }
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('stems')
       .update({ is_verified: isVerified })
-      .eq('id', id)
-      .select();
+      .eq('id', id);
 
-    if (error) return { success: false, message: error.message };
-    if (!data || data.length === 0) {
-      return { success: false, message: 'Update failed: Row-Level Security policy blocked update in database.' };
+    if (error) {
+      console.error('[toggleStemVerification] Error:', error.message);
+      return { success: false, message: `Update failed: ${error.message}` };
     }
 
     revalidatePath('/');
     return { success: true, message: `Stem marked as ${isVerified ? 'verified' : 'unverified'}.` };
-  } catch {
+  } catch (err) {
+    console.error('[toggleStemVerification] Unexpected error:', err);
     return { success: false, message: 'Verification update failed.' };
   }
 }
