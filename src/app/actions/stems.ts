@@ -230,20 +230,39 @@ export async function setUserRoleByEmail(
     const supabase = await createSupabaseServerClient();
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Try updating existing profile using case-insensitive email match
     const { error, data } = await supabase
       .from('profiles')
       .update({ role })
-      .eq('email', email.trim().toLowerCase())
+      .ilike('email', cleanEmail)
       .select();
 
-    if (error) return { success: false, message: error.message };
-    if (!data || data.length === 0) {
-      return { success: false, message: `No user found with email "${email}". Make sure they have logged in at least once.` };
+    if (!error && data && data.length > 0) {
+      revalidatePath('/');
+      return { success: true, message: `User ${cleanEmail} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
     }
 
-    revalidatePath('/');
-    return { success: true, message: `User ${email} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
-  } catch {
+    // 2. If no profile exists, search auth.users table for user ID
+    const { data: userData } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('email', cleanEmail)
+      .maybeSingle();
+
+    if (userData) {
+      await supabase.from('profiles').update({ role }).eq('id', userData.id);
+      revalidatePath('/');
+      return { success: true, message: `User ${cleanEmail} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
+    }
+
+    return {
+      success: false,
+      message: `No user profile found for "${cleanEmail}". Ensure the email is spelled correctly.`
+    };
+  } catch (err) {
+    console.error('[setUserRoleByEmail] Error:', err);
     return { success: false, message: 'Role update failed.' };
   }
 }
