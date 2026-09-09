@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, LogOut, User, Shield, Music2 } from 'lucide-react';
+import { ChevronDown, LogOut, User, Shield, Music2, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
 import { SubmitStemModal } from './SubmitStemModal';
 import { AdminModal } from './AdminModal';
+import { SettingsModal } from './SettingsModal';
 import { Stem } from '@/types';
 
 interface HeaderProps {
@@ -25,6 +26,7 @@ export function Header({ onStemAdded }: HeaderProps) {
   const [authOpen, setAuthOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const roleInfo = profile ? ROLE_LABELS[profile.role] : null;
@@ -102,6 +104,11 @@ export function Header({ onStemAdded }: HeaderProps) {
                         />
                       )}
                       <DropdownItem
+                        icon={<Settings className="w-3.5 h-3.5 text-amber" />}
+                        label="Account Settings"
+                        onClick={() => setSettingsOpen(true)}
+                      />
+                      <DropdownItem
                         icon={<User className="w-3.5 h-3.5" />}
                         label="My Submissions"
                         onClick={handleMySubmissionsClick}
@@ -144,6 +151,7 @@ export function Header({ onStemAdded }: HeaderProps) {
         onStemAdded={onStemAdded}
       />
       <AdminModal isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 }
