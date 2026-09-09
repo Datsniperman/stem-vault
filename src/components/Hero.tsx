@@ -37,8 +37,8 @@ export function Hero({ totalSessions, totalTracks, activeEngineers }: HeroProps)
           className="font-display text-warm-white leading-[0.92] mb-8 animate-[reveal-up_0.6s_cubic-bezier(0.16,1,0.3,1)_80ms_both]"
           style={{ fontSize: 'clamp(3rem, 8vw, 7.5rem)' }}
         >
-          Every stem,<br />
-          <em className="italic text-amber not-italic" style={{ fontStyle: 'italic' }}>sourced by the room.</em>
+          Stem Vault,<br />
+          <em className="italic text-amber not-italic" style={{ fontStyle: 'italic' }}>stem sharing platform.</em>
         </h1>
 
         {/* Sub */}
