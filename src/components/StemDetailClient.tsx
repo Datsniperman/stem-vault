@@ -51,8 +51,9 @@ export function StemDetailClient({
   initialRatingCount,
 }: StemDetailClientProps) {
   const { addToast } = useToast();
-  const { profile: clientProfile } = useAuth();
+  const { user: clientUser, profile: clientProfile } = useAuth();
   const profile = clientProfile || serverProfile;
+  const user = clientUser || (profile ? { id: profile.id } : null);
 
   // Ratings State
   const [avgRating, setAvgRating] = useState(initialAvgRating);
@@ -87,7 +88,7 @@ export function StemDetailClient({
 
   // Handle Star Rating
   const handleRate = async (star: number) => {
-    if (!profile) {
+    if (!user && !profile) {
       addToast('Please sign in to rate this stem session.', 'info');
       return;
     }
