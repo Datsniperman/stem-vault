@@ -68,6 +68,20 @@ export async function submitStem(
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Auto-verify stems submitted by Super Users / Pro (verified role) or Admins
+    let isVerified = false;
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile && (profile.role === 'verified' || profile.role === 'admin')) {
+        isVerified = true;
+      }
+    }
+
     const { data, error } = await supabase
       .from('stems')
       .insert([{
@@ -82,6 +96,7 @@ export async function submitStem(
         download_url: downloadUrl,
         uploader_handle: uploaderHandle || 'Anonymous',
         description: description || null,
+        is_verified: isVerified,
         status: 'published',
       }])
       .select()
