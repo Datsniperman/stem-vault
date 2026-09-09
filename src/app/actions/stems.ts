@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { FormState, Stem, Profile } from '@/types';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sendReportEmail } from '@/lib/email';
 
 const ADMIN_EMAIL = 'connorwbrown07@gmail.com';
@@ -236,7 +236,10 @@ export async function setUserRoleByEmail(
   role: 'user' | 'verified' | 'admin'
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     const cleanEmail = email.trim().toLowerCase();
