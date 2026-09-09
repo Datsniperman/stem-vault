@@ -248,18 +248,33 @@ export async function setUserRoleByEmail(
       .ilike('email', cleanEmail)
       .select();
 
-    if (error) {
-      return { success: false, message: `Update error: ${error.message}` };
-    }
-
-    if (data && data.length > 0) {
+    if (!error && data && data.length > 0) {
       revalidatePath('/');
       return { success: true, message: `User ${cleanEmail} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
     }
 
+    // 2. If profile update returned 0 rows, check if profile exists at all or if email has leading/trailing spaces
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .filter('email', 'ilike', `%${cleanEmail}%`)
+      .maybeSingle();
+
+    if (existingProfile) {
+      const { error: updateErr } = await supabase
+        .from('profiles')
+        .update({ role })
+        .eq('id', existingProfile.id);
+
+      if (!updateErr) {
+        revalidatePath('/');
+        return { success: true, message: `User ${cleanEmail} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
+      }
+    }
+
     return {
       success: false,
-      message: `No user profile found for "${cleanEmail}". Make sure they have logged in at least once or check Supabase SQL RLS policies.`
+      message: `No user profile found for "${cleanEmail}". Make sure the user has created an account and signed in at least once.`
     };
   } catch (err) {
     console.error('[setUserRoleByEmail] Error:', err);
