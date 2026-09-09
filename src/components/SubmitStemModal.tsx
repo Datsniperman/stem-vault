@@ -25,10 +25,16 @@ interface SubmitStemModalProps {
 }
 
 export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModalProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { addToast } = useToast();
   const [state, formAction, isPending] = useActionState(submitStem, INITIAL_STATE);
   const hasHandledSuccess = useRef(false);
+
+  const uploaderHandle = profile?.display_name
+    ? `@${profile.display_name.replace(/^@/, '')}`
+    : user?.email
+    ? `@${user.email.split('@')[0]}`
+    : '@anonymous';
 
   // Controlled form state to preserve input values on submit errors
   const [formData, setFormData] = useState({
@@ -40,19 +46,8 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
     bpm: '',
     key: '',
     track_count: '',
-    uploader_handle: '',
     description: '',
   });
-
-  // Set default handle when user loads
-  useEffect(() => {
-    if (user?.email && !formData.uploader_handle) {
-      setFormData(prev => ({
-        ...prev,
-        uploader_handle: `@${(user.email ?? '').split('@')[0]}`,
-      }));
-    }
-  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -69,7 +64,6 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
       bpm: '',
       key: '',
       track_count: '',
-      uploader_handle: user?.email ? `@${user.email.split('@')[0]}` : '',
       description: '',
     });
   };
@@ -83,7 +77,6 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
       resetForm();
       onClose();
     } else if (!state.success && state.message) {
-      // On error, show toast notification but keep formData values intact!
       addToast(state.message, 'error');
     }
   }, [state]);
@@ -124,7 +117,9 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
         <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
           <div>
             <h2 className="font-display text-2xl text-warm-white">Submit to Vault</h2>
-            <p className="text-dim text-sm font-body mt-0.5">Share a multitrack session with the community</p>
+            <p className="text-dim text-sm font-body mt-0.5">
+              Submitting as <span className="text-amber font-medium">{uploaderHandle}</span>
+            </p>
           </div>
           <button onClick={onClose} className="text-dim hover:text-warm-white p-1.5 transition-colors rounded-sm">
             <X className="w-5 h-5" />
@@ -157,6 +152,9 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
         </div>
 
         <form action={formAction} className="px-6 pb-6 pt-5 space-y-4 flex-1">
+          {/* Hidden handle automatically pulled from user profile */}
+          <input type="hidden" name="uploader_handle" value={uploaderHandle} />
+
           {/* Row 1: Title + Artist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Song Title *" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Gratitude" error={state.errors?.title} />
@@ -187,16 +185,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
             <Field label="Track Count" name="track_count" type="number" value={formData.track_count} onChange={handleChange} placeholder="36" inputMode="numeric" min={1} max={128} error={state.errors?.track_count} />
           </div>
 
-          {/* Row 5: Handle */}
-          <Field
-            label="Your Handle"
-            name="uploader_handle"
-            value={formData.uploader_handle}
-            onChange={handleChange}
-            placeholder="@mixguy_foh"
-          />
-
-          {/* Row 6: Description / Special Notes */}
+          {/* Row 5: Description / Special Notes */}
           <div className="space-y-1.5">
             <label htmlFor="description" className="block text-xs text-dim font-body flex items-center justify-between">
               <span>Special Notes / Description (Optional)</span>
