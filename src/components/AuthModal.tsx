@@ -12,6 +12,13 @@ interface AuthModalProps {
 
 type AuthMode = 'signin' | 'signup' | 'magic' | 'forgot';
 
+function getOrigin() {
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return window.location.origin;
+  }
+  return 'https://stem-vault-tau.vercel.app';
+}
+
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const { addToast } = useToast();
   const [mode, setMode] = useState<AuthMode>('signin');
@@ -42,7 +49,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       if (!supabase) throw new Error('Supabase client unavailable.');
 
       const { error: supaErr } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${getOrigin()}/auth/reset-password`,
       });
 
       if (supaErr) { setError(supaErr.message); return; }
@@ -65,7 +72,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const { error: supaErr } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${getOrigin()}/auth/callback`,
           shouldCreateUser: true,
         },
       });
@@ -100,6 +107,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           email,
           password,
           options: {
+            emailRedirectTo: `${getOrigin()}/auth/callback`,
             data: {
               display_name: handleClean,
             },
