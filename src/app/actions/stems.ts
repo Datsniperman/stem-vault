@@ -190,13 +190,12 @@ export async function updateUsername(userId: string, displayName: string): Promi
     const cleanName = displayName.trim().replace(/^@/, '');
     if (!cleanName) return { success: false, message: 'Username cannot be empty.' };
 
-    // 1. Update profiles table
-    const { error: profileErr } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({ display_name: cleanName })
       .eq('id', userId);
 
-    if (profileErr) return { success: false, message: profileErr.message };
+    if (error) return { success: false, message: error.message };
 
     revalidatePath('/');
     return { success: true, message: `Username updated to @${cleanName}.` };
@@ -214,9 +213,19 @@ export async function updateUserRole(
     const supabase = await createSupabaseServerClient();
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ role })
+      .eq('id', userId)
+      .select();
+
     if (error) return { success: false, message: error.message };
-    return { success: true, message: `Role updated to ${role}.` };
+    if (!data || data.length === 0) {
+      return { success: false, message: 'Role update failed: RLS blocked the update or user not found.' };
+    }
+
+    revalidatePath('/');
+    return { success: true, message: `Role updated to ${role === 'verified' ? 'Super User / Pro' : role}.` };
   } catch {
     return { success: false, message: 'Role update failed.' };
   }
@@ -232,34 +241,25 @@ export async function setUserRoleByEmail(
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // 1. Try updating existing profile using case-insensitive email match
+    // 1. Update existing profile using case-insensitive email match
     const { error, data } = await supabase
       .from('profiles')
       .update({ role })
       .ilike('email', cleanEmail)
       .select();
 
-    if (!error && data && data.length > 0) {
-      revalidatePath('/');
-      return { success: true, message: `User ${cleanEmail} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
+    if (error) {
+      return { success: false, message: `Update error: ${error.message}` };
     }
 
-    // 2. If no profile exists, search auth.users table for user ID
-    const { data: userData } = await supabase
-      .from('profiles')
-      .select('id')
-      .ilike('email', cleanEmail)
-      .maybeSingle();
-
-    if (userData) {
-      await supabase.from('profiles').update({ role }).eq('id', userData.id);
+    if (data && data.length > 0) {
       revalidatePath('/');
       return { success: true, message: `User ${cleanEmail} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
     }
 
     return {
       success: false,
-      message: `No user profile found for "${cleanEmail}". Ensure the email is spelled correctly.`
+      message: `No user profile found for "${cleanEmail}". Make sure they have logged in at least once or check Supabase SQL RLS policies.`
     };
   } catch (err) {
     console.error('[setUserRoleByEmail] Error:', err);
