@@ -89,3 +89,70 @@ $$;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- ------------------------------------------------------------
+-- Community Ratings, Comments & Mix Showcase
+-- ------------------------------------------------------------
+
+-- 1. Stem Ratings Table
+create table if not exists public.stem_ratings (
+  id uuid primary key default gen_random_uuid(),
+  stem_id uuid references public.stems(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  rating integer check (rating >= 1 and rating <= 5) not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique (stem_id, user_id)
+);
+
+-- 2. Stem Comments Table
+create table if not exists public.stem_comments (
+  id uuid primary key default gen_random_uuid(),
+  stem_id uuid references public.stems(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  user_handle text not null,
+  content text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 3. Community Mixes Showcase Table
+create table if not exists public.stem_mixes (
+  id uuid primary key default gen_random_uuid(),
+  stem_id uuid references public.stems(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  user_handle text not null,
+  title text not null,
+  mix_url text not null,
+  description text,
+  likes_count integer default 0,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 4. Mix Likes Table
+create table if not exists public.mix_likes (
+  id uuid primary key default gen_random_uuid(),
+  mix_id uuid references public.stem_mixes(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique (mix_id, user_id)
+);
+
+-- Enable RLS and public policies
+alter table public.stem_ratings enable row level security;
+alter table public.stem_comments enable row level security;
+alter table public.stem_mixes enable row level security;
+alter table public.mix_likes enable row level security;
+
+create policy "Public read stem_ratings" on public.stem_ratings for select using (true);
+create policy "Authenticated insert stem_ratings" on public.stem_ratings for insert with check (auth.role() = 'authenticated');
+create policy "Authenticated update stem_ratings" on public.stem_ratings for update using (auth.uid() = user_id);
+
+create policy "Public read stem_comments" on public.stem_comments for select using (true);
+create policy "Authenticated insert stem_comments" on public.stem_comments for insert with check (auth.role() = 'authenticated');
+
+create policy "Public read stem_mixes" on public.stem_mixes for select using (true);
+create policy "Authenticated insert stem_mixes" on public.stem_mixes for insert with check (auth.role() = 'authenticated');
+
+create policy "Public read mix_likes" on public.mix_likes for select using (true);
+create policy "Authenticated insert mix_likes" on public.mix_likes for insert with check (auth.role() = 'authenticated');
+create policy "Authenticated delete mix_likes" on public.mix_likes for delete using (auth.uid() = user_id);
+

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Download, Flag, ExternalLink, Music, Info, Check } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
@@ -25,6 +26,7 @@ interface StemCardProps {
 }
 
 export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: StemCardProps) {
+  const router = useRouter();
   const { addToast } = useToast();
   const [reporting, setReporting] = useState(false);
   const [localVerified, setLocalVerified] = useState(stem.is_verified);
@@ -87,7 +89,10 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
   return (
     <article
-      onClick={() => onClick && onClick(artworkUrl)}
+      onClick={() => {
+        if (onClick) onClick(artworkUrl);
+        router.push(`/stems/${stem.id}`);
+      }}
       className={clsx(
         'group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm cursor-pointer',
         'hover:border-amber/50 transition-all duration-200 hover:shadow-[0_0_15px_rgba(0,229,255,0.08)]',

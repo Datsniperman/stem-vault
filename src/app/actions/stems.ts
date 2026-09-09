@@ -333,3 +333,174 @@ export async function getAllProfiles(): Promise<Profile[]> {
     return [];
   }
 }
+
+// ── Rating, Comments & Community Mixes Actions ──────────────────────────────────
+
+export async function rateStem(
+  stemId: string,
+  rating: number
+): Promise<{ success: boolean; message: string; avgRating?: number; userRating?: number }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'You must be logged in to rate.' };
+
+    if (rating < 1 || rating > 5) return { success: false, message: 'Rating must be between 1 and 5.' };
+
+    const { error } = await supabase
+      .from('stem_ratings')
+      .upsert({ stem_id: stemId, user_id: user.id, rating }, { onConflict: 'stem_id,user_id' });
+
+    if (error) {
+      console.error('[rateStem] Error:', error);
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath('/');
+    revalidatePath(`/stems/${stemId}`);
+    return { success: true, message: 'Rating saved.', userRating: rating };
+  } catch (err) {
+    console.error('[rateStem] Unexpected error:', err);
+    return { success: false, message: 'Failed to save rating.' };
+  }
+}
+
+export async function addComment(
+  stemId: string,
+  content: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'You must be signed in to post comments.' };
+
+    const cleanContent = content.trim().slice(0, 2000);
+    if (!cleanContent) return { success: false, message: 'Comment cannot be empty.' };
+
+    // Get user handle
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, email')
+      .eq('id', user.id)
+      .single();
+
+    const handle = profile?.display_name
+      ? `@${profile.display_name}`
+      : profile?.email
+      ? profile.email.split('@')[0]
+      : 'Anonymous';
+
+    const { error } = await supabase
+      .from('stem_comments')
+      .insert([{ stem_id: stemId, user_id: user.id, user_handle: handle, content: cleanContent }]);
+
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath(`/stems/${stemId}`);
+    return { success: true, message: 'Comment posted.' };
+  } catch (err) {
+    console.error('[addComment] Error:', err);
+    return { success: false, message: 'Failed to post comment.' };
+  }
+}
+
+export async function submitCommunityMix(
+  stemId: string,
+  title: string,
+  mixUrl: string,
+  description?: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'You must be signed in to post a mix.' };
+
+    const cleanTitle = title.trim().slice(0, 200);
+    const cleanUrl = mixUrl.trim();
+    if (!cleanTitle) return { success: false, message: 'Mix title is required.' };
+    if (!cleanUrl || !isValidUrl(cleanUrl)) return { success: false, message: 'Please provide a valid https:// audio or video URL.' };
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, email')
+      .eq('id', user.id)
+      .single();
+
+    const handle = profile?.display_name
+      ? `@${profile.display_name}`
+      : profile?.email
+      ? profile.email.split('@')[0]
+      : 'Anonymous';
+
+    const { error } = await supabase
+      .from('stem_mixes')
+      .insert([{
+        stem_id: stemId,
+        user_id: user.id,
+        user_handle: handle,
+        title: cleanTitle,
+        mix_url: cleanUrl,
+        description: description?.trim().slice(0, 1000) || null,
+        likes_count: 0
+      }]);
+
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath(`/stems/${stemId}`);
+    return { success: true, message: 'Community mix submitted!' };
+  } catch (err) {
+    console.error('[submitCommunityMix] Error:', err);
+    return { success: false, message: 'Failed to submit mix.' };
+  }
+}
+
+export async function toggleMixLike(
+  mixId: string,
+  stemId: string
+): Promise<{ success: boolean; message: string; liked?: boolean }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'You must be signed in to like a mix.' };
+
+    // Check if already liked
+    const { data: existingLike } = await supabase
+      .from('mix_likes')
+      .select('id')
+      .eq('mix_id', mixId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existingLike) {
+      // Remove like
+      await supabase.from('mix_likes').delete().eq('id', existingLike.id);
+      const { data: currentMix } = await supabase.from('stem_mixes').select('likes_count').eq('id', mixId).single();
+      if (currentMix) {
+        await supabase.from('stem_mixes').update({ likes_count: Math.max(0, (currentMix.likes_count || 1) - 1) }).eq('id', mixId);
+      }
+      revalidatePath(`/stems/${stemId}`);
+      return { success: true, message: 'Unliked mix.', liked: false };
+    } else {
+      // Add like
+      await supabase.from('mix_likes').insert([{ mix_id: mixId, user_id: user.id }]);
+      const { data: currentMix } = await supabase.from('stem_mixes').select('likes_count').eq('id', mixId).single();
+      if (currentMix) {
+        await supabase.from('stem_mixes').update({ likes_count: (currentMix.likes_count || 0) + 1 }).eq('id', mixId);
+      }
+      revalidatePath(`/stems/${stemId}`);
+      return { success: true, message: 'Liked mix!', liked: true };
+    }
+  } catch (err) {
+    console.error('[toggleMixLike] Error:', err);
+    return { success: false, message: 'Failed to update like status.' };
+  }
+}
+

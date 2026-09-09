@@ -47,3 +47,34 @@ export type FilterType =
   | 'WAV (48kHz/24-bit)'
   | 'Multitrack Zip'
   | 'Verified Only';
+
+export interface StemRating {
+  id: string;
+  stem_id: string;
+  user_id: string;
+  rating: number;
+  created_at: string;
+}
+
+export interface StemComment {
+  id: string;
+  stem_id: string;
+  user_id: string;
+  user_handle: string;
+  content: string;
+  created_at: string;
+}
+
+export interface StemMix {
+  id: string;
+  stem_id: string;
+  user_id: string;
+  user_handle: string;
+  title: string;
+  mix_url: string;
+  description: string | null;
+  likes_count: number;
+  user_has_liked?: boolean;
+  created_at: string;
+}
+
