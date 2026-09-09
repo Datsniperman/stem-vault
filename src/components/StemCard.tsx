@@ -89,10 +89,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
   return (
     <article
-      onClick={() => {
-        if (onClick) onClick(artworkUrl);
-        router.push(`/stems/${stem.id}`);
-      }}
+      onClick={() => router.push(`/stems/${stem.id}`)}
       className={clsx(
         'group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm cursor-pointer',
         'hover:border-amber/50 transition-all duration-200 hover:shadow-[0_0_15px_rgba(0,229,255,0.08)]',

@@ -24,6 +24,8 @@ import Link from 'next/link';
 import { Stem, Profile, StemComment, StemMix } from '@/types';
 import { rateStem, addComment, submitCommunityMix, toggleMixLike, flagStem, deleteStem } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
+import { Header } from '@/components/Header';
 import { clsx } from 'clsx';
 import { AdminBar } from './AdminBar';
 
@@ -41,7 +43,7 @@ interface StemDetailClientProps {
 export function StemDetailClient({
   stem,
   artworkUrl,
-  profile,
+  profile: serverProfile,
   initialComments,
   initialMixes,
   initialAvgRating,
@@ -49,6 +51,8 @@ export function StemDetailClient({
   initialRatingCount,
 }: StemDetailClientProps) {
   const { addToast } = useToast();
+  const { profile: clientProfile } = useAuth();
+  const profile = clientProfile || serverProfile;
 
   // Ratings State
   const [avgRating, setAvgRating] = useState(initialAvgRating);
@@ -209,6 +213,7 @@ export function StemDetailClient({
 
   return (
     <div className="min-h-screen bg-obsidian text-warm-white pb-20">
+      <Header onStemAdded={() => {}} />
 
       {/* Top Bar */}
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-6">
