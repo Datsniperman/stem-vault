@@ -21,9 +21,10 @@ interface StemCardProps {
   profile: Profile | null;
   onDelete: (id: string) => void;
   onVerifyToggle: (id: string, verified: boolean) => void;
+  onClick?: (artworkUrl: string | null) => void;
 }
 
-export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardProps) {
+export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: StemCardProps) {
   const { addToast } = useToast();
   const [reporting, setReporting] = useState(false);
   const [localVerified, setLocalVerified] = useState(stem.is_verified);
@@ -66,7 +67,8 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardPr
     return () => { isMounted = false; };
   }, [stem.artist, stem.title, stem.cover_url]);
 
-  const handleReport = async () => {
+  const handleReport = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     setReporting(true);
     const result = await flagStem(stem.id);
     addToast(
@@ -85,8 +87,9 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardPr
 
   return (
     <article
+      onClick={() => onClick && onClick(artworkUrl)}
       className={clsx(
-        'group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm',
+        'group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm cursor-pointer',
         'hover:border-amber/50 transition-all duration-200 hover:shadow-[0_0_15px_rgba(0,229,255,0.08)]',
         localVerified && 'border-l-2 border-l-amber'
       )}
@@ -124,7 +127,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardPr
         {/* Description toggle button if description exists */}
         {stem.description && (
           <button
-            onClick={() => setShowNotes(n => !n)}
+            onClick={(e) => { e.stopPropagation(); setShowNotes(n => !n); }}
             title="Toggle special notes"
             className="absolute bottom-2 right-2 bg-obsidian/80 hover:bg-obsidian border border-border hover:border-amber text-amber p-1 rounded transition-colors backdrop-blur-md"
           >
@@ -173,13 +176,15 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardPr
             <span className="text-dim text-[10px]">·</span>
             <span className="text-[11px] text-dim font-body shrink-0">{timeAgo}</span>
             {isAdmin && (
-              <AdminBar
-                stemId={stem.id}
-                uploaderId={stem.user_id}
-                isVerified={localVerified}
-                onDelete={onDelete}
-                onVerifyToggle={handleVerifyToggle}
-              />
+              <div onClick={e => e.stopPropagation()}>
+                <AdminBar
+                  stemId={stem.id}
+                  uploaderId={stem.user_id}
+                  isVerified={localVerified}
+                  onDelete={onDelete}
+                  onVerifyToggle={handleVerifyToggle}
+                />
+              </div>
             )}
           </div>
 
@@ -196,6 +201,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardPr
               href={stem.download_url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
               className="flex items-center gap-1 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-2.5 py-1.5 rounded-sm transition-colors uppercase tracking-wider"
             >
               <Download className="w-3.5 h-3.5" />

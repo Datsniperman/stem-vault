@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Stem, FilterType } from '@/types';
 import { StemCard } from './StemCard';
+import { StemDetailModal } from './StemDetailModal';
 import { FilterRail } from './FilterRail';
 import { Header } from './Header';
 import { Hero } from './Hero';
@@ -17,6 +18,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   const [stems, setStems] = useState<Stem[]>(initialStems);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   const [search, setSearch] = useState('');
+  const [selectedStem, setSelectedStem] = useState<{ stem: Stem; artworkUrl: string | null } | null>(null);
 
   const handleStemAdded = (stem: Stem) => {
     setStems(prev => [stem, ...prev]);
@@ -86,12 +88,23 @@ export function StemFeed({ initialStems }: StemFeedProps) {
                   profile={profile}
                   onDelete={handleDelete}
                   onVerifyToggle={handleVerifyToggle}
+                  onClick={(artworkUrl) => setSelectedStem({ stem, artworkUrl })}
                 />
               ))}
             </div>
           )}
         </main>
       </div>
+
+      <StemDetailModal
+        stem={selectedStem?.stem ?? null}
+        artworkUrl={selectedStem?.artworkUrl ?? null}
+        profile={profile}
+        isOpen={!!selectedStem}
+        onClose={() => setSelectedStem(null)}
+        onDelete={handleDelete}
+        onVerifyToggle={handleVerifyToggle}
+      />
 
       <footer className="mt-auto border-t border-border">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-6 flex items-center justify-between gap-4">
