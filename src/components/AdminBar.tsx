@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Trash2, ShieldCheck, ShieldOff } from 'lucide-react';
-import { deleteStem, updateUserRole } from '@/app/actions/stems';
+import { deleteStem, toggleStemVerification } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
 
 interface AdminBarProps {
@@ -15,7 +15,6 @@ interface AdminBarProps {
 
 export function AdminBar({
   stemId,
-  uploaderId,
   isVerified,
   onDelete,
   onVerifyToggle,
@@ -38,16 +37,12 @@ export function AdminBar({
   };
 
   const handleVerifyToggle = async () => {
-    if (!uploaderId) {
-      addToast('Cannot verify: this stem has no associated uploader user ID.', 'error');
-      return;
-    }
     setVerifying(true);
-    const newRole = isVerified ? 'user' : 'verified';
-    const result = await updateUserRole(uploaderId, newRole);
+    const newVerifiedState = !isVerified;
+    const result = await toggleStemVerification(stemId, newVerifiedState);
     if (result.success) {
-      addToast(`Uploader status updated to ${newRole}.`, 'success');
-      onVerifyToggle(stemId, !isVerified);
+      addToast(`Stem ${newVerifiedState ? 'verified' : 'un-verified'}.`, 'success');
+      onVerifyToggle(stemId, newVerifiedState);
     } else {
       addToast(`Verify failed: ${result.message}`, 'error');
     }
@@ -55,11 +50,11 @@ export function AdminBar({
   };
 
   return (
-    <div className="flex items-center gap-1 bg-surface-raised border border-border rounded px-1 py-0.5 ml-2">
+    <div className="flex items-center gap-1 bg-surface-raised border border-border rounded px-1.5 py-0.5 ml-2 shrink-0">
       <button
         onClick={handleVerifyToggle}
         disabled={verifying}
-        title={isVerified ? 'Remove verified status' : 'Grant verified engineer status'}
+        title={isVerified ? 'Remove verified status' : 'Mark as Verified Pro session'}
         className="p-1 text-verified hover:text-warm-white hover:bg-verified-dim rounded transition-colors disabled:opacity-50"
       >
         {isVerified ? (
@@ -71,7 +66,7 @@ export function AdminBar({
       <button
         onClick={handleDelete}
         disabled={deleting}
-        title="Delete stem (Admin Action)"
+        title="Delete stem permanently"
         className="p-1 text-error hover:text-warm-white hover:bg-error/20 rounded transition-colors disabled:opacity-50"
       >
         <Trash2 className="w-3.5 h-3.5" />

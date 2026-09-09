@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { FormState, Stem } from '@/types';
+import { FormState, Stem, Profile } from '@/types';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 // ── Validation helpers ───────────────────────────────────────────────────────
@@ -64,7 +64,6 @@ export async function submitStem(
       return { success: false, message: 'Database connection failed.' };
     }
 
-    // Get current user session if authenticated
     const { data: { user } } = await supabase.auth.getUser();
 
     const { data, error } = await supabase
@@ -105,11 +104,36 @@ export async function deleteStem(id: string): Promise<{ success: boolean; messag
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     const { error } = await supabase.from('stems').delete().eq('id', id);
+    if (error) {
+      console.error('[deleteStem] Supabase delete error:', error);
+      return { success: false, message: error.message };
+    }
+    revalidatePath('/');
+    return { success: true, message: 'Stem deleted successfully.' };
+  } catch (err) {
+    console.error('[deleteStem] Unexpected error:', err);
+    return { success: false, message: 'Delete failed.' };
+  }
+}
+
+export async function toggleStemVerification(
+  id: string,
+  isVerified: boolean
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { error } = await supabase
+      .from('stems')
+      .update({ is_verified: isVerified })
+      .eq('id', id);
+
     if (error) return { success: false, message: error.message };
     revalidatePath('/');
-    return { success: true, message: 'Stem deleted.' };
+    return { success: true, message: `Stem marked as ${isVerified ? 'verified' : 'unverified'}.` };
   } catch {
-    return { success: false, message: 'Delete failed.' };
+    return { success: false, message: 'Verification update failed.' };
   }
 }
 
@@ -140,5 +164,47 @@ export async function updateUserRole(
     return { success: true, message: `Role updated to ${role}.` };
   } catch {
     return { success: false, message: 'Role update failed.' };
+  }
+}
+
+export async function setUserRoleByEmail(
+  email: string,
+  role: 'user' | 'verified' | 'admin'
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { error, data } = await supabase
+      .from('profiles')
+      .update({ role })
+      .eq('email', email.trim().toLowerCase())
+      .select();
+
+    if (error) return { success: false, message: error.message };
+    if (!data || data.length === 0) {
+      return { success: false, message: `No user found with email "${email}". Make sure they have logged in at least once.` };
+    }
+
+    revalidatePath('/');
+    return { success: true, message: `User ${email} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
+  } catch {
+    return { success: false, message: 'Role update failed.' };
+  }
+}
+
+export async function getAllProfiles(): Promise<Profile[]> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return [];
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    return (data as Profile[]) || [];
+  } catch {
+    return [];
   }
 }

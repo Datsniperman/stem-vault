@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
 import { SubmitStemModal } from './SubmitStemModal';
+import { AdminModal } from './AdminModal';
 import { Stem } from '@/types';
 
 interface HeaderProps {
@@ -14,7 +15,7 @@ interface HeaderProps {
 
 const ROLE_LABELS = {
   admin:    { label: 'Admin',    color: 'text-error' },
-  verified: { label: 'Verified', color: 'text-verified' },
+  verified: { label: 'Super User / Pro', color: 'text-verified' },
   user:     { label: 'Member',   color: 'text-mid' },
 };
 
@@ -23,6 +24,7 @@ export function Header({ onStemAdded }: HeaderProps) {
   const { addToast } = useToast();
   const [authOpen, setAuthOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const roleInfo = profile ? ROLE_LABELS[profile.role] : null;
@@ -31,7 +33,7 @@ export function Header({ onStemAdded }: HeaderProps) {
     : user?.email?.slice(0, 2).toUpperCase() ?? '??';
 
   const handleAdminClick = () => {
-    addToast('Admin mode active: Use the shield and trash icons on stem cards to verify or remove stems.', 'info');
+    setAdminOpen(true);
   };
 
   const handleMySubmissionsClick = () => {
@@ -141,6 +143,7 @@ export function Header({ onStemAdded }: HeaderProps) {
         onClose={() => setSubmitOpen(false)}
         onStemAdded={onStemAdded}
       />
+      <AdminModal isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
     </>
   );
 }
