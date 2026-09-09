@@ -221,7 +221,7 @@ export async function updateUserRole(
 
     if (error) return { success: false, message: error.message };
     if (!data || data.length === 0) {
-      return { success: false, message: 'Role update failed: RLS blocked the update or user not found.' };
+      return { success: false, message: 'Role update failed: Database RLS policy blocked the update.' };
     }
 
     revalidatePath('/');
@@ -248,12 +248,16 @@ export async function setUserRoleByEmail(
       .ilike('email', cleanEmail)
       .select();
 
-    if (!error && data && data.length > 0) {
-      revalidatePath('/');
-      return { success: true, message: `User ${cleanEmail} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
+    if (error) {
+      return { success: false, message: `Update error: ${error.message}` };
     }
 
-    // 2. If profile update returned 0 rows, check if profile exists at all or if email has leading/trailing spaces
+    if (data && data.length > 0) {
+      revalidatePath('/');
+      return { success: true, message: `User ${cleanEmail} updated to ${role === 'verified' ? 'Super User / Pro' : role}.` };
+    }
+
+    // 2. If profile update returned 0 rows, check if RLS blocked it or if email has leading/trailing spaces
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id, email')
@@ -261,20 +265,26 @@ export async function setUserRoleByEmail(
       .maybeSingle();
 
     if (existingProfile) {
-      const { error: updateErr } = await supabase
+      const { data: updatedData, error: updateErr } = await supabase
         .from('profiles')
         .update({ role })
-        .eq('id', existingProfile.id);
+        .eq('id', existingProfile.id)
+        .select();
 
-      if (!updateErr) {
+      if (!updateErr && updatedData && updatedData.length > 0) {
         revalidatePath('/');
-        return { success: true, message: `User ${cleanEmail} is now a ${role === 'verified' ? 'Super User / Pro' : role}.` };
+        return { success: true, message: `User ${cleanEmail} updated to ${role === 'verified' ? 'Super User / Pro' : role}.` };
+      } else {
+        return {
+          success: false,
+          message: 'Role update blocked by Supabase Row-Level Security (RLS). Ensure the RLS update policy is active.'
+        };
       }
     }
 
     return {
       success: false,
-      message: `No user profile found for "${cleanEmail}". Make sure the user has created an account and signed in at least once.`
+      message: `No user profile found for "${cleanEmail}". Make sure the user has created an account.`
     };
   } catch (err) {
     console.error('[setUserRoleByEmail] Error:', err);

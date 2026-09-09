@@ -5,6 +5,7 @@ import { X, Shield, Award, User, Check, Search } from 'lucide-react';
 import { getAllProfiles, setUserRoleByEmail } from '@/app/actions/stems';
 import { Profile, UserRole } from '@/types';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface AdminModalProps {
 
 export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const { addToast } = useToast();
+  const { user, refreshProfile } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [emailInput, setEmailInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('verified');
@@ -44,6 +46,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     if (res.success) {
       addToast(res.message, 'success');
       setEmailInput('');
+      setProfiles(prev => prev.map(p => p.email?.toLowerCase() === emailInput.trim().toLowerCase() ? { ...p, role: selectedRole } : p));
+      if (user?.email?.toLowerCase() === emailInput.trim().toLowerCase()) {
+        await refreshProfile();
+      }
       loadProfiles();
     } else {
       addToast(res.message, 'error');
@@ -55,6 +61,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     const res = await setUserRoleByEmail(email, role);
     if (res.success) {
       addToast(res.message, 'success');
+      setProfiles(prev => prev.map(p => p.email?.toLowerCase() === email.toLowerCase() ? { ...p, role } : p));
+      if (user?.email?.toLowerCase() === email.toLowerCase()) {
+        await refreshProfile();
+      }
       loadProfiles();
     } else {
       addToast(res.message, 'error');
