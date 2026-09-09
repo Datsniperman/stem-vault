@@ -15,6 +15,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 interface AuthContextValue {
   user: User | null;
   profile: Profile | null;
+  accessToken: string | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string, userObj?: User | null) => {
@@ -64,7 +66,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setAccessToken(session?.access_token ?? null);
       if (session?.user) {
+        // Ensure browser cookies are set/synced for Supabase SSR
+        if (session.access_token && session.refresh_token) {
+          supabase.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          }).catch(() => {});
+        }
         fetchProfile(session.user.id, session.user).finally(() => setLoading(false));
       } else {
         setLoading(false);
@@ -74,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setUser(session?.user ?? null);
+        setAccessToken(session?.access_token ?? null);
         if (session?.user) {
           await fetchProfile(session.user.id, session.user);
         } else {
@@ -90,10 +101,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    setAccessToken(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, accessToken, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

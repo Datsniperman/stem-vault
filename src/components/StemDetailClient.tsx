@@ -51,7 +51,7 @@ export function StemDetailClient({
   initialRatingCount,
 }: StemDetailClientProps) {
   const { addToast } = useToast();
-  const { user: clientUser, profile: clientProfile } = useAuth();
+  const { user: clientUser, profile: clientProfile, accessToken } = useAuth();
   const profile = clientProfile || serverProfile;
   const user = clientUser || (profile ? { id: profile.id, email: profile.email } : null);
 
@@ -101,7 +101,7 @@ export function StemDetailClient({
       return;
     }
     setRatingLoading(true);
-    const res = await rateStem(stem.id, star);
+    const res = await rateStem(stem.id, star, accessToken || undefined);
     if (res.success) {
       addToast('Thank you for rating!', 'success');
       // Recalculate average locally
@@ -130,7 +130,7 @@ export function StemDetailClient({
     if (!commentInput.trim()) return;
 
     setCommentLoading(true);
-    const res = await addComment(stem.id, commentInput);
+    const res = await addComment(stem.id, commentInput, accessToken || undefined);
     if (res.success) {
       addToast('Comment posted.', 'success');
       setComments(prev => [
@@ -160,7 +160,7 @@ export function StemDetailClient({
     }
 
     setMixLoading(true);
-    const res = await submitCommunityMix(stem.id, mixTitle, mixUrl, mixDesc);
+    const res = await submitCommunityMix(stem.id, mixTitle, mixUrl, mixDesc, accessToken || undefined);
     if (res.success) {
       addToast('Mix submitted to the showcase!', 'success');
       setMixes(prev => [
@@ -207,7 +207,7 @@ export function StemDetailClient({
       return m;
     }));
 
-    await toggleMixLike(mixId, stem.id);
+    await toggleMixLike(mixId, stem.id, accessToken || undefined);
   };
 
   const handleReport = async () => {

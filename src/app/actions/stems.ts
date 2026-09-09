@@ -336,6 +336,33 @@ export async function getAllProfiles(): Promise<Profile[]> {
 
 // ── Rating, Comments & Community Mixes Actions ──────────────────────────────────
 
+// Helper to reliably authenticate user via server cookies OR fallback access token
+async function getAuthenticatedUser(supabaseServer: any, accessToken?: string) {
+  try {
+    if (supabaseServer) {
+      const { data: { user } } = await supabaseServer.auth.getUser();
+      if (user) return user;
+    }
+  } catch {
+    // Cookie auth fallback
+  }
+
+  if (accessToken) {
+    try {
+      const supabaseAdmin = await createSupabaseAdminClient();
+      const supabase = supabaseAdmin || supabaseServer;
+      if (supabase) {
+        const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+        if (!error && user) return user;
+      }
+    } catch (err) {
+      console.error('[getAuthenticatedUser] Access token auth error:', err);
+    }
+  }
+
+  return null;
+}
+
 // Helper to ensure user profile exists in database prior to foreign key operations
 async function ensureUserProfile(supabase: any, user: { id: string; email?: string; user_metadata?: Record<string, any> }): Promise<string> {
   try {
@@ -364,16 +391,19 @@ async function ensureUserProfile(supabase: any, user: { id: string; email?: stri
 
 export async function rateStem(
   stemId: string,
-  rating: number
+  rating: number,
+  accessToken?: string
 ): Promise<{ success: boolean; message: string; avgRating?: number; userRating?: number }> {
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const user = await getAuthenticatedUser(supabaseServer, accessToken);
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: 'You must be logged in to rate.' };
-
     if (rating < 1 || rating > 5) return { success: false, message: 'Rating must be between 1 and 5.' };
+
+    const supabase = supabaseAdmin || supabaseServer;
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     await ensureUserProfile(supabase, user);
 
@@ -397,17 +427,21 @@ export async function rateStem(
 
 export async function addComment(
   stemId: string,
-  content: string
+  content: string,
+  accessToken?: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const user = await getAuthenticatedUser(supabaseServer, accessToken);
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: 'You must be signed in to post comments.' };
 
     const cleanContent = content.trim().slice(0, 2000);
     if (!cleanContent) return { success: false, message: 'Comment cannot be empty.' };
+
+    const supabase = supabaseAdmin || supabaseServer;
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     const handle = await ensureUserProfile(supabase, user);
 
@@ -429,19 +463,23 @@ export async function submitCommunityMix(
   stemId: string,
   title: string,
   mixUrl: string,
-  description?: string
+  description?: string,
+  accessToken?: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const user = await getAuthenticatedUser(supabaseServer, accessToken);
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: 'You must be signed in to post a mix.' };
 
     const cleanTitle = title.trim().slice(0, 200);
     const cleanUrl = mixUrl.trim();
     if (!cleanTitle) return { success: false, message: 'Mix title is required.' };
     if (!cleanUrl || !isValidUrl(cleanUrl)) return { success: false, message: 'Please provide a valid https:// audio or video URL.' };
+
+    const supabase = supabaseAdmin || supabaseServer;
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     const handle = await ensureUserProfile(supabase, user);
 
@@ -469,14 +507,18 @@ export async function submitCommunityMix(
 
 export async function toggleMixLike(
   mixId: string,
-  stemId: string
+  stemId: string,
+  accessToken?: string
 ): Promise<{ success: boolean; message: string; liked?: boolean }> {
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const user = await getAuthenticatedUser(supabaseServer, accessToken);
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: 'You must be signed in to like a mix.' };
+
+    const supabase = supabaseAdmin || supabaseServer;
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
 
     await ensureUserProfile(supabase, user);
 
