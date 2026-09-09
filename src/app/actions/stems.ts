@@ -15,7 +15,7 @@ function isValidUrl(url: string): boolean {
   }
 }
 
-function sanitizeText(value: string, maxLen = 200): string {
+function sanitizeText(value: string, maxLen = 1000): string {
   return value.trim().slice(0, maxLen).replace(/[<>]/g, '');
 }
 
@@ -27,15 +27,14 @@ export async function submitStem(
 ): Promise<FormState> {
   const errors: Record<string, string> = {};
 
-  const title          = sanitizeText(formData.get('title') as string || '');
-  const artist         = sanitizeText(formData.get('artist') as string || '');
+  const title          = sanitizeText(formData.get('title') as string || '', 200);
+  const artist         = sanitizeText(formData.get('artist') as string || '', 200);
   const downloadUrl    = (formData.get('download_url') as string || '').trim();
-  const hostPlatform   = sanitizeText(formData.get('host_platform') as string || 'Google Drive');
-  const format         = sanitizeText(formData.get('format') as string || 'WAV (48kHz/24-bit)');
+  const hostPlatform   = sanitizeText(formData.get('host_platform') as string || 'Google Drive', 50);
+  const format         = sanitizeText(formData.get('format') as string || 'WAV (48kHz/24-bit)', 50);
   const uploaderHandle = sanitizeText(formData.get('uploader_handle') as string || 'Anonymous', 50);
   const keyVal         = sanitizeText(formData.get('key') as string || '', 10);
-  const rawTags        = formData.get('tags') as string || '';
-  const tags           = rawTags.split(',').map(t => sanitizeText(t, 50)).filter(Boolean).slice(0, 12);
+  const description    = sanitizeText(formData.get('description') as string || '', 1000);
 
   const bpmRaw        = parseInt(formData.get('bpm') as string || '');
   const trackCountRaw = parseInt(formData.get('track_count') as string || '');
@@ -79,7 +78,7 @@ export async function submitStem(
         host_platform: hostPlatform,
         download_url: downloadUrl,
         uploader_handle: uploaderHandle || 'Anonymous',
-        tags,
+        description: description || null,
         status: 'published',
       }])
       .select()

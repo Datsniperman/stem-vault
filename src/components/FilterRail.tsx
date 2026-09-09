@@ -4,13 +4,10 @@ import { FilterType } from '@/types';
 import { Search, X } from 'lucide-react';
 
 const FILTERS: { label: string; value: FilterType }[] = [
-  { label: 'All sessions',     value: 'All' },
-  { label: 'WAV 48k/24-bit',  value: 'WAV (48kHz/24-bit)' },
-  { label: 'Reaper',          value: 'Reaper Session' },
-  { label: 'Multitrack',      value: 'Multitrack' },
-  { label: 'Click & Guide',   value: 'Click & Guide' },
-  { label: 'Broadcast Mix',   value: 'Broadcast Mix' },
-  { label: 'Verified only',   value: 'Verified Only' },
+  { label: 'All Sessions',      value: 'All' },
+  { label: 'WAV 48k/24-bit',   value: 'WAV (48kHz/24-bit)' },
+  { label: 'Multitrack Zip',   value: 'Multitrack Zip' },
+  { label: 'Pro Sessions Only', value: 'Verified Only' },
 ];
 
 interface FilterRailProps {
@@ -41,7 +38,7 @@ export function FilterRail({
               type="text"
               value={search}
               onChange={e => onSearchChange(e.target.value)}
-              placeholder="Song, artist, uploader…"
+              placeholder="Song, artist, handle…"
               className="
                 w-full bg-surface border border-border rounded-sm
                 pl-8 pr-8 py-2 font-body text-sm text-warm-white
@@ -62,7 +59,7 @@ export function FilterRail({
 
         {/* Filters */}
         <div>
-          <p className="text-xs text-dim font-body mb-2">Filter by type</p>
+          <p className="text-xs text-dim font-body mb-2">Filter by format</p>
           <nav className="flex flex-col gap-0.5">
             {FILTERS.map(({ label, value }) => {
               const active = activeFilter === value;
@@ -73,7 +70,7 @@ export function FilterRail({
                   className={`
                     w-full text-left px-3 py-1.5 rounded-sm text-sm font-body transition-colors
                     ${active
-                      ? 'bg-amber/10 text-amber'
+                      ? 'bg-amber-dim text-amber font-semibold border-l-2 border-amber'
                       : 'text-mid hover:text-warm-white hover:bg-surface-raised'
                     }
                   `}
@@ -87,7 +84,7 @@ export function FilterRail({
 
         {/* Count */}
         <p className="text-xs text-dim font-body">
-          {resultCount} {resultCount === 1 ? 'result' : 'results'}
+          {resultCount} {resultCount === 1 ? 'session' : 'sessions'}
         </p>
 
       </div>

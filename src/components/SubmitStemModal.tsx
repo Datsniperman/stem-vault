@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useRef } from 'react';
-import { X, AlertCircle, Link } from 'lucide-react';
+import { X, AlertCircle, Link, Info } from 'lucide-react';
 import { submitStem } from '@/app/actions/stems';
 import { FormState, Stem } from '@/types';
 import { useToast } from '@/context/ToastContext';
@@ -13,11 +13,9 @@ const INITIAL_STATE: FormState = { success: false, message: '' };
 const HOST_PLATFORMS = ['Google Drive', 'Dropbox', 'OneDrive', 'Box', 'Other'];
 const FORMATS = [
   'WAV (48kHz/24-bit)',
+  'WAV (44.1kHz/16-bit)',
   'FLAC',
-  'Reaper Session',
-  'Pro Tools Session',
-  'Studio One',
-  'Ableton Live',
+  'Multitrack Zip',
 ];
 
 interface SubmitStemModalProps {
@@ -52,7 +50,6 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
 
   if (!isOpen) return null;
 
-  // Gate: sign-in required
   if (!user) {
     return (
       <div
@@ -92,7 +89,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
 
         {/* Share link notice */}
         <div className="px-6 pt-5 shrink-0">
-          <div className="flex items-start gap-3 bg-amber-dim border border-amber/15 rounded-sm px-4 py-3">
+          <div className="flex items-start gap-3 bg-amber-dim border border-amber/20 rounded-sm px-4 py-3">
             <Link className="w-4 h-4 text-amber shrink-0 mt-0.5" />
             <p className="text-sm text-amber font-body leading-relaxed">
               Make sure your link is set to <strong>"Anyone with the link can view"</strong> before submitting. Private or quota-exceeded links will be flagged and removed.
@@ -115,48 +112,60 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
           )}
         </div>
 
-        <form ref={formRef} action={formAction} className="px-6 pb-6 pt-5 space-y-5 flex-1">
-          {/* Row 1 */}
+        <form ref={formRef} action={formAction} className="px-6 pb-6 pt-5 space-y-4 flex-1">
+          {/* Row 1: Title + Artist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Song title *" name="title" placeholder="e.g. Gratitude" error={state.errors?.title} />
+            <Field label="Song Title *" name="title" placeholder="e.g. Gratitude" error={state.errors?.title} />
             <Field label="Artist *" name="artist" placeholder="e.g. Brandon Lake" error={state.errors?.artist} />
           </div>
 
-          {/* Row 2 */}
+          {/* Row 2: Cloud Link */}
           <Field
-            label="Cloud link *"
+            label="Cloud Link *"
             name="download_url"
             type="url"
             placeholder="https://drive.google.com/…"
             error={state.errors?.download_url}
           />
 
-          {/* Row 3 */}
+          {/* Row 3: Platform + Format */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SelectField label="Host platform" name="host_platform" options={HOST_PLATFORMS} />
-            <SelectField label="Session format" name="format" options={FORMATS} />
+            <SelectField label="Host Platform" name="host_platform" options={HOST_PLATFORMS} />
+            <SelectField label="Audio Format" name="format" options={FORMATS} />
           </div>
 
-          {/* Row 4 */}
+          {/* Row 4: BPM + Key + Track Count */}
           <div className="grid grid-cols-3 gap-4">
             <Field label="BPM" name="bpm" type="number" placeholder="72" inputMode="numeric" min={30} max={300} error={state.errors?.bpm} />
             <Field label="Key" name="key" placeholder="Bb" />
-            <Field label="Track count" name="track_count" type="number" placeholder="36" inputMode="numeric" min={1} max={128} error={state.errors?.track_count} />
+            <Field label="Track Count" name="track_count" type="number" placeholder="36" inputMode="numeric" min={1} max={128} error={state.errors?.track_count} />
           </div>
 
-          {/* Row 5 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field
-              label="Your handle"
-              name="uploader_handle"
-              placeholder="@mixguy_foh"
-              defaultValue={user?.email?.split('@')[0] ? `@${user.email.split('@')[0]}` : ''}
+          {/* Row 5: Handle */}
+          <Field
+            label="Your Handle"
+            name="uploader_handle"
+            placeholder="@mixguy_foh"
+            defaultValue={user?.email?.split('@')[0] ? `@${user.email.split('@')[0]}` : ''}
+          />
+
+          {/* Row 6: Description / Special Notes */}
+          <div className="space-y-1.5">
+            <label htmlFor="description" className="block text-xs text-dim font-body flex items-center justify-between">
+              <span>Special Notes / Description (Optional)</span>
+              <span className="text-[10px] text-dim/60">Key changes, extra stems, instructions</span>
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows={3}
+              placeholder="e.g. Includes live drums, click track in Bb, and organ stems. Drums split into kick, snare, toms..."
+              className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors resize-none"
             />
-            <Field label="Tags (comma-separated)" name="tags" placeholder="Live Drums, Click, Acoustic" />
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2 border-t border-border">
+          <div className="flex justify-end gap-3 pt-3 border-t border-border">
             <button
               type="button"
               onClick={onClose}
@@ -173,7 +182,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
                 isPending && 'opacity-60 cursor-not-allowed'
               )}
             >
-              {isPending ? 'Submitting…' : 'Submit to archive'}
+              {isPending ? 'Submitting…' : 'Submit to Archive'}
             </button>
           </div>
         </form>
@@ -201,7 +210,7 @@ function Field({ label, name, error, ...rest }: FieldProps) {
         name={name}
         {...rest}
         className={clsx(
-          'w-full bg-obsidian border rounded-sm px-3 py-2.5 text-warm-white font-body text-sm',
+          'w-full bg-obsidian border rounded-sm px-3 py-2 text-warm-white font-body text-sm',
           'focus:outline-none placeholder:text-dim/40 transition-colors',
           error ? 'border-error focus:border-error' : 'border-border focus:border-amber'
         )}
@@ -226,7 +235,7 @@ function SelectField({ label, name, options }: SelectFieldProps) {
       <select
         id={name}
         name={name}
-        className="w-full bg-obsidian border border-border rounded-sm px-3 py-2.5 text-warm-white font-body text-sm focus:outline-none focus:border-amber transition-colors appearance-none"
+        className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber transition-colors appearance-none"
       >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>

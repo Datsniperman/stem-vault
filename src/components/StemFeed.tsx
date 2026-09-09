@@ -37,15 +37,13 @@ export function StemFeed({ initialStems }: StemFeedProps) {
         stem.title.toLowerCase().includes(q) ||
         stem.artist.toLowerCase().includes(q) ||
         stem.uploader_handle.toLowerCase().includes(q) ||
-        stem.tags.some(t => t.toLowerCase().includes(q));
+        (stem.description || '').toLowerCase().includes(q);
 
       let matchesFilter = true;
       if (activeFilter === 'Verified Only') {
         matchesFilter = stem.is_verified;
       } else if (activeFilter !== 'All') {
-        matchesFilter =
-          stem.format === activeFilter ||
-          stem.tags.some(t => t.toLowerCase().includes(activeFilter.toLowerCase()));
+        matchesFilter = stem.format === activeFilter;
       }
 
       return matchesSearch && matchesFilter;
@@ -66,7 +64,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
       />
 
       {/* Main content */}
-      <div className="max-w-7xl mx-auto w-full px-5 sm:px-8 py-10 flex flex-col lg:flex-row gap-10">
+      <div className="max-w-7xl mx-auto w-full px-5 sm:px-8 py-10 flex flex-col lg:flex-row gap-8">
 
         <FilterRail
           activeFilter={activeFilter}
@@ -80,7 +78,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
           {filtered.length === 0 ? (
             <EmptyState query={search} hasStems={stems.length > 0} />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {filtered.map(stem => (
                 <StemCard
                   key={stem.id}

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Download, Flag, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Flag, ExternalLink, Music, Info, Check } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
 import { flagStem } from '@/app/actions/stems';
@@ -9,10 +9,10 @@ import { useToast } from '@/context/ToastContext';
 import { clsx } from 'clsx';
 
 const PLATFORM_BADGE: Record<string, string> = {
-  'Google Drive': 'bg-blue-950/60 text-blue-300 border-blue-900/60',
-  'Dropbox':      'bg-sky-950/60 text-sky-300 border-sky-900/60',
-  'OneDrive':     'bg-indigo-950/60 text-indigo-300 border-indigo-900/60',
-  'Box':          'bg-purple-950/60 text-purple-300 border-purple-900/60',
+  'Google Drive': 'bg-blue-950/70 text-blue-300 border-blue-800/60',
+  'Dropbox':      'bg-sky-950/70 text-sky-300 border-sky-800/60',
+  'OneDrive':     'bg-indigo-950/70 text-indigo-300 border-indigo-800/60',
+  'Box':          'bg-purple-950/70 text-purple-300 border-purple-800/60',
   'Other':        'bg-surface-raised text-mid border-border',
 };
 
@@ -27,9 +27,44 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardPr
   const { addToast } = useToast();
   const [reporting, setReporting] = useState(false);
   const [localVerified, setLocalVerified] = useState(stem.is_verified);
+  const [artworkUrl, setArtworkUrl] = useState<string | null>(stem.cover_url || null);
+  const [artworkLoading, setArtworkLoading] = useState(!stem.cover_url);
+  const [showNotes, setShowNotes] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
   const platformBadge = PLATFORM_BADGE[stem.host_platform] ?? PLATFORM_BADGE['Other'];
+
+  // Fetch album cover automatically from iTunes Search API if cover_url not provided
+  useEffect(() => {
+    if (stem.cover_url) {
+      setArtworkUrl(stem.cover_url);
+      setArtworkLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchArtwork = async () => {
+      try {
+        const query = encodeURIComponent(`${stem.artist} ${stem.title}`);
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.results && data.results.length > 0) {
+            // Replace 100x100 with 600x600 for high resolution artwork
+            const hiresUrl = data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+            if (isMounted) setArtworkUrl(hiresUrl);
+          }
+        }
+      } catch {
+        // Fallback to placeholder gradient
+      } finally {
+        if (isMounted) setArtworkLoading(false);
+      }
+    };
+
+    fetchArtwork();
+    return () => { isMounted = false; };
+  }, [stem.artist, stem.title, stem.cover_url]);
 
   const handleReport = async () => {
     setReporting(true);
@@ -51,109 +86,124 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardPr
   return (
     <article
       className={clsx(
-        'group relative bg-surface border border-border flex flex-col',
-        'hover:border-border-warm transition-colors duration-200',
-        localVerified && 'border-l-2 border-l-verified'
+        'group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm',
+        'hover:border-amber/50 transition-all duration-200 hover:shadow-[0_0_15px_rgba(0,229,255,0.08)]',
+        localVerified && 'border-l-2 border-l-amber'
       )}
     >
-      {/* Card body */}
-      <div className="px-5 pt-5 pb-4 flex-1">
-
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="min-w-0">
-            <h2 className="font-display text-xl text-warm-white leading-snug truncate">
-              {stem.title}
-            </h2>
-            <p className="text-mid text-sm font-body mt-0.5 truncate">{stem.artist}</p>
+      {/* Upper 1/3: Album Artwork Cover */}
+      <div className="relative h-1/3 w-full overflow-hidden bg-surface-raised border-b border-border shrink-0">
+        {artworkUrl ? (
+          <img
+            src={artworkUrl}
+            alt={`${stem.title} by ${stem.artist}`}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-surface-raised via-obsidian to-surface flex items-center justify-center">
+            <Music className="w-8 h-8 text-amber/40" />
           </div>
+        )}
 
-          {/* Platform + verified */}
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <span className={clsx(
-              'text-xs font-body px-2 py-0.5 rounded-sm border',
-              platformBadge
-            )}>
-              {stem.host_platform}
-            </span>
-            {localVerified && (
-              <span className="text-xs font-body text-verified bg-verified-dim border border-verified/20 px-2 py-0.5 rounded-sm">
-                ✓ Verified
-              </span>
-            )}
-          </div>
-        </div>
+        {/* Top Badges overlay */}
+        <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+          <span className={clsx(
+            'text-[10px] font-body px-2 py-0.5 rounded-sm border shadow-sm backdrop-blur-md font-semibold pointer-events-auto',
+            platformBadge
+          )}>
+            {stem.host_platform}
+          </span>
 
-        {/* Metadata pills */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {stem.bpm && (
-            <MetaPill label="BPM" value={String(stem.bpm)} />
-          )}
-          {stem.key && (
-            <MetaPill label="Key" value={stem.key} />
-          )}
-          {stem.track_count && (
-            <MetaPill label="Tracks" value={String(stem.track_count)} />
-          )}
-          {stem.format && (
-            <span className="text-xs font-body text-dim border border-border px-2 py-0.5 rounded-sm">
-              {formatShort(stem.format)}
+          {localVerified && (
+            <span className="text-[10px] font-body text-amber bg-obsidian/80 border border-amber/30 px-2 py-0.5 rounded-sm shadow-sm backdrop-blur-md font-bold flex items-center gap-1">
+              <Check className="w-3 h-3" /> PRO SESSION
             </span>
           )}
         </div>
 
-        {/* Tags */}
-        {stem.tags.length > 0 && (
-          <div className="flex flex-wrap gap-x-2 gap-y-1">
-            {stem.tags.map(tag => (
-              <span
-                key={tag}
-                className="text-xs font-body text-dim hover:text-mid transition-colors cursor-default"
-              >
-                #{tag.replace(/\s+/g, '')}
-              </span>
-            ))}
-          </div>
+        {/* Description toggle button if description exists */}
+        {stem.description && (
+          <button
+            onClick={() => setShowNotes(n => !n)}
+            title="Toggle special notes"
+            className="absolute bottom-2 right-2 bg-obsidian/80 hover:bg-obsidian border border-border hover:border-amber text-amber p-1 rounded transition-colors backdrop-blur-md"
+          >
+            <Info className="w-3.5 h-3.5" />
+          </button>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-border px-5 py-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs text-dim font-body truncate">{stem.uploader_handle}</span>
-          <span className="text-dim text-xs hidden sm:inline">·</span>
-          <span className="text-xs text-dim font-body hidden sm:inline">{timeAgo}</span>
-          {isAdmin && (
-            <AdminBar
-              stemId={stem.id}
-              uploaderId={stem.user_id}
-              isVerified={localVerified}
-              onDelete={onDelete}
-              onVerifyToggle={handleVerifyToggle}
-            />
-          )}
+      {/* Middle Content Section */}
+      <div className="p-4 flex-1 flex flex-col justify-between min-h-0 bg-surface">
+
+        {showNotes && stem.description ? (
+          /* Notes overlay tab */
+          <div className="flex-1 overflow-y-auto pr-1 text-xs text-mid font-body space-y-1 animate-[fade-in_0.2s_ease-out]">
+            <p className="text-[10px] font-mono text-amber uppercase tracking-wider font-semibold">Special Notes / Details:</p>
+            <p className="leading-relaxed text-warm-white whitespace-pre-wrap">{stem.description}</p>
+          </div>
+        ) : (
+          /* Title & Metadata */
+          <div className="space-y-3 min-h-0">
+            <div>
+              <h2 className="font-display text-lg sm:text-xl text-warm-white leading-snug truncate group-hover:text-amber transition-colors">
+                {stem.title}
+              </h2>
+              <p className="text-mid text-xs sm:text-sm font-body truncate mt-0.5">{stem.artist}</p>
+            </div>
+
+            {/* Metadata Pills */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {stem.bpm && <MetaPill label="BPM" value={String(stem.bpm)} />}
+              {stem.key && <MetaPill label="KEY" value={stem.key} />}
+              {stem.track_count && <MetaPill label="TRACKS" value={String(stem.track_count)} />}
+              {stem.format && (
+                <span className="text-[10px] font-body text-dim border border-border px-1.5 py-0.5 rounded-sm">
+                  {formatShort(stem.format)}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Footer row inside 1:1 box */}
+        <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2 mt-auto shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[11px] text-dim font-body truncate">{stem.uploader_handle}</span>
+            <span className="text-dim text-[10px]">·</span>
+            <span className="text-[11px] text-dim font-body shrink-0">{timeAgo}</span>
+            {isAdmin && (
+              <AdminBar
+                stemId={stem.id}
+                uploaderId={stem.user_id}
+                isVerified={localVerified}
+                onDelete={onDelete}
+                onVerifyToggle={handleVerifyToggle}
+              />
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={handleReport}
+              disabled={reporting}
+              title="Report link"
+              className="p-1 text-dim hover:text-error transition-colors disabled:opacity-40"
+            >
+              <Flag className="w-3.5 h-3.5" />
+            </button>
+            <a
+              href={stem.download_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-2.5 py-1.5 rounded-sm transition-colors uppercase tracking-wider"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Get</span>
+            </a>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleReport}
-            disabled={reporting}
-            title="Report dead or restricted link"
-            className="p-1.5 text-dim hover:text-error transition-colors disabled:opacity-40"
-          >
-            <Flag className="w-3.5 h-3.5" />
-          </button>
-          <a
-            href={stem.download_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 bg-amber hover:bg-amber-muted text-obsidian font-body font-semibold text-sm px-3.5 py-1.5 rounded-sm transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Download</span>
-            <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-          </a>
-        </div>
       </div>
     </article>
   );
@@ -161,8 +211,8 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle }: StemCardPr
 
 function MetaPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline gap-1 bg-surface-raised border border-border rounded-sm px-2 py-0.5">
-      <span className="text-[10px] font-body text-dim uppercase tracking-wide">{label}</span>
+    <div className="flex items-baseline gap-1 bg-surface-raised border border-border rounded-sm px-1.5 py-0.5">
+      <span className="text-[9px] font-body text-dim uppercase tracking-wide">{label}</span>
       <span className="text-xs font-body font-semibold text-warm-white">{value}</span>
     </div>
   );
@@ -171,11 +221,9 @@ function MetaPill({ label, value }: { label: string; value: string }) {
 function formatShort(format: string): string {
   const map: Record<string, string> = {
     'WAV (48kHz/24-bit)': 'WAV 48k/24',
-    'FLAC':               'FLAC',
-    'Reaper Session':     'Reaper',
-    'Pro Tools Session':  'Pro Tools',
-    'Studio One':         'Studio One',
-    'Ableton Live':       'Ableton',
+    'WAV (44.1kHz/16-bit)': 'WAV 44k/16',
+    'FLAC': 'FLAC',
+    'Multitrack Zip': 'Zip',
   };
   return map[format] ?? format;
 }
@@ -184,7 +232,7 @@ function getTimeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86_400_000);
   if (days === 0) return 'today';
-  if (days === 1) return 'yesterday';
+  if (days === 1) return '1d ago';
   if (days < 30)  return `${days}d ago`;
   const months = Math.floor(days / 30);
   if (months < 12) return `${months}mo ago`;

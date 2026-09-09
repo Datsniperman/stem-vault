@@ -3,11 +3,9 @@ export type StemStatus = 'pending' | 'published' | 'flagged';
 export type HostPlatform = 'Google Drive' | 'Dropbox' | 'OneDrive' | 'Box' | 'Other';
 export type StemFormat =
   | 'WAV (48kHz/24-bit)'
+  | 'WAV (44.1kHz/16-bit)'
   | 'FLAC'
-  | 'Reaper Session'
-  | 'Pro Tools Session'
-  | 'Studio One'
-  | 'Ableton Live';
+  | 'Multitrack Zip';
 
 export interface Profile {
   id: string;
@@ -30,7 +28,8 @@ export interface Stem {
   host_platform: string;
   download_url: string;
   uploader_handle: string;
-  tags: string[];
+  description?: string | null;
+  cover_url?: string | null;
   is_verified: boolean;
   status: StemStatus;
   created_at: string;
@@ -41,14 +40,10 @@ export interface FormState {
   message: string;
   errors?: Record<string, string>;
   stem?: Stem;
-  demoMode?: boolean;
 }
 
 export type FilterType =
   | 'All'
   | 'WAV (48kHz/24-bit)'
-  | 'Reaper Session'
-  | 'Multitrack'
-  | 'Click & Guide'
-  | 'Broadcast Mix'
+  | 'Multitrack Zip'
   | 'Verified Only';
