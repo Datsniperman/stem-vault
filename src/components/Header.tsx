@@ -65,7 +65,7 @@ export function Header({ onStemAdded }: HeaderProps) {
                   onClick={() => setSubmitOpen(true)}
                   className="bg-amber hover:bg-amber-muted text-obsidian font-body font-semibold text-sm px-4 py-1.5 rounded-sm transition-colors"
                 >
-                  Submit Stems
+                  Submit to Vault
                 </button>
 
                 {/* User dropdown */}
@@ -129,7 +129,7 @@ export function Header({ onStemAdded }: HeaderProps) {
                   onClick={() => setAuthOpen(true)}
                   className="bg-amber hover:bg-amber-muted text-obsidian font-body font-semibold text-sm px-4 py-1.5 rounded-sm transition-colors"
                 >
-                  Submit Stems
+                  Submit to Vault
                 </button>
               </>
             )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useRef } from 'react';
-import { X, AlertCircle, Link, Info } from 'lucide-react';
+import { X, AlertCircle, Link } from 'lucide-react';
 import { submitStem } from '@/app/actions/stems';
 import { FormState, Stem } from '@/types';
 import { useToast } from '@/context/ToastContext';
@@ -79,7 +79,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
         {/* Header */}
         <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
           <div>
-            <h2 className="font-display text-2xl text-warm-white">Submit to the archive</h2>
+            <h2 className="font-display text-2xl text-warm-white">Submit to Vault</h2>
             <p className="text-dim text-sm font-body mt-0.5">Share a multitrack session with the community</p>
           </div>
           <button onClick={onClose} className="text-dim hover:text-warm-white p-1.5 transition-colors rounded-sm">
@@ -178,11 +178,11 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               disabled={isPending}
               className={clsx(
                 'bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-sm px-8 py-2 rounded-sm',
-                'transition-colors',
+                'transition-colors uppercase tracking-wider',
                 isPending && 'opacity-60 cursor-not-allowed'
               )}
             >
-              {isPending ? 'Submitting…' : 'Submit to Archive'}
+              {isPending ? 'Submitting…' : 'Submit to Vault'}
             </button>
           </div>
         </form>
