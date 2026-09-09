@@ -336,6 +336,32 @@ export async function getAllProfiles(): Promise<Profile[]> {
 
 // ── Rating, Comments & Community Mixes Actions ──────────────────────────────────
 
+// Helper to ensure user profile exists in database prior to foreign key operations
+async function ensureUserProfile(supabase: any, user: { id: string; email?: string; user_metadata?: Record<string, any> }): Promise<string> {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, email')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile) {
+      if (profile.display_name) return `@${profile.display_name}`;
+      if (profile.email) return `@${profile.email.split('@')[0]}`;
+    }
+
+    const fallbackHandle = user.user_metadata?.display_name || (user.email ? user.email.split('@')[0] : 'Anonymous');
+    await supabase
+      .from('profiles')
+      .upsert({ id: user.id, email: user.email || null, display_name: fallbackHandle, role: 'user' }, { onConflict: 'id' });
+
+    return `@${fallbackHandle}`;
+  } catch (err) {
+    console.error('[ensureUserProfile] Warning:', err);
+    return `@${user.email ? user.email.split('@')[0] : 'Anonymous'}`;
+  }
+}
+
 export async function rateStem(
   stemId: string,
   rating: number
@@ -348,6 +374,8 @@ export async function rateStem(
     if (!user) return { success: false, message: 'You must be logged in to rate.' };
 
     if (rating < 1 || rating > 5) return { success: false, message: 'Rating must be between 1 and 5.' };
+
+    await ensureUserProfile(supabase, user);
 
     const { error } = await supabase
       .from('stem_ratings')
@@ -381,18 +409,7 @@ export async function addComment(
     const cleanContent = content.trim().slice(0, 2000);
     if (!cleanContent) return { success: false, message: 'Comment cannot be empty.' };
 
-    // Get user handle
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name, email')
-      .eq('id', user.id)
-      .single();
-
-    const handle = profile?.display_name
-      ? `@${profile.display_name}`
-      : profile?.email
-      ? profile.email.split('@')[0]
-      : 'Anonymous';
+    const handle = await ensureUserProfile(supabase, user);
 
     const { error } = await supabase
       .from('stem_comments')
@@ -426,17 +443,7 @@ export async function submitCommunityMix(
     if (!cleanTitle) return { success: false, message: 'Mix title is required.' };
     if (!cleanUrl || !isValidUrl(cleanUrl)) return { success: false, message: 'Please provide a valid https:// audio or video URL.' };
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name, email')
-      .eq('id', user.id)
-      .single();
-
-    const handle = profile?.display_name
-      ? `@${profile.display_name}`
-      : profile?.email
-      ? profile.email.split('@')[0]
-      : 'Anonymous';
+    const handle = await ensureUserProfile(supabase, user);
 
     const { error } = await supabase
       .from('stem_mixes')
@@ -470,6 +477,8 @@ export async function toggleMixLike(
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: 'You must be signed in to like a mix.' };
+
+    await ensureUserProfile(supabase, user);
 
     // Check if already liked
     const { data: existingLike } = await supabase

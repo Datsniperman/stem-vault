@@ -27,18 +27,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, userObj?: User | null) => {
     const supabase = getSupabaseBrowserClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
-    if (data) setProfile(data as Profile);
+      .maybeSingle();
+
+    if (data) {
+      setProfile(data as Profile);
+    } else if (!error && userObj) {
+      // Auto-heal missing profile row
+      const fallbackName = userObj.user_metadata?.display_name || userObj.email?.split('@')[0] || 'User';
+      const { data: newProfile } = await supabase
+        .from('profiles')
+        .upsert(
+          { id: userId, email: userObj.email || null, display_name: fallbackName, role: 'user' },
+          { onConflict: 'id' }
+        )
+        .select()
+        .single();
+
+      if (newProfile) {
+        setProfile(newProfile as Profile);
+      }
+    }
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (user) await fetchProfile(user.id);
+    if (user) await fetchProfile(user.id, user);
   }, [user, fetchProfile]);
 
   useEffect(() => {
@@ -47,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id).finally(() => setLoading(false));
+        fetchProfile(session.user.id, session.user).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -57,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (_event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          await fetchProfile(session.user.id, session.user);
         } else {
           setProfile(null);
         }
