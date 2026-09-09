@@ -219,6 +219,44 @@ export async function flagStem(id: string): Promise<{ success: boolean; message:
   }
 }
 
+export async function unflagStem(id: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { error } = await supabase.from('stems').update({ status: 'published' }).eq('id', id);
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath('/');
+    return { success: true, message: 'Report cleared. Stem restored.' };
+  } catch {
+    return { success: false, message: 'Restore failed.' };
+  }
+}
+
+export async function getFlaggedStems(): Promise<Stem[]> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return [];
+
+    const { data } = await supabase
+      .from('stems')
+      .select('*')
+      .eq('status', 'flagged')
+      .order('created_at', { ascending: false });
+
+    return (data as Stem[]) || [];
+  } catch {
+    return [];
+  }
+}
+
 export async function updateUsername(userId: string, displayName: string): Promise<{ success: boolean; message: string }> {
   try {
     const supabase = await createSupabaseServerClient();

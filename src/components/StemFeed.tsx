@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Stem, FilterType } from '@/types';
 import { StemCard } from './StemCard';
 import { StemDetailModal } from './StemDetailModal';
-import { FilterRail } from './FilterRail';
+import { FilterRail, SortOption } from './FilterRail';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { useAuth } from '@/context/AuthContext';
@@ -18,7 +18,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   const [stems, setStems] = useState<Stem[]>(initialStems);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   const [search, setSearch] = useState('');
-  const [selectedStem, setSelectedStem] = useState<{ stem: Stem; artworkUrl: string | null } | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
 
   const handleStemAdded = (stem: Stem) => {
     setStems(prev => [stem, ...prev]);
@@ -34,7 +34,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return stems.filter(stem => {
+    let result = stems.filter(stem => {
       const matchesSearch = !q ||
         stem.title.toLowerCase().includes(q) ||
         stem.artist.toLowerCase().includes(q) ||
@@ -50,7 +50,22 @@ export function StemFeed({ initialStems }: StemFeedProps) {
 
       return matchesSearch && matchesFilter;
     });
-  }, [stems, search, activeFilter]);
+
+    // Apply Sorting
+    return [...result].sort((a, b) => {
+      if (sortBy === 'rating') {
+        return (b.avg_rating || 0) - (a.avg_rating || 0);
+      }
+      if (sortBy === 'comments') {
+        return (b.comment_count || 0) - (a.comment_count || 0);
+      }
+      if (sortBy === 'tracks') {
+        return (b.track_count || 0) - (a.track_count || 0);
+      }
+      // 'recent' default: created_at descending
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [stems, search, activeFilter, sortBy]);
 
   const totalTracks    = stems.reduce((sum, s) => sum + (s.track_count ?? 0), 0);
   const activeEngineers = new Set(stems.map(s => s.uploader_handle)).size;
@@ -71,8 +86,10 @@ export function StemFeed({ initialStems }: StemFeedProps) {
         <FilterRail
           activeFilter={activeFilter}
           search={search}
+          sortBy={sortBy}
           onFilterChange={setActiveFilter}
           onSearchChange={setSearch}
+          onSortChange={setSortBy}
           resultCount={filtered.length}
         />
 

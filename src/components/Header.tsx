@@ -51,14 +51,23 @@ export function Header({ onStemAdded }: HeaderProps) {
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-[56px] flex items-center justify-between gap-6">
 
           {/* Brand */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-7 h-7 bg-amber rounded-sm flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Music2 className="w-4 h-4 text-obsidian" strokeWidth={2.5} />
-            </div>
-            <span className="font-body font-bold text-warm-white text-[15px] tracking-tight group-hover:text-amber transition-colors">
-              Stem Vault
-            </span>
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+              <div className="w-7 h-7 bg-amber rounded-sm flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Music2 className="w-4 h-4 text-obsidian" strokeWidth={2.5} />
+              </div>
+              <span className="font-body font-bold text-warm-white text-[15px] tracking-tight group-hover:text-amber transition-colors">
+                Stem Vault
+              </span>
+            </Link>
+
+            <Link
+              href="/showcase"
+              className="text-xs font-body font-semibold text-mid hover:text-amber transition-colors flex items-center gap-1 bg-surface-raised border border-border px-2.5 py-1 rounded-sm"
+            >
+              <span>Mix Showcase</span>
+            </Link>
+          </div>
 
           {/* Right */}
           <div className="flex items-center gap-3">

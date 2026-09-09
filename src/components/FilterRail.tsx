@@ -10,19 +10,25 @@ const FILTERS: { label: string; value: FilterType }[] = [
   { label: 'Pro Sessions Only', value: 'Verified Only' },
 ];
 
+export type SortOption = 'recent' | 'rating' | 'comments' | 'tracks';
+
 interface FilterRailProps {
   activeFilter: FilterType;
   search: string;
+  sortBy: SortOption;
   onFilterChange: (f: FilterType) => void;
   onSearchChange: (s: string) => void;
+  onSortChange: (s: SortOption) => void;
   resultCount: number;
 }
 
 export function FilterRail({
   activeFilter,
   search,
+  sortBy,
   onFilterChange,
   onSearchChange,
+  onSortChange,
   resultCount,
 }: FilterRailProps) {
   return (
@@ -55,6 +61,21 @@ export function FilterRail({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Sort By */}
+        <div>
+          <label className="block text-xs text-dim font-body mb-2">Sort Sessions</label>
+          <select
+            value={sortBy}
+            onChange={e => onSortChange(e.target.value as SortOption)}
+            className="w-full bg-surface border border-border rounded-sm px-3 py-2 text-sm text-warm-white font-body focus:outline-none focus:border-amber"
+          >
+            <option value="recent">Recently Added</option>
+            <option value="rating">Highest Rated (⭐)</option>
+            <option value="comments">Most Discussed (💬)</option>
+            <option value="tracks">Stem Track Count</option>
+          </select>
         </div>
 
         {/* Filters */}
