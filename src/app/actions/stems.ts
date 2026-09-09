@@ -136,17 +136,29 @@ export async function toggleStemVerification(
   isVerified: boolean
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('stems')
       .update({ is_verified: isVerified })
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
     if (error) {
       console.error('[toggleStemVerification] Error:', error.message);
       return { success: false, message: `Update failed: ${error.message}` };
+    }
+
+    if (!data || data.length === 0) {
+      console.error('[toggleStemVerification] 0 rows modified. Check RLS policies on public.stems.');
+      return {
+        success: false,
+        message: 'Update was blocked by Supabase Row-Level Security (RLS). Please run the SQL policy setup in your Supabase SQL Editor.'
+      };
     }
 
     revalidatePath('/');
