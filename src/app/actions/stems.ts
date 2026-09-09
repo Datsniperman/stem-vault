@@ -142,6 +142,23 @@ export async function toggleStemVerification(
 
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
+    // Verify current user is admin before toggling
+    if (supabaseServer) {
+      const { data: { user } } = await supabaseServer.auth.getUser();
+      if (!user) {
+        return { success: false, message: 'You must be logged in as an admin.' };
+      }
+      const { data: userProfile } = await supabaseServer
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (userProfile?.role !== 'admin') {
+        return { success: false, message: 'Only admins can toggle Pro Session status.' };
+      }
+    }
+
     const { data, error } = await supabase
       .from('stems')
       .update({ is_verified: isVerified })
@@ -150,7 +167,7 @@ export async function toggleStemVerification(
 
     if (error) return { success: false, message: error.message };
     if (!data || data.length === 0) {
-      return { success: false, message: 'Update failed: Row-Level Security policy blocked update.' };
+      return { success: false, message: 'Update failed: Row-Level Security policy blocked update in database.' };
     }
 
     revalidatePath('/');
