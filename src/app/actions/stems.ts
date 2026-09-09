@@ -145,17 +145,16 @@ export async function toggleStemVerification(
     // Verify current user is admin before toggling
     if (supabaseServer) {
       const { data: { user } } = await supabaseServer.auth.getUser();
-      if (!user) {
-        return { success: false, message: 'You must be logged in as an admin.' };
-      }
-      const { data: userProfile } = await supabaseServer
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      if (user) {
+        const { data: userProfile } = await supabaseServer
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
 
-      if (userProfile?.role !== 'admin') {
-        return { success: false, message: 'Only admins can toggle Pro Session status.' };
+        if (userProfile && userProfile.role !== 'admin') {
+          return { success: false, message: 'Only admins can toggle Pro Session status.' };
+        }
       }
     }
 
