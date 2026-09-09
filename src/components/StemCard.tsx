@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Download, Flag, ExternalLink, Music, Info, Check } from 'lucide-react';
+import { Download, Flag, ExternalLink, Music, Info, Check, Star, MessageSquare } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
 import { flagStem } from '@/app/actions/stems';
@@ -149,7 +149,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
           </div>
         ) : (
           /* Title & Metadata */
-          <div className="space-y-3 min-h-0">
+          <div className="space-y-2 min-h-0">
             <div>
               <h2 className="font-display text-lg sm:text-xl text-warm-white leading-snug truncate group-hover:text-amber transition-colors">
                 {stem.title}
@@ -167,6 +167,22 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
                   {formatShort(stem.format)}
                 </span>
               )}
+            </div>
+
+            {/* Community Rating & Comment Stats */}
+            <div className="flex items-center gap-3 text-xs font-body pt-1 border-t border-border/40">
+              <div className="flex items-center gap-1 text-amber font-semibold">
+                <Star className="w-3.5 h-3.5 fill-amber text-amber" />
+                <span>{stem.avg_rating && stem.avg_rating > 0 ? stem.avg_rating : 'New'}</span>
+                {stem.rating_count && stem.rating_count > 0 ? (
+                  <span className="text-[10px] text-dim font-normal">({stem.rating_count})</span>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-1 text-mid font-medium">
+                <MessageSquare className="w-3.5 h-3.5 text-amber/70" />
+                <span>{stem.comment_count || 0}</span>
+              </div>
             </div>
           </div>
         )}

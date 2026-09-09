@@ -33,6 +33,9 @@ export interface Stem {
   is_verified: boolean;
   status: StemStatus;
   created_at: string;
+  avg_rating?: number;
+  rating_count?: number;
+  comment_count?: number;
 }
 
 export interface FormState {
