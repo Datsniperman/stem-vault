@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Mail, Lock, Eye, EyeOff, AlertCircle, User, KeyRound } from 'lucide-react';
+import { X, Mail, Lock, Eye, EyeOff, AlertCircle, User, KeyRound, Info } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useToast } from '@/context/ToastContext';
 
@@ -53,7 +53,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       });
 
       if (supaErr) { setError(supaErr.message); return; }
-      setSuccessMessage(`Password reset link sent to ${email}. Check your inbox.`);
+      setSuccessMessage(`Password reset link sent to ${email}.`);
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       });
 
       if (supaErr) { setError(supaErr.message); return; }
-      setSuccessMessage(`Sign-in link sent to ${email}. Check your inbox.`);
+      setSuccessMessage(`Sign-in link sent to ${email}.`);
     } finally {
       setLoading(false);
     }
@@ -155,15 +155,27 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
         <div className="p-6">
           {successMessage ? (
-            <div className="text-center py-4">
-              <div className="w-10 h-10 rounded-full bg-amber/10 border border-amber/20 flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-5 h-5 text-amber" />
+            <div className="text-center py-4 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-amber-dim border border-amber/30 flex items-center justify-center mx-auto">
+                <Mail className="w-6 h-6 text-amber" />
               </div>
-              <p className="font-body text-warm-white mb-2 font-medium">Check your email</p>
-              <p className="text-dim text-sm font-body leading-relaxed">{successMessage}</p>
+
+              <div>
+                <p className="font-body text-warm-white text-lg font-medium">Check your inbox</p>
+                <p className="text-dim text-sm font-body leading-relaxed mt-1">{successMessage}</p>
+              </div>
+
+              {/* Spam Box Warning */}
+              <div className="flex items-start gap-2.5 bg-amber-dim border border-amber/25 rounded-sm p-3.5 text-left">
+                <Info className="w-4 h-4 text-amber shrink-0 mt-0.5" />
+                <p className="text-xs text-amber font-body leading-relaxed">
+                  <strong>Can't find the email?</strong> Make sure to check your <strong>Spam / Junk folder</strong>. Automatic emails often land there on first delivery.
+                </p>
+              </div>
+
               <button
                 onClick={() => setSuccessMessage(null)}
-                className="mt-6 text-sm text-dim hover:text-warm-white underline transition-colors font-body"
+                className="mt-4 text-sm text-dim hover:text-warm-white underline transition-colors font-body"
               >
                 Back to sign in
               </button>
