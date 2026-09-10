@@ -18,11 +18,13 @@ import {
   HardDrive,
   Layers,
   FileAudio,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  Tag,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Stem, Profile, StemComment, StemMix } from '@/types';
-import { rateStem, addComment, submitCommunityMix, toggleMixLike, flagStem, deleteStem } from '@/app/actions/stems';
+import { rateStem, addComment, submitCommunityMix, toggleMixLike, flagStem, deleteStem, deleteComment, incrementDownloadCount } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/Header';
@@ -212,6 +214,22 @@ export function StemDetailClient({
     setReporting(false);
   };
 
+  const handleDownload = () => {
+    incrementDownloadCount(stem.id).catch(() => {});
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('Delete this comment?')) return;
+    const res = await deleteComment(commentId, stem.id);
+    if (res.success) {
+      addToast('Comment deleted.', 'success');
+      setComments(prev => prev.filter(c => c.id !== commentId));
+    } else {
+      addToast(res.message, 'error');
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-obsidian text-warm-white pb-20">
       <Header onStemAdded={() => {}} />
@@ -297,6 +315,7 @@ export function StemDetailClient({
                   href={stem.download_url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={handleDownload}
                   className="flex items-center gap-2 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-sm px-6 py-3 rounded-sm transition-colors uppercase tracking-wider shadow-lg hover:shadow-amber/20"
                 >
                   <Download className="w-4 h-4" />
@@ -329,6 +348,18 @@ export function StemDetailClient({
               <SpecBox icon={<HardDrive className="w-4 h-4 text-amber" />} label="Format / Quality" value={stem.format} />
             </div>
           </div>
+
+          {/* Tags */}
+          {(stem.tags || []).length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-xs font-mono text-dim uppercase tracking-wider">Tags:</span>
+              {(stem.tags || []).map(tag => (
+                <span key={tag} className="text-xs font-body text-mid bg-surface-raised border border-border px-2.5 py-1 rounded-sm">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Special Notes */}
           {stem.description && (
@@ -540,15 +571,29 @@ export function StemDetailClient({
             </div>
           ) : (
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-              {comments.map(c => (
-                <div key={c.id} className="bg-surface border border-border p-3.5 rounded-sm space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-body font-semibold text-amber">{c.user_handle}</span>
-                    <span className="text-[10px] text-dim font-mono">{getTimeAgo(c.created_at)}</span>
+              {comments.map(c => {
+                const canDelete = isAdmin || (profile && profile.id === c.user_id);
+                return (
+                  <div key={c.id} className="bg-surface border border-border p-3.5 rounded-sm space-y-1 group">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-body font-semibold text-amber">{c.user_handle}</span>
+                        <span className="text-[10px] text-dim font-mono">{getTimeAgo(c.created_at)}</span>
+                      </div>
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDeleteComment(c.id)}
+                          title="Delete comment"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-dim hover:text-error hover:bg-error/10 rounded transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-sm font-body text-warm-white leading-relaxed">{c.content}</p>
                   </div>
-                  <p className="text-sm font-body text-warm-white leading-relaxed">{c.content}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

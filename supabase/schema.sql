@@ -4,16 +4,18 @@
 -- ============================================================
 
 -- Profiles table linked to auth.users
+-- NOTE: display_name has a UNIQUE constraint to prevent duplicate handles
 create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
   email text,
-  display_name text,
+  display_name text unique,
   role text default 'user' check (role in ('user', 'verified', 'admin')),
   avatar_url text,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
 -- Stems directory table
+-- NOTE: status defaults to 'pending' — admin must approve before appearing in feed
 create table if not exists public.stems (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete set null,
@@ -28,7 +30,8 @@ create table if not exists public.stems (
   uploader_handle text not null,
   tags text[] default array[]::text[],
   is_verified boolean default false,
-  status text default 'published' check (status in ('pending', 'published', 'flagged')),
+  status text default 'pending' check (status in ('pending', 'published', 'flagged')),
+  download_count integer default 0,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -57,6 +60,10 @@ create policy "Users insert own profile"
 -- Stem policies
 create policy "Public viewable stems"
   on public.stems for select using (status = 'published');
+
+-- Users can see their own stems regardless of status (for profile page)
+create policy "Users view own stems"
+  on public.stems for select using (auth.uid() = user_id);
 
 create policy "Authenticated submit stems"
   on public.stems for insert with check (auth.role() = 'authenticated');
@@ -148,6 +155,15 @@ create policy "Authenticated update stem_ratings" on public.stem_ratings for upd
 
 create policy "Public read stem_comments" on public.stem_comments for select using (true);
 create policy "Authenticated insert stem_comments" on public.stem_comments for insert with check (auth.role() = 'authenticated');
+-- Users can delete their own comments
+create policy "Users delete own comments" on public.stem_comments for delete using (auth.uid() = user_id);
+-- Admins can delete any comment
+create policy "Admins delete any comment" on public.stem_comments for delete using (
+  exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'admin'
+  )
+);
 
 create policy "Public read stem_mixes" on public.stem_mixes for select using (true);
 create policy "Authenticated insert stem_mixes" on public.stem_mixes for insert with check (auth.role() = 'authenticated');
@@ -155,4 +171,13 @@ create policy "Authenticated insert stem_mixes" on public.stem_mixes for insert 
 create policy "Public read mix_likes" on public.mix_likes for select using (true);
 create policy "Authenticated insert mix_likes" on public.mix_likes for insert with check (auth.role() = 'authenticated');
 create policy "Authenticated delete mix_likes" on public.mix_likes for delete using (auth.uid() = user_id);
+
+-- ============================================================
+-- MIGRATION SNIPPETS: Run these on an existing database
+-- ============================================================
+-- alter table public.stems add column if not exists download_count integer default 0;
+-- alter table public.stems add column if not exists tags text[] default array[]::text[];
+-- alter table public.stems alter column status set default 'pending';
+-- alter table public.profiles add constraint profiles_display_name_unique unique (display_name);
+-- alter table public.stems add policy "Users view own stems" on public.stems for select using (auth.uid() = user_id);
 

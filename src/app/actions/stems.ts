@@ -6,6 +6,7 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 import { sendReportEmail } from '@/lib/email';
 
 const ADMIN_EMAIL = 'connorwbrown07@gmail.com';
+const MAX_SUBMISSIONS_PER_DAY = 5;
 
 // ── Validation helpers ───────────────────────────────────────────────────────
 
@@ -20,6 +21,22 @@ function isValidUrl(url: string): boolean {
 
 function sanitizeText(value: string, maxLen = 1000): string {
   return value.trim().slice(0, maxLen).replace(/[<>]/g, '');
+}
+
+function parseTags(raw: string): string[] {
+  return raw
+    .split(',')
+    .map(t => t.trim().toLowerCase().replace(/[^a-z0-9 _-]/g, '').slice(0, 40))
+    .filter(Boolean)
+    .slice(0, 8); // max 8 tags
+}
+
+function isUniqueConstraintError(error: { message?: string; code?: string }): boolean {
+  return (
+    error.code === '23505' ||
+    (error.message || '').toLowerCase().includes('unique') ||
+    (error.message || '').toLowerCase().includes('duplicate')
+  );
 }
 
 // ── Server Actions ───────────────────────────────────────────────────────────
@@ -38,6 +55,8 @@ export async function submitStem(
   const uploaderHandle = sanitizeText(formData.get('uploader_handle') as string || 'Anonymous', 50);
   const keyVal         = sanitizeText(formData.get('key') as string || '', 10);
   const description    = sanitizeText(formData.get('description') as string || '', 1000);
+  const tagsRaw        = (formData.get('tags') as string || '');
+  const tags           = parseTags(tagsRaw);
 
   const bpmRaw        = parseInt(formData.get('bpm') as string || '');
   const trackCountRaw = parseInt(formData.get('track_count') as string || '');
@@ -68,6 +87,23 @@ export async function submitStem(
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    // ── Rate limiting: max 5 submissions per 24 hours ────────────────────────
+    if (user) {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from('stems')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', since);
+
+      if ((count ?? 0) >= MAX_SUBMISSIONS_PER_DAY) {
+        return {
+          success: false,
+          message: `You've reached the limit of ${MAX_SUBMISSIONS_PER_DAY} submissions per 24 hours. Please try again later.`,
+        };
+      }
+    }
+
     const { data, error } = await supabase
       .from('stems')
       .insert([{
@@ -82,7 +118,8 @@ export async function submitStem(
         download_url: downloadUrl,
         uploader_handle: uploaderHandle || 'Anonymous',
         description: description || null,
-        status: 'published',
+        tags,
+        status: 'pending', // all new submissions require admin review
       }])
       .select()
       .single();
@@ -93,7 +130,11 @@ export async function submitStem(
     }
 
     revalidatePath('/');
-    return { success: true, message: 'Stems submitted to the archive.', stem: data as Stem };
+    return {
+      success: true,
+      message: '✓ Submitted! Your stems are pending review and will appear in the archive once approved.',
+      stem: data as Stem,
+    };
   } catch (err) {
     console.error('[submitStem] Unexpected error:', err);
     return { success: false, message: 'An unexpected error occurred. Please try again.' };
@@ -127,6 +168,7 @@ export async function deleteStem(id: string): Promise<{ success: boolean; messag
     }
 
     revalidatePath('/');
+    revalidatePath('/profile');
     return { success: true, message: 'Stem deleted successfully.' };
   } catch (err) {
     console.error('[deleteStem] Unexpected error:', err);
@@ -204,6 +246,163 @@ export async function flagStem(id: string): Promise<{ success: boolean; message:
   }
 }
 
+// ── Admin Moderation Actions ─────────────────────────────────────────────────
+
+export async function approveStem(id: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { error } = await supabase
+      .from('stems')
+      .update({ status: 'published' })
+      .eq('id', id);
+
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath('/');
+    return { success: true, message: 'Stem approved and published.' };
+  } catch {
+    return { success: false, message: 'Approval failed.' };
+  }
+}
+
+export async function rejectStem(id: string): Promise<{ success: boolean; message: string }> {
+  return deleteStem(id);
+}
+
+export async function restoreStem(id: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { error } = await supabase
+      .from('stems')
+      .update({ status: 'published' })
+      .eq('id', id);
+
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath('/');
+    return { success: true, message: 'Stem restored to published.' };
+  } catch {
+    return { success: false, message: 'Restore failed.' };
+  }
+}
+
+export async function getPendingStems(): Promise<Stem[]> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return [];
+
+    const { data } = await supabase
+      .from('stems')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    return (data as Stem[]) || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getFlaggedStems(): Promise<Stem[]> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return [];
+
+    const { data } = await supabase
+      .from('stems')
+      .select('*')
+      .eq('status', 'flagged')
+      .order('created_at', { ascending: false });
+
+    return (data as Stem[]) || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getAllStems(): Promise<Stem[]> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return [];
+
+    const { data } = await supabase
+      .from('stems')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    return (data as Stem[]) || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getUserStems(userId: string): Promise<Stem[]> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return [];
+
+    const { data } = await supabase
+      .from('stems')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    return (data as Stem[]) || [];
+  } catch {
+    return [];
+  }
+}
+
+// ── Download Tracking ────────────────────────────────────────────────────────
+
+export async function incrementDownloadCount(id: string): Promise<void> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return;
+
+    // Try RPC first (if you've created one in Supabase)
+    const { error: rpcError } = await supabase.rpc('increment_download_count', { stem_id: id });
+
+    if (rpcError) {
+      // Fallback: manual read-increment-write
+      const { data: stem } = await supabase
+        .from('stems')
+        .select('download_count')
+        .eq('id', id)
+        .single();
+      if (stem) {
+        await supabase
+          .from('stems')
+          .update({ download_count: (stem.download_count || 0) + 1 })
+          .eq('id', id);
+      }
+    }
+  } catch {
+    // Non-critical — swallow errors
+  }
+}
+
+// ── Profile / User Actions ───────────────────────────────────────────────────
+
 export async function updateUsername(userId: string, displayName: string): Promise<{ success: boolean; message: string }> {
   try {
     const supabase = await createSupabaseServerClient();
@@ -217,7 +416,12 @@ export async function updateUsername(userId: string, displayName: string): Promi
       .update({ display_name: cleanName })
       .eq('id', userId);
 
-    if (error) return { success: false, message: error.message };
+    if (error) {
+      if (isUniqueConstraintError(error)) {
+        return { success: false, message: `@${cleanName} is already taken. Please choose a different username.` };
+      }
+      return { success: false, message: error.message };
+    }
 
     revalidatePath('/');
     return { success: true, message: `Username updated to @${cleanName}.` };
@@ -408,6 +612,32 @@ export async function addComment(
   }
 }
 
+export async function deleteComment(
+  commentId: string,
+  stemId: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'You must be signed in.' };
+
+    const { error } = await supabase
+      .from('stem_comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath(`/stems/${stemId}`);
+    return { success: true, message: 'Comment deleted.' };
+  } catch (err) {
+    console.error('[deleteComment] Error:', err);
+    return { success: false, message: 'Failed to delete comment.' };
+  }
+}
+
 export async function submitCommunityMix(
   stemId: string,
   title: string,
@@ -503,4 +733,5 @@ export async function toggleMixLike(
     return { success: false, message: 'Failed to update like status.' };
   }
 }
+
 

@@ -20,13 +20,23 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'STEM VAULT — Community Worship Multitrack Archive',
+  title: {
+    default: 'Stem Vault — Community Worship Multitrack Archive',
+    template: '%s | Stem Vault',
+  },
   description:
     'A community directory for worship sound engineers to discover and share high-quality multitrack stem sessions.',
+  metadataBase: new URL('https://stem-vault-tau.vercel.app'),
   openGraph: {
-    title: 'STEM VAULT',
+    title: 'Stem Vault — Community Worship Multitrack Archive',
     description: 'The community worship multitrack stem archive.',
     type: 'website',
+    siteName: 'Stem Vault',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Stem Vault — Community Worship Multitrack Archive',
+    description: 'The community worship multitrack stem archive.',
   },
 };
 

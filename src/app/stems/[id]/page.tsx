@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { StemDetailClient } from '@/components/StemDetailClient';
 import { Stem, StemComment, StemMix } from '@/types';
@@ -7,6 +8,61 @@ export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const supabaseAdmin = await createSupabaseAdminClient();
+  const supabaseServer = await createSupabaseServerClient();
+  const supabase = supabaseAdmin || supabaseServer;
+
+  if (!supabase) return { title: 'Stem Vault' };
+
+  const { data: stem } = await supabase
+    .from('stems')
+    .select('title, artist, description, cover_url')
+    .eq('id', id)
+    .single();
+
+  if (!stem) return { title: 'Stem Vault' };
+
+  // Try to get artwork
+  let artworkUrl = stem.cover_url || null;
+  if (!artworkUrl) {
+    try {
+      const query = encodeURIComponent(`${stem.artist} ${stem.title}`);
+      const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`, { next: { revalidate: 86400 } });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.results?.length > 0) {
+          artworkUrl = json.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  const title = `${stem.title} — ${stem.artist} | Stem Vault`;
+  const description = stem.description
+    ? stem.description.slice(0, 160)
+    : `Download the multitrack session for "${stem.title}" by ${stem.artist} from Stem Vault — the community worship archive.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'music.song',
+      siteName: 'Stem Vault',
+      ...(artworkUrl ? { images: [{ url: artworkUrl, width: 600, height: 600, alt: `${stem.title} album art` }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(artworkUrl ? { images: [artworkUrl] } : {}),
+    },
+  };
 }
 
 export default async function StemDetailPage({ params }: PageProps) {

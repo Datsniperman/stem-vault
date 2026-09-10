@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { FilterType } from '@/types';
+import { FilterType, SortType } from '@/types';
 import { Search, X } from 'lucide-react';
 
 const FILTERS: { label: string; value: FilterType }[] = [
@@ -10,19 +10,43 @@ const FILTERS: { label: string; value: FilterType }[] = [
   { label: 'Pro Sessions Only', value: 'Verified Only' },
 ];
 
+const SORT_OPTIONS: { label: string; value: SortType }[] = [
+  { label: 'Newest',          value: 'newest' },
+  { label: 'Most Tracks',     value: 'most_tracks' },
+  { label: 'Most Downloaded', value: 'most_downloaded' },
+];
+
+const COMMON_TAGS = [
+  'click track',
+  'live recording',
+  'studio',
+  'multibus',
+  'keys heavy',
+  'drums split',
+  'broadcast',
+];
+
 interface FilterRailProps {
   activeFilter: FilterType;
+  sort: SortType;
   search: string;
+  activeTag: string;
   onFilterChange: (f: FilterType) => void;
+  onSortChange: (s: SortType) => void;
   onSearchChange: (s: string) => void;
+  onTagChange: (t: string) => void;
   resultCount: number;
 }
 
 export function FilterRail({
   activeFilter,
+  sort,
   search,
+  activeTag,
   onFilterChange,
+  onSortChange,
   onSearchChange,
+  onTagChange,
   resultCount,
 }: FilterRailProps) {
   return (
@@ -38,7 +62,7 @@ export function FilterRail({
               type="text"
               value={search}
               onChange={e => onSearchChange(e.target.value)}
-              placeholder="Song, artist, handle…"
+              placeholder="Song, artist, handle..."
               className="
                 w-full bg-surface border border-border rounded-sm
                 pl-8 pr-8 py-2 font-body text-sm text-warm-white
@@ -55,6 +79,31 @@ export function FilterRail({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Sort */}
+        <div>
+          <p className="text-xs text-dim font-body mb-2">Sort by</p>
+          <nav className="flex flex-col gap-0.5">
+            {SORT_OPTIONS.map(({ label, value }) => {
+              const active = sort === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => onSortChange(value)}
+                  className={`
+                    w-full text-left px-3 py-1.5 rounded-sm text-sm font-body transition-colors
+                    ${active
+                      ? 'bg-amber-dim text-amber font-semibold border-l-2 border-amber'
+                      : 'text-mid hover:text-warm-white hover:bg-surface-raised'
+                    }
+                  `}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
         {/* Filters */}
@@ -80,6 +129,29 @@ export function FilterRail({
               );
             })}
           </nav>
+        </div>
+
+        {/* Tags */}
+        <div>
+          <p className="text-xs text-dim font-body mb-2">Filter by tag</p>
+          <div className="flex flex-wrap gap-1.5">
+            {COMMON_TAGS.map(tag => {
+              const active = activeTag === tag;
+              return (
+                <button
+                  key={tag}
+                  onClick={() => onTagChange(active ? '' : tag)}
+                  className={`text-[11px] font-body px-2 py-0.5 rounded-sm border transition-colors ${
+                    active
+                      ? 'bg-amber-dim text-amber border-amber/40 font-semibold'
+                      : 'text-dim border-border hover:text-warm-white hover:border-border/80'
+                  }`}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Count */}

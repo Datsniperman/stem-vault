@@ -47,6 +47,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
     key: '',
     track_count: '',
     description: '',
+    tags: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -65,6 +66,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
       key: '',
       track_count: '',
       description: '',
+      tags: '',
     });
   };
 
@@ -201,6 +203,25 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors resize-none"
             />
           </div>
+
+          {/* Row 6: Tags */}
+          <div className="space-y-1.5">
+            <label htmlFor="tags" className="block text-xs text-dim font-body flex items-center justify-between">
+              <span>Tags (Optional)</span>
+              <span className="text-[10px] text-dim/60">Comma-separated, max 8</span>
+            </label>
+            <input
+              id="tags"
+              name="tags"
+              type="text"
+              value={formData.tags}
+              onChange={handleChange}
+              placeholder="e.g. click track, live recording, keys heavy, multibus"
+              className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors"
+            />
+            <p className="text-[10px] text-dim/60 font-body">Suggested: click track, live recording, studio, multibus, keys heavy, drums split, broadcast</p>
+          </div>
+
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-3 border-t border-border">

@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
-import { Stem, FilterType } from '@/types';
+import { Stem, FilterType, SortType } from '@/types';
 import { StemCard } from './StemCard';
 import { StemDetailModal } from './StemDetailModal';
 import { FilterRail } from './FilterRail';
@@ -17,11 +17,13 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   const { profile } = useAuth();
   const [stems, setStems] = useState<Stem[]>(initialStems);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
+  const [sort, setSort] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
+  const [activeTag, setActiveTag] = useState('');
   const [selectedStem, setSelectedStem] = useState<{ stem: Stem; artworkUrl: string | null } | null>(null);
 
   const handleStemAdded = (stem: Stem) => {
-    setStems(prev => [stem, ...prev]);
+    // Pending stems don't appear in the public feed
   };
 
   const handleDelete = (id: string) => {
@@ -34,7 +36,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return stems.filter(stem => {
+    let result = stems.filter(stem => {
       const matchesSearch = !q ||
         stem.title.toLowerCase().includes(q) ||
         stem.artist.toLowerCase().includes(q) ||
@@ -48,9 +50,22 @@ export function StemFeed({ initialStems }: StemFeedProps) {
         matchesFilter = stem.format === activeFilter;
       }
 
-      return matchesSearch && matchesFilter;
+      const matchesTag = !activeTag ||
+        (stem.tags || []).some(t => t.toLowerCase() === activeTag.toLowerCase());
+
+      return matchesSearch && matchesFilter && matchesTag;
     });
-  }, [stems, search, activeFilter]);
+
+    // Sort
+    if (sort === 'most_tracks') {
+      result = [...result].sort((a, b) => (b.track_count ?? 0) - (a.track_count ?? 0));
+    } else if (sort === 'most_downloaded') {
+      result = [...result].sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0));
+    }
+    // 'newest' is already the default order from the server
+
+    return result;
+  }, [stems, search, activeFilter, activeTag, sort]);
 
   const totalTracks    = stems.reduce((sum, s) => sum + (s.track_count ?? 0), 0);
   const activeEngineers = new Set(stems.map(s => s.uploader_handle)).size;
@@ -70,9 +85,13 @@ export function StemFeed({ initialStems }: StemFeedProps) {
 
         <FilterRail
           activeFilter={activeFilter}
+          sort={sort}
           search={search}
+          activeTag={activeTag}
           onFilterChange={setActiveFilter}
+          onSortChange={setSort}
           onSearchChange={setSearch}
+          onTagChange={setActiveTag}
           resultCount={filtered.length}
         />
 
@@ -98,7 +117,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
       <footer className="mt-auto border-t border-border">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-6 flex items-center justify-between gap-4">
           <p className="text-dim text-sm font-body">
-            Stem Vault — community worship multitrack archive
+            Stem Vault - community worship multitrack archive
           </p>
           <p className="text-dim text-xs font-body">
             All links are community-sourced. Verify before use.

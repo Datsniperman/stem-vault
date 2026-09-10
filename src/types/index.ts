@@ -30,8 +30,10 @@ export interface Stem {
   uploader_handle: string;
   description?: string | null;
   cover_url?: string | null;
+  tags?: string[] | null;
   is_verified: boolean;
   status: StemStatus;
+  download_count?: number;
   created_at: string;
 }
 
@@ -47,6 +49,8 @@ export type FilterType =
   | 'WAV (48kHz/24-bit)'
   | 'Multitrack Zip'
   | 'Verified Only';
+
+export type SortType = 'newest' | 'most_tracks' | 'most_downloaded';
 
 export interface StemRating {
   id: string;

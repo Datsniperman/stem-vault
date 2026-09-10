@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Download, Flag, ExternalLink, Music, Info, Check } from 'lucide-react';
+import { Download, Flag, ExternalLink, Music, Info, Check, Tag } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
-import { flagStem } from '@/app/actions/stems';
+import { flagStem, incrementDownloadCount } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
 import { clsx } from 'clsx';
 
@@ -36,6 +36,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
   const isAdmin = profile?.role === 'admin';
   const platformBadge = PLATFORM_BADGE[stem.host_platform] ?? PLATFORM_BADGE['Other'];
+  const visibleTags = (stem.tags || []).slice(0, 3);
 
   // Fetch album cover automatically from iTunes Search API if cover_url not provided
   useEffect(() => {
@@ -53,7 +54,6 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
         if (res.ok) {
           const data = await res.json();
           if (data.results && data.results.length > 0) {
-            // Replace 100x100 with 600x600 for high resolution artwork
             const hiresUrl = data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
             if (isMounted) setArtworkUrl(hiresUrl);
           }
@@ -74,7 +74,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
     setReporting(true);
     const result = await flagStem(stem.id);
     addToast(
-      result.success ? 'Link reported — thanks for keeping the archive clean.' : result.message,
+      result.success ? 'Link reported - thanks for keeping the archive clean.' : result.message,
       result.success ? 'info' : 'error'
     );
     setReporting(false);
@@ -83,6 +83,12 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
   const handleVerifyToggle = (id: string, verified: boolean) => {
     setLocalVerified(verified);
     onVerifyToggle(id, verified);
+  };
+
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Non-blocking download count increment
+    incrementDownloadCount(stem.id).catch(() => {});
   };
 
   const timeAgo = getTimeAgo(stem.created_at);
@@ -168,6 +174,17 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
                 </span>
               )}
             </div>
+
+            {/* Tags */}
+            {visibleTags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {visibleTags.map(tag => (
+                  <span key={tag} className="text-[10px] font-body text-dim/80 bg-surface-raised border border-border/60 px-1.5 py-0.5 rounded-sm">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -175,7 +192,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
         <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2 mt-auto shrink-0">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-[11px] text-dim font-body truncate">{stem.uploader_handle}</span>
-            <span className="text-dim text-[10px]">·</span>
+            <span className="text-dim text-[10px]">-</span>
             <span className="text-[11px] text-dim font-body shrink-0">{timeAgo}</span>
             {isAdmin && (
               <div onClick={e => e.stopPropagation()}>
@@ -203,7 +220,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
               href={stem.download_url}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
+              onClick={handleDownload}
               className="flex items-center gap-1 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-2.5 py-1.5 rounded-sm transition-colors uppercase tracking-wider"
             >
               <Download className="w-3.5 h-3.5" />

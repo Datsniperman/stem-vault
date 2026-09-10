@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ChevronDown, LogOut, User, Shield, Music2, Settings } from 'lucide-react';
+
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
@@ -23,6 +25,7 @@ const ROLE_LABELS = {
 export function Header({ onStemAdded }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
   const { addToast } = useToast();
+  const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -39,10 +42,10 @@ export function Header({ onStemAdded }: HeaderProps) {
   };
 
   const handleMySubmissionsClick = () => {
-    if (user?.email) {
-      addToast(`Showing stems submitted by ${user.email}.`, 'info');
-    }
+    setDropdownOpen(false);
+    router.push('/profile');
   };
+
 
   return (
     <>
