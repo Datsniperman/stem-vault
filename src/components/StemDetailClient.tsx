@@ -53,9 +53,17 @@ export function StemDetailClient({
   initialRatingCount,
 }: StemDetailClientProps) {
   const { addToast } = useToast();
-  const { user: clientUser, profile: clientProfile } = useAuth();
+  const { user: clientUser, profile: clientProfile, accessToken } = useAuth();
   const profile = clientProfile || serverProfile;
-  const user = clientUser || (profile ? { id: profile.id } : null);
+  const user = clientUser || (profile ? { id: profile.id, email: profile.email } : null);
+
+  const userHandle = profile?.display_name
+    ? `@${profile.display_name}`
+    : profile?.email
+    ? `@${profile.email.split('@')[0]}`
+    : clientUser?.email
+    ? `@${clientUser.email.split('@')[0]}`
+    : 'Anonymous';
 
   // Ratings State
   const [avgRating, setAvgRating] = useState(initialAvgRating);
@@ -90,12 +98,12 @@ export function StemDetailClient({
 
   // Handle Star Rating
   const handleRate = async (star: number) => {
-    if (!user && !profile) {
+    if (!user) {
       addToast('Please sign in to rate this stem session.', 'info');
       return;
     }
     setRatingLoading(true);
-    const res = await rateStem(stem.id, star);
+    const res = await rateStem(stem.id, star, accessToken || undefined);
     if (res.success) {
       addToast('Thank you for rating!', 'success');
       // Recalculate average locally
@@ -117,22 +125,22 @@ export function StemDetailClient({
   // Handle New Comment
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) {
+    if (!user) {
       addToast('Please sign in to comment.', 'info');
       return;
     }
     if (!commentInput.trim()) return;
 
     setCommentLoading(true);
-    const res = await addComment(stem.id, commentInput);
+    const res = await addComment(stem.id, commentInput, accessToken || undefined);
     if (res.success) {
       addToast('Comment posted.', 'success');
       setComments(prev => [
         {
           id: String(Date.now()),
           stem_id: stem.id,
-          user_id: profile.id,
-          user_handle: profile.display_name ? `@${profile.display_name}` : (profile.email?.split('@')[0] || 'Anonymous'),
+          user_id: user.id,
+          user_handle: userHandle,
           content: commentInput.trim(),
           created_at: new Date().toISOString(),
         },
@@ -148,21 +156,21 @@ export function StemDetailClient({
   // Handle New Mix Submission
   const handleMixSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) {
+    if (!user) {
       addToast('Please sign in to share a mix.', 'info');
       return;
     }
 
     setMixLoading(true);
-    const res = await submitCommunityMix(stem.id, mixTitle, mixUrl, mixDesc);
+    const res = await submitCommunityMix(stem.id, mixTitle, mixUrl, mixDesc, accessToken || undefined);
     if (res.success) {
       addToast('Mix submitted to the showcase!', 'success');
       setMixes(prev => [
         {
           id: String(Date.now()),
           stem_id: stem.id,
-          user_id: profile.id,
-          user_handle: profile.display_name ? `@${profile.display_name}` : (profile.email?.split('@')[0] || 'Anonymous'),
+          user_id: user.id,
+          user_handle: userHandle,
           title: mixTitle.trim(),
           mix_url: mixUrl.trim(),
           description: mixDesc.trim() || null,
@@ -184,7 +192,7 @@ export function StemDetailClient({
 
   // Handle Like Mix
   const handleLikeMix = async (mixId: string) => {
-    if (!profile) {
+    if (!user) {
       addToast('Please sign in to like a mix.', 'info');
       return;
     }
@@ -201,7 +209,7 @@ export function StemDetailClient({
       return m;
     }));
 
-    await toggleMixLike(mixId, stem.id);
+    await toggleMixLike(mixId, stem.id, accessToken || undefined);
   };
 
   const handleReport = async () => {
@@ -549,13 +557,13 @@ export function StemDetailClient({
               type="text"
               value={commentInput}
               onChange={e => setCommentInput(e.target.value)}
-              placeholder={profile ? "Add a comment or production feedback..." : "Sign in to leave a comment"}
-              disabled={!profile || commentLoading}
+              placeholder={user ? "Add a comment or production feedback..." : "Sign in to leave a comment"}
+              disabled={!user || commentLoading}
               className="flex-1 bg-surface border border-border rounded px-3 py-2 text-sm text-warm-white font-body focus:outline-none focus:border-amber placeholder:text-dim/50 disabled:opacity-50"
             />
             <button
               type="submit"
-              disabled={!profile || commentLoading || !commentInput.trim()}
+              disabled={!user || commentLoading || !commentInput.trim()}
               className="bg-amber hover:bg-amber-muted disabled:opacity-50 text-obsidian p-2 rounded transition-colors shrink-0"
               title="Post Comment"
             >

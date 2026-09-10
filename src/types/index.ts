@@ -35,6 +35,9 @@ export interface Stem {
   status: StemStatus;
   download_count?: number;
   created_at: string;
+  avg_rating?: number;
+  rating_count?: number;
+  comment_count?: number;
 }
 
 export interface FormState {

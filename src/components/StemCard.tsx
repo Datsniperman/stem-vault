@@ -155,7 +155,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
           </div>
         ) : (
           /* Title & Metadata */
-          <div className="space-y-3 min-h-0">
+          <div className="space-y-2 min-h-0">
             <div>
               <h2 className="font-display text-lg sm:text-xl text-warm-white leading-snug truncate group-hover:text-amber transition-colors">
                 {stem.title}
