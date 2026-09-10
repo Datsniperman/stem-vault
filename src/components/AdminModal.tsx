@@ -22,12 +22,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
   // Users tab state
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [flaggedStems, setFlaggedStems] = useState<Stem[]>([]);
   const [emailInput, setEmailInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('verified');
   const [loading, setLoading] = useState(false);
   const [fetchingProfiles, setFetchingProfiles] = useState(false);
-  const [fetchingFlagged, setFetchingFlagged] = useState(false);
   const [filterSearch, setFilterSearch] = useState('');
 
   // Stems tabs state
@@ -65,27 +63,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const handleUnflag = async (stemId: string) => {
-    const res = await unflagStem(stemId);
-    if (res.success) {
-      addToast(res.message, 'success');
-      setFlaggedStems(prev => prev.filter(s => s.id !== stemId));
-    } else {
-      addToast(res.message, 'error');
-    }
-  };
-
-  const handleDeleteFlagged = async (stemId: string) => {
-    if (!confirm('Are you sure you want to permanently delete this stem session?')) return;
-    const res = await deleteStem(stemId);
-    if (res.success) {
-      addToast('Stem session deleted from archive.', 'info');
-      setFlaggedStems(prev => prev.filter(s => s.id !== stemId));
-    } else {
-      addToast(res.message, 'error');
-    }
-  };
 
   const handlePromote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -503,132 +480,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             </div>
           )}
 
-                {fetchingProfiles ? (
-                  <p className="text-xs text-dim font-body py-4 text-center">Loading user profiles…</p>
-                ) : filteredProfiles.length === 0 ? (
-                  <p className="text-xs text-dim font-body py-4 text-center">No profiles found in the database.</p>
-                ) : (
-                  <div className="border border-border rounded divide-y divide-border">
-                    {filteredProfiles.map(p => (
-                      <div key={p.id} className="p-3 flex items-center justify-between gap-4 bg-surface hover:bg-surface-raised transition-colors">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-body text-warm-white font-medium truncate">{p.email || 'No email'}</p>
-                            <RoleBadge role={p.role} />
-                          </div>
-                          <p className="text-xs text-dim font-body mt-0.5">{p.display_name ? `@${p.display_name}` : 'No handle'}</p>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            onClick={() => handleRoleChangeForUser(p.email || '', 'verified')}
-                            title="Promote to Super User / Pro"
-                            className={`text-xs px-2.5 py-1 rounded font-body transition-colors ${
-                              p.role === 'verified'
-                                ? 'bg-verified-dim text-verified border border-verified/30 font-semibold'
-                                : 'text-dim hover:text-warm-white hover:bg-surface-raised border border-border'
-                            }`}
-                          >
-                            {p.role === 'verified' && <Check className="w-3 h-3 inline mr-1" />}
-                            Pro Tech
-                          </button>
-
-                          <button
-                            onClick={() => handleRoleChangeForUser(p.email || '', 'admin')}
-                            title="Make Admin"
-                            className={`text-xs px-2.5 py-1 rounded font-body transition-colors ${
-                              p.role === 'admin'
-                                ? 'bg-error/10 text-error border border-error/30 font-semibold'
-                                : 'text-dim hover:text-warm-white hover:bg-surface-raised border border-border'
-                            }`}
-                          >
-                            {p.role === 'admin' && <Check className="w-3 h-3 inline mr-1" />}
-                            Admin
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            /* Reported Links Inbox Tab */
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-body font-semibold text-warm-white flex items-center gap-2">
-                    <Flag className="w-4 h-4 text-error" />
-                    Reported / Flagged Links Inbox
-                  </h3>
-                  <p className="text-xs text-dim font-body mt-0.5">
-                    Sessions reported by users for dead links, access restriction, or invalid files.
-                  </p>
-                </div>
-                <button
-                  onClick={loadFlaggedStems}
-                  className="p-1.5 text-dim hover:text-amber border border-border rounded transition-colors"
-                  title="Refresh inbox"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {fetchingFlagged ? (
-                <p className="text-xs text-dim font-body py-6 text-center">Loading reported links…</p>
-              ) : flaggedStems.length === 0 ? (
-                <div className="border border-border rounded p-8 text-center bg-surface-raised space-y-1">
-                  <p className="text-sm font-body text-warm-white font-medium">No reported links!</p>
-                  <p className="text-xs text-dim font-body">All stem download links are active and healthy.</p>
-                </div>
-              ) : (
-                <div className="border border-border rounded divide-y divide-border">
-                  {flaggedStems.map(s => (
-                    <div key={s.id} className="p-4 bg-surface hover:bg-surface-raised transition-colors space-y-2">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h4 className="text-base font-body font-bold text-warm-white">{s.title}</h4>
-                          <p className="text-xs text-amber font-body">by {s.artist}</p>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => handleUnflag(s.id)}
-                            className="flex items-center gap-1 text-xs bg-surface-raised border border-border hover:border-amber text-warm-white px-3 py-1.5 rounded transition-colors font-body"
-                          >
-                            <RefreshCw className="w-3 h-3 text-amber" />
-                            <span>Clear Report</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteFlagged(s.id)}
-                            className="flex items-center gap-1 text-xs bg-error/10 border border-error/30 hover:bg-error/20 text-error px-3 py-1.5 rounded transition-colors font-body"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Delete Stem</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-dim font-body pt-1">
-                        <span>Host: <strong className="text-warm-white">{s.host_platform}</strong></span>
-                        <span>Uploader: <strong className="text-warm-white">{s.uploader_handle}</strong></span>
-                        <a
-                          href={s.download_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-amber hover:underline inline-flex items-center gap-1 font-medium ml-auto"
-                        >
-                          <span>Test Link</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
       </div>
