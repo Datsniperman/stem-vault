@@ -728,6 +728,7 @@ export async function submitCommunityMix(
     if (error) return { success: false, message: error.message };
 
     revalidatePath(`/stems/${stemId}`);
+    revalidatePath('/showcase');
     return { success: true, message: 'Community mix submitted!' };
   } catch (err) {
     console.error('[submitCommunityMix] Error:', err);
@@ -768,6 +769,7 @@ export async function toggleMixLike(
         await supabase.from('stem_mixes').update({ likes_count: Math.max(0, (currentMix.likes_count || 1) - 1) }).eq('id', mixId);
       }
       revalidatePath(`/stems/${stemId}`);
+      revalidatePath('/showcase');
       return { success: true, message: 'Unliked mix.', liked: false };
     } else {
       // Add like
@@ -777,6 +779,7 @@ export async function toggleMixLike(
         await supabase.from('stem_mixes').update({ likes_count: (currentMix.likes_count || 0) + 1 }).eq('id', mixId);
       }
       revalidatePath(`/stems/${stemId}`);
+      revalidatePath('/showcase');
       return { success: true, message: 'Liked mix!', liked: true };
     }
   } catch (err) {
