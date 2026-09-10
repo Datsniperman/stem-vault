@@ -1,10 +1,10 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo } from 'react';
 import { Stem, FilterType, SortType } from '@/types';
 import { StemCard } from './StemCard';
 import { StemDetailModal } from './StemDetailModal';
-import { FilterRail, SortOption } from './FilterRail';
+import { FilterRail } from './FilterRail';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { useAuth } from '@/context/AuthContext';
