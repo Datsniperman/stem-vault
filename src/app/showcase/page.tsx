@@ -28,10 +28,14 @@ export default async function ShowcasePage() {
     const supabase = supabaseAdmin || supabaseServer;
 
     if (supabase) {
-      const { data: mixesData } = await supabase
+      const { data: mixesData, error: mixesError } = await supabase
         .from('stem_mixes')
         .select('*')
         .order('likes_count', { ascending: false });
+
+      if (mixesError) {
+        console.error('[ShowcasePage] Supabase error fetching stem_mixes:', mixesError);
+      }
 
       if (mixesData && mixesData.length > 0) {
         const stemIds = Array.from(new Set(mixesData.map(m => m.stem_id)));
