@@ -238,7 +238,7 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                             <div className="relative h-1/3 w-full overflow-hidden bg-surface-raised border-b border-border shrink-0">
                               {(artworkUrl || track.cover_url) ? (
                                 <img
-                                  src={artworkUrl || track.cover_url}
+                                  src={(artworkUrl || track.cover_url) as string}
                                   alt={mix.title}
                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
