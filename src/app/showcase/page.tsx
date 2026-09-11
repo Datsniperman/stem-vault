@@ -2,42 +2,65 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
-import { ShowcaseClient, ShowcaseMix } from '@/components/ShowcaseClient';
+import { ShowcaseClient } from '@/components/ShowcaseClient';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Music2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ShowcasePage() {
-  const [mixes, setMixes] = useState<ShowcaseMix[]>([]);
+  const [tracks, setTracks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    const fetchMixes = async () => {
+    const fetchTracks = async () => {
       try {
         const supabase = getSupabaseBrowserClient();
         if (supabase) {
-          const { data: mixesData, error: mixesError } = await supabase
-            .from('stem_mixes')
+          // Fetch published stem tracks
+          const { data: stemsData, error: stemsError } = await supabase
+            .from('stems')
             .select('*')
-            .order('likes_count', { ascending: false });
+            .eq('status', 'published')
+            .order('created_at', { ascending: false });
 
-          if (!mixesError && mixesData && mixesData.length > 0) {
-            const stemIds = Array.from(new Set(mixesData.map((m: any) => m.stem_id)));
-            const { data: stemsData } = await supabase
-              .from('stems')
-              .select('id, title, artist')
-              .in('id', stemIds);
+          if (!stemsError && stemsData && stemsData.length > 0) {
+            const stemIds = stemsData.map(s => s.id);
 
-            const stemMap = new Map((stemsData as any[])?.map((s: any) => [s.id, s]) || []);
+            // Fetch community mixes for these tracks
+            const { data: mixesData } = await supabase
+              .from('stem_mixes')
+              .select('*')
+              .in('stem_id', stemIds);
 
-            const formatted = mixesData.map((m: any) => ({
-              ...m,
-              stem_title: stemMap.get(m.stem_id)?.title || 'Stem Session',
-              stem_artist: stemMap.get(m.stem_id)?.artist || 'Artist',
+            // Fetch comments for these tracks
+            const { data: commentsData } = await supabase
+              .from('stem_comments')
+              .select('*')
+              .in('stem_id', stemIds);
+
+            const mixMap = new Map<string, any[]>();
+            mixesData?.forEach(m => {
+              const list = mixMap.get(m.stem_id) || [];
+              list.push(m);
+              mixMap.set(m.stem_id, list);
+            });
+
+            const commentMap = new Map<string, any[]>();
+            commentsData?.forEach(c => {
+              const list = commentMap.get(c.stem_id) || [];
+              list.push(c);
+              commentMap.set(c.stem_id, list);
+            });
+
+            const formatted = stemsData.map(s => ({
+              ...s,
+              mixes: mixMap.get(s.id) || [],
+              comments: commentMap.get(s.id) || [],
+              is_track_of_week: (s.tags || []).includes('track of the week')
             }));
 
-            if (isMounted) setMixes(formatted);
+            if (isMounted) setTracks(formatted);
           }
         }
       } catch (err) {
@@ -47,7 +70,7 @@ export default function ShowcasePage() {
       }
     };
 
-    fetchMixes();
+    fetchTracks();
     return () => { isMounted = false; };
   }, []);
 
@@ -80,13 +103,13 @@ export default function ShowcasePage() {
           </div>
         </div>
 
-        {/* Interactive Mix Showcase Feed */}
+        {/* Interactive Track of the Week Showcase Feed */}
         {loading ? (
           <div className="bg-surface border border-border p-12 text-center rounded-sm space-y-2">
-            <p className="text-sm font-body text-dim animate-pulse">Loading showcase mixes...</p>
+            <p className="text-sm font-body text-dim animate-pulse">Loading Track of the Week showcase...</p>
           </div>
         ) : (
-          <ShowcaseClient initialMixes={mixes} />
+          <ShowcaseClient tracks={tracks} />
         )}
 
       </div>
