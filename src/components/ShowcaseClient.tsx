@@ -129,8 +129,8 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
       ) : (
         <div className="space-y-6">
           <h2 className="font-display text-2xl text-warm-white flex items-center gap-2">
-            <span>Community Sessions & Mix Stream</span>
-            <span className="text-xs font-mono text-dim font-normal">({tracks.length} tracks)</span>
+            <span>Submitted Mixes for Track of the Week & Sessions</span>
+            <span className="text-xs font-mono text-dim font-normal">({tracks.length} sessions)</span>
           </h2>
 
           <div className="grid grid-cols-1 gap-6">

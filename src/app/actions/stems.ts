@@ -205,11 +205,62 @@ export async function toggleStemVerification(
       };
     }
 
+export async function setTrackOfTheWeek(
+  stemId: string
+): Promise<{ success: boolean; message: string; isSpotlight?: boolean }> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    // 1. Clear 'track of the week' tag from all existing stems so only 1 is active
+    const { data: allStems } = await supabase.from('stems').select('id, tags');
+    if (allStems) {
+      for (const s of allStems) {
+        if (s.tags && s.tags.includes('track of the week')) {
+          const updatedTags = s.tags.filter((t: string) => t !== 'track of the week');
+          await supabase.from('stems').update({ tags: updatedTags }).eq('id', s.id);
+        }
+      }
+    }
+
+    // 2. Fetch target stem and toggle tag
+    const { data: targetStem } = await supabase.from('stems').select('tags').eq('id', stemId).single();
+    let isSpotlight = true;
+    let newTags: string[] = ['track of the week'];
+
+    if (targetStem && targetStem.tags) {
+      if (targetStem.tags.includes('track of the week')) {
+        isSpotlight = false;
+        newTags = targetStem.tags.filter((t: string) => t !== 'track of the week');
+      } else {
+        newTags = Array.from(new Set([...targetStem.tags, 'track of the week']));
+      }
+    }
+
+    const { error } = await supabase
+      .from('stems')
+      .update({ tags: newTags })
+      .eq('id', stemId);
+
+    if (error) {
+      console.error('[setTrackOfTheWeek] Error:', error.message);
+      return { success: false, message: `Failed to update Track of the Week: ${error.message}` };
+    }
+
     revalidatePath('/');
-    return { success: true, message: `Stem marked as ${isVerified ? 'verified' : 'unverified'}.` };
-  } catch (err) {
-    console.error('[toggleStemVerification] Unexpected error:', err);
-    return { success: false, message: 'Verification update failed.' };
+    revalidatePath(`/stems/${stemId}`);
+    revalidatePath('/showcase');
+    return {
+      success: true,
+      message: isSpotlight ? '★ Designated as Official Track of the Week!' : 'Removed Track of the Week spotlight.',
+      isSpotlight
+    };
+  } catch (err: any) {
+    console.error('[setTrackOfTheWeek] Error:', err);
+    return { success: false, message: 'Failed to update Track of the Week.' };
   }
 }
 

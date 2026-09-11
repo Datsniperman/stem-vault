@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Stem, Profile, StemComment, StemMix } from '@/types';
-import { rateStem, addComment, submitCommunityMix, toggleMixLike, flagStem, deleteStem, deleteComment, incrementDownloadCount } from '@/app/actions/stems';
+import { rateStem, addComment, submitCommunityMix, toggleMixLike, flagStem, deleteStem, deleteComment, incrementDownloadCount, setTrackOfTheWeek } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/Header';
@@ -349,18 +349,18 @@ export function StemDetailClient({
 
                 {isAdmin && (
                   <button
-                    onClick={() => {
-                      addToast(
-                        stem.tags?.includes('track of the week')
-                          ? 'Removed Track of the Week spotlight.'
-                          : '★ Designated as Track of the Week!',
-                        'success'
-                      );
+                    onClick={async () => {
+                      const res = await setTrackOfTheWeek(stem.id);
+                      if (res.success) {
+                        addToast(res.message, 'success');
+                      } else {
+                        addToast(res.message, 'error');
+                      }
                     }}
                     className="flex items-center gap-1.5 text-xs font-body font-bold text-amber border border-amber/50 hover:bg-amber/10 px-4 py-3 rounded-sm transition-colors"
                   >
                     <Star className="w-4 h-4 fill-amber" />
-                    <span>{stem.tags?.includes('track of the week') ? 'Spotlighted' : 'Make Track of the Week'}</span>
+                    <span>{stem.tags?.includes('track of the week') ? 'Track of the Week Active' : 'Make Track of the Week'}</span>
                   </button>
                 )}
 
