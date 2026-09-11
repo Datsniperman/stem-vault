@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { FormState, Stem, Profile } from '@/types';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { sendReportEmail } from '@/lib/email';
+import { sendReportEmail, sendBugReportEmail } from '@/lib/email';
 
 const ADMIN_EMAIL = 'connorwbrown07@gmail.com';
 const MAX_SUBMISSIONS_PER_DAY = 5;
@@ -785,6 +785,35 @@ export async function toggleMixLike(
   } catch (err) {
     console.error('[toggleMixLike] Error:', err);
     return { success: false, message: 'Failed to update like status.' };
+  }
+}
+
+export async function submitBugReport(
+  contactInfo: string,
+  description: string,
+  userHandle?: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const cleanContact = contactInfo.trim().slice(0, 200);
+    const cleanDesc = description.trim().slice(0, 3000);
+
+    if (!cleanContact) return { success: false, message: 'Please provide contact info (Email or Discord handle).' };
+    if (!cleanDesc) return { success: false, message: 'Please describe the bug or issue.' };
+
+    const result = await sendBugReportEmail({
+      contactInfo: cleanContact,
+      description: cleanDesc,
+      userHandle,
+    });
+
+    if (!result.success) {
+      return { success: false, message: result.error || 'Failed to submit bug report email.' };
+    }
+
+    return { success: true, message: 'Bug report sent! Thanks for helping improve Stem Vault.' };
+  } catch (err: any) {
+    console.error('[submitBugReport] Error:', err);
+    return { success: false, message: 'Failed to submit bug report.' };
   }
 }
 

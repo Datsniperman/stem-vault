@@ -9,9 +9,8 @@ import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
 import { SubmitStemModal } from './SubmitStemModal';
 import { AdminModal } from './AdminModal';
-import { SettingsModal } from './SettingsModal';
-import Link from 'next/link';
-import { Stem } from '@/types';
+import { BugReportModal } from './BugReportModal';
+import { DisclaimerModal } from './DisclaimerModal';
 
 interface HeaderProps {
   onStemAdded: (stem: Stem) => void;
@@ -31,6 +30,8 @@ export function Header({ onStemAdded }: HeaderProps) {
   const [submitOpen, setSubmitOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [bugReportOpen, setBugReportOpen] = useState(false);
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const roleInfo = profile ? ROLE_LABELS[profile.role] : null;
@@ -74,6 +75,13 @@ export function Header({ onStemAdded }: HeaderProps) {
 
           {/* Right */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setBugReportOpen(true)}
+              className="hidden sm:flex items-center gap-1 text-xs font-body text-dim hover:text-amber border border-border hover:border-amber/40 px-2.5 py-1 rounded-sm transition-colors"
+            >
+              <span>🐛 Report Bug</span>
+            </button>
+
             {user ? (
               <>
                 <button
@@ -165,6 +173,8 @@ export function Header({ onStemAdded }: HeaderProps) {
       />
       <AdminModal isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <BugReportModal isOpen={bugReportOpen} onClose={() => setBugReportOpen(false)} />
+      <DisclaimerModal isOpen={disclaimerOpen} onClose={() => setDisclaimerOpen(false)} />
     </>
   );
 }

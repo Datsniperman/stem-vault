@@ -222,6 +222,19 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
             <p className="text-[10px] text-dim/60 font-body">Suggested: click track, live recording, studio, multibus, keys heavy, drums split, broadcast</p>
           </div>
 
+          {/* Row 7: Rights Certification Checkbox */}
+          <div className="flex items-start gap-2.5 pt-2 border-t border-border/60">
+            <input
+              type="checkbox"
+              id="certify-rights"
+              required
+              className="mt-0.5 accent-amber rounded-sm cursor-pointer"
+            />
+            <label htmlFor="certify-rights" className="text-xs text-mid font-body leading-relaxed cursor-pointer">
+              I certify that these audio files are my own or that I am explicitly authorized to distribute them for non-commercial educational & mixing use on Stem Vault.
+            </label>
+          </div>
+
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-3 border-t border-border">

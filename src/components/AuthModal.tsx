@@ -270,20 +270,34 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
               {/* Confirm Password (Sign up only) */}
               {mode === 'signup' && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs text-dim font-body">Confirm Password *</label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={confirmPassword}
-                      onChange={e => setConfirmPassword(e.target.value)}
-                      placeholder="Re-type password"
-                      className="w-full bg-obsidian border border-border rounded-sm pl-9 pr-3 py-2.5 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/50 transition-colors"
-                    />
+                <>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs text-dim font-body">Confirm Password *</label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        placeholder="Re-type password"
+                        className="w-full bg-obsidian border border-border rounded-sm pl-9 pr-3 py-2.5 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/50 transition-colors"
+                      />
+                    </div>
                   </div>
-                </div>
+
+                  <div className="flex items-start gap-2 pt-1">
+                    <input
+                      type="checkbox"
+                      id="accept-terms"
+                      required
+                      className="mt-0.5 accent-amber rounded-sm cursor-pointer"
+                    />
+                    <label htmlFor="accept-terms" className="text-xs text-dim font-body leading-tight cursor-pointer">
+                      I accept the <span className="text-warm-white underline font-semibold">Terms of Service</span> (confirming all uploaded files are my own or authorized for non-commercial distribution on this pre-alpha).
+                    </label>
+                  </div>
+                </>
               )}
 
               <button

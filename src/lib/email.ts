@@ -41,3 +41,40 @@ export async function sendReportEmail({
     return { success: false, error: error?.message || 'Failed to send email' };
   }
 }
+
+export async function sendBugReportEmail({
+  contactInfo,
+  description,
+  userHandle,
+}: {
+  contactInfo: string;
+  description: string;
+  userHandle?: string;
+}) {
+  try {
+    const data = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: 'connorwbrown07@gmail.com',
+      subject: `🐛 Stem Vault Bug Report from ${contactInfo}`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; background-color: #08090B; color: #E8E4DE; border-radius: 8px;">
+          <h2 style="color: #FFB703; margin-top: 0;">🐛 New Bug Report Submitted</h2>
+          <p>A user reported an issue on <strong>Stem Vault</strong> during Alpha testing.</p>
+          
+          <div style="background-color: #111215; border: 1px solid #23252B; padding: 15px; border-radius: 6px; margin: 15px 0;">
+            <p style="margin: 4px 0;"><strong>Contact Info (Email/Discord):</strong> ${contactInfo}</p>
+            <p style="margin: 4px 0;"><strong>Logged-in User:</strong> ${userHandle || 'Guest'}</p>
+            <p style="margin: 12px 0 4px 0;"><strong>Bug Details:</strong></p>
+            <div style="background-color: #08090B; padding: 10px; border-radius: 4px; border: 1px solid #23252B; white-space: pre-wrap;">${description}</div>
+          </div>
+
+          <p style="font-size: 12px; color: #9A9690;">Stem Vault Alpha Issue Tracking System.</p>
+        </div>
+      `,
+    });
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('[Resend Bug Report Error]', error);
+    return { success: false, error: error?.message || 'Failed to send email' };
+  }
+}

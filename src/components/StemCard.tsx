@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -165,6 +165,19 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
             {/* Metadata Pills */}
             <div className="flex flex-wrap items-center gap-1.5">
+              {stem.avg_rating !== undefined && stem.avg_rating > 0 && (
+                <div className="flex items-center gap-1 bg-amber/10 border border-amber/30 text-amber rounded-sm px-1.5 py-0.5 text-xs font-body font-bold">
+                  <span>★</span>
+                  <span>{stem.avg_rating}</span>
+                  <span className="text-[10px] text-amber/70 font-normal">({stem.rating_count || 0})</span>
+                </div>
+              )}
+              {stem.comment_count !== undefined && stem.comment_count > 0 && (
+                <div className="flex items-center gap-1 bg-surface-raised border border-border text-mid rounded-sm px-1.5 py-0.5 text-xs font-body font-semibold">
+                  <span>💬</span>
+                  <span>{stem.comment_count}</span>
+                </div>
+              )}
               {stem.bpm && <MetaPill label="BPM" value={String(stem.bpm)} />}
               {stem.key && <MetaPill label="KEY" value={stem.key} />}
               {stem.track_count && <MetaPill label="TRACKS" value={String(stem.track_count)} />}

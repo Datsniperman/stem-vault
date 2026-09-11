@@ -7,6 +7,7 @@ import { StemDetailModal } from './StemDetailModal';
 import { FilterRail } from './FilterRail';
 import { Header } from './Header';
 import { Hero } from './Hero';
+import { DisclaimerModal } from './DisclaimerModal';
 import { useAuth } from '@/context/AuthContext';
 
 interface StemFeedProps {
@@ -20,6 +21,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   const [sort, setSort] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('');
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false);
   const [selectedStem, setSelectedStem] = useState<{ stem: Stem; artworkUrl: string | null } | null>(null);
 
   const handleStemAdded = (stem: Stem) => {
@@ -115,15 +117,24 @@ export function StemFeed({ initialStems }: StemFeedProps) {
       </div>
 
       <footer className="mt-auto border-t border-border">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-6 flex items-center justify-between gap-4">
-          <p className="text-dim text-sm font-body">
-            Stem Vault - community worship multitrack archive
-          </p>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-xs font-body text-dim">
+            <span>Stem Vault - Community worship multitrack archive</span>
+            <span>•</span>
+            <button
+              onClick={() => setDisclaimerOpen(true)}
+              className="text-amber hover:underline transition-colors font-medium"
+            >
+              Disclaimer & Terms
+            </button>
+          </div>
           <p className="text-dim text-xs font-body">
             All links are community-sourced. Verify before use.
           </p>
         </div>
       </footer>
+
+      <DisclaimerModal isOpen={disclaimerOpen} onClose={() => setDisclaimerOpen(false)} />
     </div>
   );
 }
