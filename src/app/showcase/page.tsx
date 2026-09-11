@@ -1,49 +1,55 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { ShowcaseClient, ShowcaseMix } from '@/components/ShowcaseClient';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Music2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
+export default function ShowcasePage() {
+  const [mixes, setMixes] = useState<ShowcaseMix[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function ShowcasePage() {
-  let mixes: ShowcaseMix[] = [];
-
-  try {
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabaseServer = await createSupabaseServerClient();
-    const supabase = supabaseAdmin || supabaseServer;
-
-    if (supabase) {
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMixes = async () => {
       try {
-        const { data: mixesData, error: mixesError } = await supabase
-          .from('stem_mixes')
-          .select('*')
-          .order('likes_count', { ascending: false });
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const { data: mixesData, error: mixesError } = await supabase
+            .from('stem_mixes')
+            .select('*')
+            .order('likes_count', { ascending: false });
 
-        if (!mixesError && mixesData && mixesData.length > 0) {
-          const stemIds = Array.from(new Set(mixesData.map(m => m.stem_id)));
-          const { data: stemsData } = await supabase
-            .from('stems')
-            .select('id, title, artist')
-            .in('id', stemIds);
+          if (!mixesError && mixesData && mixesData.length > 0) {
+            const stemIds = Array.from(new Set(mixesData.map(m => m.stem_id)));
+            const { data: stemsData } = await supabase
+              .from('stems')
+              .select('id, title, artist')
+              .in('id', stemIds);
 
-          const stemMap = new Map(stemsData?.map(s => [s.id, s]) || []);
+            const stemMap = new Map(stemsData?.map(s => [s.id, s]) || []);
 
-          mixes = mixesData.map(m => ({
-            ...m,
-            stem_title: stemMap.get(m.stem_id)?.title || 'Stem Session',
-            stem_artist: stemMap.get(m.stem_id)?.artist || 'Artist',
-          }));
+            const formatted = mixesData.map(m => ({
+              ...m,
+              stem_title: stemMap.get(m.stem_id)?.title || 'Stem Session',
+              stem_artist: stemMap.get(m.stem_id)?.artist || 'Artist',
+            }));
+
+            if (isMounted) setMixes(formatted);
+          }
         }
-      } catch (dbErr) {
-        console.error('[ShowcasePage] DB Query Error:', dbErr);
+      } catch (err) {
+        console.error('[ShowcasePage] Client fetch error:', err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    }
-  } catch (err) {
-    console.error('[ShowcasePage] Supabase Initialization error:', err);
-    mixes = [];
-  }
+    };
+
+    fetchMixes();
+    return () => { isMounted = false; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-obsidian text-warm-white pb-20">
@@ -75,7 +81,13 @@ export default async function ShowcasePage() {
         </div>
 
         {/* Interactive Mix Showcase Feed */}
-        <ShowcaseClient initialMixes={mixes} />
+        {loading ? (
+          <div className="bg-surface border border-border p-12 text-center rounded-sm space-y-2">
+            <p className="text-sm font-body text-dim animate-pulse">Loading showcase mixes...</p>
+          </div>
+        ) : (
+          <ShowcaseClient initialMixes={mixes} />
+        )}
 
       </div>
     </div>
