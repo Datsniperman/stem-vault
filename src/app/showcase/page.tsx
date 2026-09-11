@@ -25,7 +25,7 @@ export default function ShowcasePage() {
             .order('created_at', { ascending: false });
 
           if (!stemsError && stemsData && stemsData.length > 0) {
-            const stemIds = stemsData.map(s => s.id);
+            const stemIds = stemsData.map((s: any) => s.id);
 
             // Fetch community mixes for these tracks
             const { data: mixesData } = await supabase
@@ -40,20 +40,20 @@ export default function ShowcasePage() {
               .in('stem_id', stemIds);
 
             const mixMap = new Map<string, any[]>();
-            mixesData?.forEach(m => {
+            mixesData?.forEach((m: any) => {
               const list = mixMap.get(m.stem_id) || [];
               list.push(m);
               mixMap.set(m.stem_id, list);
             });
 
             const commentMap = new Map<string, any[]>();
-            commentsData?.forEach(c => {
+            commentsData?.forEach((c: any) => {
               const list = commentMap.get(c.stem_id) || [];
               list.push(c);
               commentMap.set(c.stem_id, list);
             });
 
-            const formatted = stemsData.map(s => ({
+            const formatted = stemsData.map((s: any) => ({
               ...s,
               mixes: mixMap.get(s.id) || [],
               comments: commentMap.get(s.id) || [],
