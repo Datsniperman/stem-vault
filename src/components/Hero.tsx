@@ -43,8 +43,7 @@ export function Hero({ totalSessions, totalTracks, activeEngineers }: HeroProps)
 
         {/* Sub */}
         <p className="text-mid text-lg max-w-xl leading-relaxed mb-14 animate-[reveal-up_0.6s_cubic-bezier(0.16,1,0.3,1)_160ms_both]">
-          A community directory where worship sound engineers share and discover
-          high-quality multitrack sessions — no paywalls, no gatekeeping.
+          A free, community-driven multitrack audio archive for live sound engineers, church tech teams, and producers to share, practice, and mix live sessions. Welcome to <strong>the Stem Vault</strong>.
         </p>
 
         {/* Stats */}

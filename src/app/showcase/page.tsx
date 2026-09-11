@@ -22,9 +22,7 @@ export default async function ShowcasePage() {
 
       if (mixesError) {
         console.error('[ShowcasePage] Supabase error fetching stem_mixes:', mixesError);
-      }
-
-      if (mixesData && mixesData.length > 0) {
+      } else if (mixesData && mixesData.length > 0) {
         const stemIds = Array.from(new Set(mixesData.map(m => m.stem_id)));
         const { data: stemsData } = await supabase
           .from('stems')
@@ -42,6 +40,7 @@ export default async function ShowcasePage() {
     }
   } catch (err) {
     console.error('[ShowcasePage] Fetch error:', err);
+    mixes = [];
   }
 
   return (
