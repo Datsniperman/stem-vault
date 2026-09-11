@@ -198,12 +198,14 @@ export async function toggleStemVerification(
       return { success: false, message: `Update failed: ${error.message}` };
     }
 
-    if (!data || data.length === 0) {
-      return {
-        success: false,
-        message: 'Update failed: Stem not found.'
-      };
-    }
+    revalidatePath('/');
+    revalidatePath(`/stems/${id}`);
+    return { success: true, message: `Stem verification status updated.` };
+  } catch (err: any) {
+    console.error('[toggleStemVerification] Error:', err);
+    return { success: false, message: 'Failed to update stem verification status.' };
+  }
+}
 
 export async function setTrackOfTheWeek(
   stemId: string
