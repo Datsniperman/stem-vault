@@ -9,8 +9,11 @@ import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
 import { SubmitStemModal } from './SubmitStemModal';
 import { AdminModal } from './AdminModal';
+import { SettingsModal } from './SettingsModal';
 import { BugReportModal } from './BugReportModal';
 import { DisclaimerModal } from './DisclaimerModal';
+import Link from 'next/link';
+import { Stem } from '@/types';
 
 interface HeaderProps {
   onStemAdded: (stem: Stem) => void;
