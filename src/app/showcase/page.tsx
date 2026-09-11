@@ -10,36 +10,38 @@ export default async function ShowcasePage() {
   let mixes: ShowcaseMix[] = [];
 
   try {
-    const supabaseServer = await createSupabaseServerClient();
     const supabaseAdmin = await createSupabaseAdminClient();
+    const supabaseServer = await createSupabaseServerClient();
     const supabase = supabaseAdmin || supabaseServer;
 
     if (supabase) {
-      const { data: mixesData, error: mixesError } = await supabase
-        .from('stem_mixes')
-        .select('*')
-        .order('likes_count', { ascending: false });
+      try {
+        const { data: mixesData, error: mixesError } = await supabase
+          .from('stem_mixes')
+          .select('*')
+          .order('likes_count', { ascending: false });
 
-      if (mixesError) {
-        console.error('[ShowcasePage] Supabase error fetching stem_mixes:', mixesError);
-      } else if (mixesData && mixesData.length > 0) {
-        const stemIds = Array.from(new Set(mixesData.map(m => m.stem_id)));
-        const { data: stemsData } = await supabase
-          .from('stems')
-          .select('id, title, artist')
-          .in('id', stemIds);
+        if (!mixesError && mixesData && mixesData.length > 0) {
+          const stemIds = Array.from(new Set(mixesData.map(m => m.stem_id)));
+          const { data: stemsData } = await supabase
+            .from('stems')
+            .select('id, title, artist')
+            .in('id', stemIds);
 
-        const stemMap = new Map(stemsData?.map(s => [s.id, s]) || []);
+          const stemMap = new Map(stemsData?.map(s => [s.id, s]) || []);
 
-        mixes = mixesData.map(m => ({
-          ...m,
-          stem_title: stemMap.get(m.stem_id)?.title || 'Stem Session',
-          stem_artist: stemMap.get(m.stem_id)?.artist || 'Artist',
-        }));
+          mixes = mixesData.map(m => ({
+            ...m,
+            stem_title: stemMap.get(m.stem_id)?.title || 'Stem Session',
+            stem_artist: stemMap.get(m.stem_id)?.artist || 'Artist',
+          }));
+        }
+      } catch (dbErr) {
+        console.error('[ShowcasePage] DB Query Error:', dbErr);
       }
     }
   } catch (err) {
-    console.error('[ShowcasePage] Fetch error:', err);
+    console.error('[ShowcasePage] Supabase Initialization error:', err);
     mixes = [];
   }
 
