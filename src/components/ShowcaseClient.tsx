@@ -22,8 +22,9 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
   const { user } = useAuth();
   const { addToast } = useToast();
 
-  // Find designated Track of the Week or fallback to first track
+  // Only display the designated Track of the Week (or fallback to the top track if none set)
   const trackOfTheWeek = tracks.find(t => t.is_track_of_week) || tracks[0];
+  const displayTracks = trackOfTheWeek ? [trackOfTheWeek] : [];
 
   const [likingMap, setLikingMap] = useState<Record<string, boolean>>({});
   const [localMixes, setLocalMixes] = useState<Record<string, StemMix[]>>({});
@@ -122,19 +123,18 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
       )}
 
       {/* Track Feed Grid focusing on Community Mixes & Comments */}
-      {tracks.length === 0 ? (
+      {displayTracks.length === 0 ? (
         <div className="bg-surface border border-border p-12 text-center rounded-sm space-y-2">
-          <p className="text-base font-body text-warm-white font-medium">No sessions in the archive yet.</p>
+          <p className="text-base font-body text-warm-white font-medium">No Track of the Week selected yet.</p>
         </div>
       ) : (
         <div className="space-y-6">
           <h2 className="font-display text-2xl text-warm-white flex items-center gap-2">
-            <span>Submitted Mixes for Track of the Week & Sessions</span>
-            <span className="text-xs font-mono text-dim font-normal">({tracks.length} sessions)</span>
+            <span>Community Submitted Mixes</span>
           </h2>
 
           <div className="grid grid-cols-1 gap-6">
-            {tracks.map(track => {
+            {displayTracks.map(track => {
               const mixesList = localMixes[track.id] || track.mixes;
 
               return (
