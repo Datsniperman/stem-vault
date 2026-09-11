@@ -317,6 +317,22 @@ export function StemDetailClient({
                 </div>
               </div>
 
+              {/* Track of the Week Banner if spotlighted */}
+              {stem.tags?.includes('track of the week') && (
+                <div className="bg-gradient-to-r from-amber/20 via-surface-raised to-surface border border-amber/50 p-4 rounded-sm flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 text-amber font-body text-xs font-bold uppercase tracking-wider">
+                    <Star className="w-4 h-4 fill-amber" />
+                    <span>Featured Track of the Week — Official Mix Challenge</span>
+                  </div>
+                  <a
+                    href="#mixes-section"
+                    className="text-xs text-warm-white hover:text-amber font-body underline font-semibold transition-colors"
+                  >
+                    View Community Mixes Below ↓
+                  </a>
+                </div>
+              )}
+
               {/* Primary Action Buttons */}
               <div className="pt-4 flex flex-wrap items-center gap-4">
                 <a
@@ -330,6 +346,23 @@ export function StemDetailClient({
                   <span>Download Stems ({stem.host_platform})</span>
                   <ExternalLink className="w-4 h-4 opacity-75 ml-1" />
                 </a>
+
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      addToast(
+                        stem.tags?.includes('track of the week')
+                          ? 'Removed Track of the Week spotlight.'
+                          : '★ Designated as Track of the Week!',
+                        'success'
+                      );
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-body font-bold text-amber border border-amber/50 hover:bg-amber/10 px-4 py-3 rounded-sm transition-colors"
+                  >
+                    <Star className="w-4 h-4 fill-amber" />
+                    <span>{stem.tags?.includes('track of the week') ? 'Spotlighted' : 'Make Track of the Week'}</span>
+                  </button>
+                )}
 
                 <button
                   onClick={handleReport}
@@ -419,7 +452,7 @@ export function StemDetailClient({
       <div className="max-w-6xl mx-auto px-5 sm:px-8 mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
 
         {/* Community Mixes Showcase */}
-        <section className="space-y-4">
+        <section id="mixes-section" className="space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <Music2 className="w-5 h-5 text-amber" />
