@@ -179,48 +179,77 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                     </div>
 
                     {mixesList.length === 0 ? (
-                      <div className="bg-obsidian/60 border border-border/60 p-4 rounded-sm text-center">
-                        <p className="text-xs font-body text-dim">No community mixes posted for this track yet.</p>
-                        <Link href={`/stems/${track.id}`} className="text-xs font-body text-amber hover:underline font-medium mt-1 inline-block">
+                      <div className="bg-obsidian/60 border border-border/60 p-8 rounded-sm text-center space-y-2">
+                        <p className="text-sm font-body text-dim">No community mixes submitted for this track yet.</p>
+                        <Link href={`/stems/${track.id}`} className="text-xs font-body text-amber hover:underline font-bold inline-block">
                           Be the first to submit a mix →
                         </Link>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {mixesList.map(mix => (
-                          <div key={mix.id} className="bg-obsidian border border-border p-4 rounded-sm space-y-2.5 flex flex-col justify-between">
-                            <div className="space-y-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <h5 className="font-body font-bold text-warm-white text-sm">{mix.title}</h5>
-                                  <p className="text-xs text-amber font-body">by {mix.user_handle}</p>
+                          <article
+                            key={mix.id}
+                            className="group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm hover:border-amber/50 transition-all duration-200 hover:shadow-[0_0_15px_rgba(255,183,3,0.1)]"
+                          >
+                            {/* Artwork Header */}
+                            <div className="relative h-1/3 w-full overflow-hidden bg-surface-raised border-b border-border shrink-0">
+                              {track.cover_url ? (
+                                <img
+                                  src={track.cover_url}
+                                  alt={mix.title}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-surface-raised via-obsidian to-surface flex items-center justify-center">
+                                  <Music2 className="w-8 h-8 text-amber/40" />
                                 </div>
+                              )}
+
+                              {/* Top Badge Overlay */}
+                              <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+                                <span className="text-[10px] font-body bg-obsidian/80 text-amber border border-amber/30 px-2 py-0.5 rounded-sm shadow-sm backdrop-blur-md font-bold uppercase tracking-wider">
+                                  Community Mix
+                                </span>
                                 <button
                                   onClick={() => handleLike(mix.id, track.id)}
                                   disabled={likingMap[mix.id]}
-                                  className="flex items-center gap-1 text-[11px] bg-amber/10 border border-amber/30 text-amber px-2 py-0.5 rounded-sm font-bold shrink-0 cursor-pointer"
+                                  className="flex items-center gap-1 text-[11px] bg-obsidian/90 border border-amber/40 text-amber px-2 py-0.5 rounded-sm font-bold shadow-md backdrop-blur-md pointer-events-auto cursor-pointer hover:bg-amber hover:text-obsidian transition-colors"
                                 >
-                                  <Heart className="w-3 h-3 fill-amber" />
+                                  <Heart className="w-3 h-3 fill-amber group-hover/btn:fill-obsidian" />
                                   <span>{mix.likes_count}</span>
                                 </button>
                               </div>
-                              {mix.description && (
-                                <p className="text-xs font-body text-mid leading-relaxed line-clamp-2">{mix.description}</p>
-                              )}
                             </div>
 
-                            <div className="pt-2 border-t border-border/40 flex items-center justify-between">
-                              <a
-                                href={mix.mix_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-body text-amber hover:underline font-bold uppercase tracking-wider"
-                              >
-                                <span>Listen</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
+                            {/* Middle Content */}
+                            <div className="p-4 flex-1 flex flex-col justify-between min-h-0 bg-surface">
+                              <div className="space-y-1.5 min-h-0">
+                                <h5 className="font-display text-lg text-warm-white leading-snug truncate group-hover:text-amber transition-colors">
+                                  {mix.title}
+                                </h5>
+                                <p className="text-amber text-xs font-body font-semibold">by {mix.user_handle}</p>
+                                {mix.description && (
+                                  <p className="text-mid text-xs font-body leading-relaxed line-clamp-3 mt-1">
+                                    {mix.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Footer Action Button */}
+                              <div className="pt-3 border-t border-border flex items-center justify-between">
+                                <a
+                                  href={mix.mix_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-full inline-flex items-center justify-center gap-2 bg-surface-raised hover:bg-amber text-warm-white hover:text-obsidian border border-border hover:border-amber font-body font-bold text-xs py-2 rounded-sm transition-all duration-150 uppercase tracking-wider"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                  <span>Listen to Mix</span>
+                                </a>
+                              </div>
                             </div>
-                          </div>
+                          </article>
                         ))}
                       </div>
                     )}
