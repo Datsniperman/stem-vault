@@ -62,7 +62,7 @@ export function ShowcaseClient({ initialMixes }: ShowcaseClientProps) {
 
   return (
     <div className="space-y-8">
-      {/* Hand-Picked "Mix of the Week" Spotlight Header Banner */}
+      {/* Track of the Week Spotlight Header Banner */}
       {featuredMix && (
         <div className="bg-gradient-to-r from-amber/10 via-surface-raised to-surface border border-amber/30 p-6 sm:p-8 rounded-sm relative overflow-hidden shadow-xl">
           <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">
@@ -72,12 +72,12 @@ export function ShowcaseClient({ initialMixes }: ShowcaseClientProps) {
           <div className="relative z-10 space-y-4 max-w-3xl">
             <div className="inline-flex items-center gap-1.5 bg-amber text-obsidian text-[11px] font-body font-extrabold px-3 py-1 rounded-sm uppercase tracking-wider">
               <Star className="w-3.5 h-3.5 fill-obsidian" />
-              <span>Vault Spotlight • Mix of the Week</span>
+              <span>Track of the Week • Mix Challenge</span>
             </div>
 
             <div>
               <h2 className="font-display text-2xl sm:text-3xl text-warm-white">{featuredMix.title}</h2>
-              <p className="text-amber text-sm font-body font-semibold mt-1">Mixed by {featuredMix.user_handle}</p>
+              <p className="text-amber text-sm font-body font-semibold mt-1">Featured Community Mix by {featuredMix.user_handle}</p>
             </div>
 
             {featuredMix.description && (
@@ -93,7 +93,7 @@ export function ShowcaseClient({ initialMixes }: ShowcaseClientProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-5 py-2.5 rounded-sm transition-colors uppercase tracking-wider shadow-md"
               >
-                <span>Listen to Spotlight Mix</span>
+                <span>Listen to Mix</span>
                 <ExternalLink className="w-4 h-4" />
               </a>
 
@@ -101,7 +101,7 @@ export function ShowcaseClient({ initialMixes }: ShowcaseClientProps) {
                 href={`/stems/${featuredMix.stem_id}`}
                 className="inline-flex items-center gap-1.5 text-xs text-warm-white hover:text-amber font-body underline transition-colors"
               >
-                <span>Stem Session: "{featuredMix.stem_title}"</span>
+                <span>Download Stems & Mix This Track: "{featuredMix.stem_title}"</span>
               </Link>
             </div>
           </div>
@@ -113,7 +113,7 @@ export function ShowcaseClient({ initialMixes }: ShowcaseClientProps) {
         <div className="bg-surface border border-border p-12 text-center rounded-sm space-y-2">
           <p className="text-base font-body text-warm-white font-medium">No community mixes posted yet.</p>
           <p className="text-xs text-dim font-body">
-            Be the first engineer to submit a mix from any stem session detail page!
+            Be the first engineer to submit a mix for the Track of the Week!
           </p>
         </div>
       ) : (
@@ -160,7 +160,7 @@ export function ShowcaseClient({ initialMixes }: ShowcaseClientProps) {
                   onClick={() => setFeaturedId(m.id)}
                   className="text-[10px] font-mono text-dim hover:text-amber transition-colors underline"
                 >
-                  {m.id === featuredId ? '★ Spotlighted' : 'Set as Spotlight'}
+                  {m.id === featuredId ? '★ Track of the Week' : 'Set as Track of the Week'}
                 </button>
                 <a
                   href={m.mix_url}
