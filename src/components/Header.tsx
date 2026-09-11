@@ -72,7 +72,7 @@ export function Header({ onStemAdded }: HeaderProps) {
               href="/showcase"
               className="text-xs font-body font-semibold text-mid hover:text-amber transition-colors flex items-center gap-1 bg-surface-raised border border-border px-2.5 py-1 rounded-sm"
             >
-              <span>Mix Showcase</span>
+              <span>Track of the Week Showcase</span>
             </Link>
           </div>
 

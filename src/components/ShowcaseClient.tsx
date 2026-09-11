@@ -72,12 +72,12 @@ export function ShowcaseClient({ initialMixes }: ShowcaseClientProps) {
           <div className="relative z-10 space-y-4 max-w-3xl">
             <div className="inline-flex items-center gap-1.5 bg-amber text-obsidian text-[11px] font-body font-extrabold px-3 py-1 rounded-sm uppercase tracking-wider">
               <Star className="w-3.5 h-3.5 fill-obsidian" />
-              <span>Track of the Week • Mix Challenge</span>
+              <span>Official Track of the Week</span>
             </div>
 
             <div>
-              <h2 className="font-display text-2xl sm:text-3xl text-warm-white">{featuredMix.title}</h2>
-              <p className="text-amber text-sm font-body font-semibold mt-1">Featured Community Mix by {featuredMix.user_handle}</p>
+              <h2 className="font-display text-2xl sm:text-3xl text-warm-white">"{featuredMix.stem_title}" by {featuredMix.stem_artist}</h2>
+              <p className="text-amber text-sm font-body font-semibold mt-1">Featured Community Mix by {featuredMix.user_handle} — {featuredMix.title}</p>
             </div>
 
             {featuredMix.description && (
@@ -99,9 +99,9 @@ export function ShowcaseClient({ initialMixes }: ShowcaseClientProps) {
 
               <Link
                 href={`/stems/${featuredMix.stem_id}`}
-                className="inline-flex items-center gap-1.5 text-xs text-warm-white hover:text-amber font-body underline transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs text-warm-white hover:text-amber font-body underline font-bold transition-colors"
               >
-                <span>Download Stems & Mix This Track: "{featuredMix.stem_title}"</span>
+                <span>Download Stems for this Track of the Week →</span>
               </Link>
             </div>
           </div>

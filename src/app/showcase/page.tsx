@@ -72,9 +72,9 @@ export default function ShowcasePage() {
               <Music2 className="w-6 h-6 text-obsidian" />
             </div>
             <div>
-              <h1 className="font-display text-3xl sm:text-4xl text-warm-white">Community Mix Showcase</h1>
+              <h1 className="font-display text-3xl sm:text-4xl text-warm-white">Track of the Week Showcase</h1>
               <p className="text-dim text-sm font-body mt-0.5">
-                Explore live audio mixes, master revisions, and hand-picked spotlight mixes.
+                Listen to community mixes submitted for the official Track of the Week multitrack session!
               </p>
             </div>
           </div>
