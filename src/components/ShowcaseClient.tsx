@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ExternalLink, Heart, Music2, Star, MessageSquare, Layers, Download, Music } from 'lucide-react';
 import Link from 'next/link';
 import { toggleMixLike } from '@/app/actions/stems';
@@ -28,6 +28,36 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
 
   const [likingMap, setLikingMap] = useState<Record<string, boolean>>({});
   const [localMixes, setLocalMixes] = useState<Record<string, StemMix[]>>({});
+  const [artworkUrl, setArtworkUrl] = useState<string | null>(trackOfTheWeek?.cover_url || null);
+
+  // Fetch artwork dynamically from iTunes Search API if not explicit on stem
+  useEffect(() => {
+    if (!trackOfTheWeek) return;
+    if (trackOfTheWeek.cover_url) {
+      setArtworkUrl(trackOfTheWeek.cover_url);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchArtwork = async () => {
+      try {
+        const query = encodeURIComponent(`${trackOfTheWeek.artist} ${trackOfTheWeek.title}`);
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.results && data.results.length > 0) {
+            const hiresUrl = data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+            if (isMounted) setArtworkUrl(hiresUrl);
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    };
+
+    fetchArtwork();
+    return () => { isMounted = false; };
+  }, [trackOfTheWeek?.artist, trackOfTheWeek?.title, trackOfTheWeek?.cover_url]);
 
   const handleLike = async (mixId: string, stemId: string) => {
     if (!user) {
@@ -62,12 +92,24 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
 
       {/* Featured Track of the Week Banner */}
       {trackOfTheWeek && (
-        <div className="bg-gradient-to-r from-amber/15 via-surface-raised to-surface border border-amber/40 p-6 sm:p-8 rounded-sm relative overflow-hidden shadow-2xl">
-          <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">
-            <Music2 className="w-64 h-64 text-amber" />
+        <div className="bg-gradient-to-r from-amber/15 via-surface-raised to-surface border border-amber/40 p-6 sm:p-8 rounded-sm relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-start md:items-center gap-6 sm:gap-8">
+          
+          {/* Album Artwork Preview */}
+          <div className="w-32 h-32 sm:w-44 sm:h-44 bg-surface-raised border border-amber/30 rounded-sm overflow-hidden shrink-0 shadow-xl relative group">
+            {artworkUrl ? (
+              <img
+                src={artworkUrl}
+                alt={`${trackOfTheWeek.title} by ${trackOfTheWeek.artist}`}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-amber/20 via-obsidian to-surface flex items-center justify-center">
+                <Music2 className="w-12 h-12 text-amber/60" />
+              </div>
+            )}
           </div>
 
-          <div className="relative z-10 space-y-4 max-w-4xl">
+          <div className="relative z-10 space-y-4 flex-1">
             <div className="inline-flex items-center gap-1.5 bg-amber text-obsidian text-[11px] font-body font-extrabold px-3 py-1 rounded-sm uppercase tracking-wider shadow-sm">
               <Star className="w-3.5 h-3.5 fill-obsidian" />
               <span>Official Track of the Week</span>
@@ -194,9 +236,9 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                           >
                             {/* Artwork Header */}
                             <div className="relative h-1/3 w-full overflow-hidden bg-surface-raised border-b border-border shrink-0">
-                              {track.cover_url ? (
+                              {(artworkUrl || track.cover_url) ? (
                                 <img
-                                  src={track.cover_url}
+                                  src={artworkUrl || track.cover_url}
                                   alt={mix.title}
                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
