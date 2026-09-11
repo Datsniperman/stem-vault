@@ -23,15 +23,15 @@ export default function ShowcasePage() {
             .order('likes_count', { ascending: false });
 
           if (!mixesError && mixesData && mixesData.length > 0) {
-            const stemIds = Array.from(new Set(mixesData.map(m => m.stem_id)));
+            const stemIds = Array.from(new Set(mixesData.map((m: any) => m.stem_id)));
             const { data: stemsData } = await supabase
               .from('stems')
               .select('id, title, artist')
               .in('id', stemIds);
 
-            const stemMap = new Map(stemsData?.map(s => [s.id, s]) || []);
+            const stemMap = new Map((stemsData as any[])?.map((s: any) => [s.id, s]) || []);
 
-            const formatted = mixesData.map(m => ({
+            const formatted = mixesData.map((m: any) => ({
               ...m,
               stem_title: stemMap.get(m.stem_id)?.title || 'Stem Session',
               stem_artist: stemMap.get(m.stem_id)?.artist || 'Artist',
