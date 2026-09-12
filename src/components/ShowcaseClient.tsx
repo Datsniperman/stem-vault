@@ -270,7 +270,15 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                                 <h5 className="font-display text-lg text-warm-white leading-snug truncate group-hover:text-amber transition-colors">
                                   {mix.title}
                                 </h5>
-                                <p className="text-amber text-xs font-body font-semibold">by {mix.user_handle}</p>
+                                <p className="text-amber text-xs font-body font-semibold">
+                                  by{' '}
+                                  <Link
+                                    href={`/user/${encodeURIComponent(mix.user_handle.replace(/^@/, ''))}`}
+                                    className="hover:underline transition-colors"
+                                  >
+                                    {mix.user_handle}
+                                  </Link>
+                                </p>
                                 {mix.description && (
                                   <p className="text-mid text-xs font-body leading-relaxed line-clamp-3 mt-1">
                                     {mix.description}

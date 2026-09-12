@@ -309,7 +309,15 @@ export function StemDetailClient({
               <div className="flex flex-wrap gap-2 text-xs font-body text-dim pt-1">
                 <div className="flex items-center gap-1.5 bg-obsidian border border-border px-3 py-1.5 rounded-sm">
                   <User className="w-3.5 h-3.5 text-amber" />
-                  <span>Submitted by <strong className="text-warm-white font-medium">{stem.uploader_handle}</strong></span>
+                  <span>
+                    Submitted by{' '}
+                    <Link
+                      href={`/user/${encodeURIComponent(stem.uploader_handle.replace(/^@/, ''))}`}
+                      className="text-warm-white font-medium hover:text-amber hover:underline transition-colors"
+                    >
+                      {stem.uploader_handle}
+                    </Link>
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 bg-obsidian border border-border px-3 py-1.5 rounded-sm">
                   <Calendar className="w-3.5 h-3.5 text-amber" />
@@ -618,7 +626,12 @@ export function StemDetailClient({
                   <div key={c.id} className="bg-surface border border-border p-3.5 rounded-sm space-y-1 group">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-body font-semibold text-amber">{c.user_handle}</span>
+                        <Link
+                          href={`/user/${encodeURIComponent(c.user_handle.replace(/^@/, ''))}`}
+                          className="font-body font-semibold text-amber hover:underline transition-colors"
+                        >
+                          {c.user_handle}
+                        </Link>
                         <span className="text-[10px] text-dim font-mono">{getTimeAgo(c.created_at)}</span>
                       </div>
                       {canDelete && (

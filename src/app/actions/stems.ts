@@ -425,6 +425,86 @@ export async function getUserStems(userId: string): Promise<Stem[]> {
   }
 }
 
+export async function getProfileByHandle(handle: string): Promise<Profile | null> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+    if (!supabase) return null;
+
+    const cleanHandle = decodeURIComponent(handle).trim().replace(/^@/, '');
+
+    // 1. Try display_name match (case-insensitive)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .ilike('display_name', cleanHandle)
+      .maybeSingle();
+
+    if (profile) return profile as Profile;
+
+    // 2. Try email prefix match if no display_name matches
+    const { data: profileByEmail } = await supabase
+      .from('profiles')
+      .select('*')
+      .ilike('email', `${cleanHandle}@%`)
+      .maybeSingle();
+
+    return (profileByEmail as Profile) || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getPublicUserStemsByHandle(handle: string): Promise<Stem[]> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+    if (!supabase) return [];
+
+    const cleanHandle = decodeURIComponent(handle).trim().replace(/^@/, '');
+
+    // First try fetching by profile id if profile exists
+    const profile = await getProfileByHandle(cleanHandle);
+
+    if (profile) {
+      const { data } = await supabase
+        .from('stems')
+        .select('*')
+        .eq('user_id', profile.id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false });
+
+      if (data && data.length > 0) return data as Stem[];
+    }
+
+    // Fallback search by uploader_handle directly (case-insensitive)
+    const { data: stemsByHandle } = await supabase
+      .from('stems')
+      .select('*')
+      .ilike('uploader_handle', cleanHandle)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false });
+
+    if (stemsByHandle && stemsByHandle.length > 0) return stemsByHandle as Stem[];
+
+    // Additional fallback: handles with or without '@' prefix
+    const altHandle = cleanHandle.startsWith('@') ? cleanHandle.slice(1) : `@${cleanHandle}`;
+    const { data: stemsAlt } = await supabase
+      .from('stems')
+      .select('*')
+      .ilike('uploader_handle', altHandle)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false });
+
+    return (stemsAlt as Stem[]) || [];
+  } catch {
+    return [];
+  }
+}
+
+
 // ── Download Tracking ────────────────────────────────────────────────────────
 
 export async function incrementDownloadCount(id: string): Promise<void> {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Download, Flag, ExternalLink, Music, Info, Check, Tag } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
@@ -204,7 +205,13 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
         {/* Footer row inside 1:1 box */}
         <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2 mt-auto shrink-0">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[11px] text-dim font-body truncate">{stem.uploader_handle}</span>
+            <Link
+              href={`/user/${encodeURIComponent(stem.uploader_handle.replace(/^@/, ''))}`}
+              onClick={e => e.stopPropagation()}
+              className="text-[11px] text-dim font-body truncate hover:text-amber hover:underline transition-colors"
+            >
+              {stem.uploader_handle}
+            </Link>
             <span className="text-dim text-[10px]">-</span>
             <span className="text-[11px] text-dim font-body shrink-0">{timeAgo}</span>
             {isAdmin && (
