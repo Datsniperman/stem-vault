@@ -3,6 +3,7 @@ import { Playfair_Display, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { Analytics } from '@vercel/analytics/next';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -54,9 +55,11 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             {children}
+            <Analytics />
           </ToastProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
+
