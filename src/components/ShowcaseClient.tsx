@@ -41,12 +41,15 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
     let isMounted = true;
     const fetchArtwork = async () => {
       try {
-        const query = encodeURIComponent(`${trackOfTheWeek.artist} ${trackOfTheWeek.title}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+        const query = encodeURIComponent(`${trackOfTheWeek.title} ${trackOfTheWeek.artist}`);
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=3`);
         if (res.ok) {
           const data = await res.json();
           if (data.results && data.results.length > 0) {
-            const hiresUrl = data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+            const match = data.results.find((r: any) =>
+              r.trackName.toLowerCase().includes(trackOfTheWeek.title.toLowerCase())
+            ) || data.results[0];
+            const hiresUrl = match.artworkUrl100.replace('100x100bb', '600x600bb');
             if (isMounted) setArtworkUrl(hiresUrl);
           }
         }

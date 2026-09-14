@@ -50,12 +50,17 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
     let isMounted = true;
     const fetchArtwork = async () => {
       try {
-        const query = encodeURIComponent(`${stem.artist} ${stem.title}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+        // Search by song title first for cleaner match, or combined with artist
+        const query = encodeURIComponent(`${stem.title} ${stem.artist}`);
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=3`);
         if (res.ok) {
           const data = await res.json();
           if (data.results && data.results.length > 0) {
-            const hiresUrl = data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+            // Find best matching track or take top result
+            const match = data.results.find((r: any) =>
+              r.trackName.toLowerCase().includes(stem.title.toLowerCase())
+            ) || data.results[0];
+            const hiresUrl = match.artworkUrl100.replace('100x100bb', '600x600bb');
             if (isMounted) setArtworkUrl(hiresUrl);
           }
         }

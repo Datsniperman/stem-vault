@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { FilterType, SortType } from '@/types';
 import { Search, X } from 'lucide-react';
@@ -62,7 +62,7 @@ export function FilterRail({
               type="text"
               value={search}
               onChange={e => onSearchChange(e.target.value)}
-              placeholder="Song, artist, handle..."
+              placeholder="Song, church, handle..."
               className="
                 w-full bg-surface border border-border rounded-sm
                 pl-8 pr-8 py-2 font-body text-sm text-warm-white
@@ -79,56 +79,6 @@ export function FilterRail({
               </button>
             )}
           </div>
-        </div>
-
-        {/* Sort */}
-        <div>
-          <p className="text-xs text-dim font-body mb-2">Sort by</p>
-          <nav className="flex flex-col gap-0.5">
-            {SORT_OPTIONS.map(({ label, value }) => {
-              const active = sort === value;
-              return (
-                <button
-                  key={value}
-                  onClick={() => onSortChange(value)}
-                  className={`
-                    w-full text-left px-3 py-1.5 rounded-sm text-sm font-body transition-colors
-                    ${active
-                      ? 'bg-amber-dim text-amber font-semibold border-l-2 border-amber'
-                      : 'text-mid hover:text-warm-white hover:bg-surface-raised'
-                    }
-                  `}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Filters */}
-        <div>
-          <p className="text-xs text-dim font-body mb-2">Filter by format</p>
-          <nav className="flex flex-col gap-0.5">
-            {FILTERS.map(({ label, value }) => {
-              const active = activeFilter === value;
-              return (
-                <button
-                  key={value}
-                  onClick={() => onFilterChange(value)}
-                  className={`
-                    w-full text-left px-3 py-1.5 rounded-sm text-sm font-body transition-colors
-                    ${active
-                      ? 'bg-amber-dim text-amber font-semibold border-l-2 border-amber'
-                      : 'text-mid hover:text-warm-white hover:bg-surface-raised'
-                    }
-                  `}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </nav>
         </div>
 
         {/* Tags */}
