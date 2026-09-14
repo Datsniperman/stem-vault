@@ -201,7 +201,6 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
     </article>
   );
 }
-}
 
 function MetaPill({ label, value }: { label: string; value: string }) {
   return (
