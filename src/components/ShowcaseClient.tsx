@@ -95,74 +95,56 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
 
       {/* Featured Track of the Week Banner */}
       {trackOfTheWeek && (
-        <div className="bg-gradient-to-r from-amber/15 via-surface-raised to-surface border border-amber/40 p-6 sm:p-8 rounded-sm relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-start md:items-center gap-6 sm:gap-8">
-          
-          {/* Album Artwork Preview */}
-          <div className="w-32 h-32 sm:w-44 sm:h-44 bg-surface-raised border border-amber/30 rounded-sm overflow-hidden shrink-0 shadow-xl relative group">
-            {artworkUrl ? (
-              <img
-                src={artworkUrl}
-                alt={`${trackOfTheWeek.title} by ${trackOfTheWeek.artist}`}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-amber/20 via-obsidian to-surface flex items-center justify-center">
-                <Music2 className="w-12 h-12 text-amber/60" />
-              </div>
-            )}
+        <div className="bg-gradient-to-r from-amber/15 via-surface-raised to-surface border border-amber/40 p-6 sm:p-8 rounded-sm relative overflow-hidden shadow-2xl space-y-4">
+          <div className="inline-flex items-center gap-1.5 bg-amber text-obsidian text-[11px] font-body font-extrabold px-3 py-1 rounded-sm uppercase tracking-wider shadow-sm">
+            <Star className="w-3.5 h-3.5 fill-obsidian" />
+            <span>Official Track of the Week</span>
           </div>
 
-          <div className="relative z-10 space-y-4 flex-1">
-            <div className="inline-flex items-center gap-1.5 bg-amber text-obsidian text-[11px] font-body font-extrabold px-3 py-1 rounded-sm uppercase tracking-wider shadow-sm">
-              <Star className="w-3.5 h-3.5 fill-obsidian" />
-              <span>Official Track of the Week</span>
-            </div>
+          <div>
+            <h2 className="font-display text-3xl sm:text-4xl text-warm-white">{trackOfTheWeek.title}</h2>
+            <p className="text-amber text-base font-body font-semibold mt-1">by {trackOfTheWeek.artist}</p>
+          </div>
 
-            <div>
-              <h2 className="font-display text-3xl sm:text-4xl text-warm-white">{trackOfTheWeek.title}</h2>
-              <p className="text-amber text-base font-body font-semibold mt-1">by {trackOfTheWeek.artist}</p>
-            </div>
-
-            {/* Quick stats for Track of the Week */}
-            <div className="flex flex-wrap gap-3 text-xs font-body text-dim">
-              {trackOfTheWeek.bpm && (
-                <span className="bg-obsidian border border-border px-2.5 py-1 rounded-sm">
-                  ⚡ {trackOfTheWeek.bpm} BPM
-                </span>
-              )}
-              {trackOfTheWeek.key && (
-                <span className="bg-obsidian border border-border px-2.5 py-1 rounded-sm">
-                  🎵 Key of {trackOfTheWeek.key}
-                </span>
-              )}
-              {trackOfTheWeek.track_count && (
-                <span className="bg-obsidian border border-border px-2.5 py-1 rounded-sm">
-                  🎛️ {trackOfTheWeek.track_count} Stems
-                </span>
-              )}
-              <span className="bg-amber/10 border border-amber/30 text-amber px-2.5 py-1 rounded-sm font-semibold">
-                🎧 {trackOfTheWeek.mixes.length} Community Mixes
+          {/* Quick stats for Track of the Week */}
+          <div className="flex flex-wrap gap-3 text-xs font-body text-dim">
+            {trackOfTheWeek.bpm && (
+              <span className="bg-obsidian border border-border px-2.5 py-1 rounded-sm">
+                ⚡ {trackOfTheWeek.bpm} BPM
               </span>
-              <span className="bg-surface-raised border border-border text-mid px-2.5 py-1 rounded-sm">
-                💬 {trackOfTheWeek.comments.length} Discussion Comments
-              </span>
-            </div>
-
-            {trackOfTheWeek.description && (
-              <p className="text-mid text-xs sm:text-sm font-body leading-relaxed bg-obsidian/70 border border-border/60 p-3.5 rounded-sm">
-                "{trackOfTheWeek.description}"
-              </p>
             )}
+            {trackOfTheWeek.key && (
+              <span className="bg-obsidian border border-border px-2.5 py-1 rounded-sm">
+                🎵 Key of {trackOfTheWeek.key}
+              </span>
+            )}
+            {trackOfTheWeek.track_count && (
+              <span className="bg-obsidian border border-border px-2.5 py-1 rounded-sm">
+                🎛️ {trackOfTheWeek.track_count} Stems
+              </span>
+            )}
+            <span className="bg-amber/10 border border-amber/30 text-amber px-2.5 py-1 rounded-sm font-semibold">
+              🎧 {trackOfTheWeek.mixes.length} Community Mixes
+            </span>
+            <span className="bg-surface-raised border border-border text-mid px-2.5 py-1 rounded-sm">
+              💬 {trackOfTheWeek.comments.length} Discussion Comments
+            </span>
+          </div>
 
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                href={`/stems/${trackOfTheWeek.id}`}
-                className="inline-flex items-center gap-2 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-6 py-3 rounded-sm transition-colors uppercase tracking-wider shadow-lg"
-              >
-                <Download className="w-4 h-4" />
-                <span>Get Stems & Join the Mix Challenge</span>
-              </Link>
-            </div>
+          {trackOfTheWeek.description && (
+            <p className="text-mid text-xs sm:text-sm font-body leading-relaxed bg-obsidian/70 border border-border/60 p-3.5 rounded-sm">
+              "{trackOfTheWeek.description}"
+            </p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-4 pt-2">
+            <Link
+              href={`/stems/${trackOfTheWeek.id}`}
+              className="inline-flex items-center gap-2 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-6 py-3 rounded-sm transition-colors uppercase tracking-wider shadow-lg"
+            >
+              <Download className="w-4 h-4" />
+              <span>Get Stems & Join the Mix Challenge</span>
+            </Link>
           </div>
         </div>
       )}
@@ -235,72 +217,55 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                         {mixesList.map(mix => (
                           <article
                             key={mix.id}
-                            className="group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm hover:border-amber/50 transition-all duration-200 hover:shadow-[0_0_15px_rgba(255,183,3,0.1)]"
+                            className="group relative bg-obsidian border border-border p-5 rounded-sm flex flex-col justify-between space-y-4 hover:border-amber/50 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(255,183,3,0.08)]"
                           >
-                            {/* Artwork Header */}
-                            <div className="relative h-1/3 w-full overflow-hidden bg-surface-raised border-b border-border shrink-0">
-                              {(artworkUrl || track.cover_url) ? (
-                                <img
-                                  src={(artworkUrl || track.cover_url) as string}
-                                  alt={mix.title}
-                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-surface-raised via-obsidian to-surface flex items-center justify-center">
-                                  <Music2 className="w-8 h-8 text-amber/40" />
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-body text-amber bg-amber/10 border border-amber/30 px-2 py-0.5 rounded-sm font-bold uppercase tracking-wider inline-block">
+                                    Community Mix
+                                  </span>
+                                  <h5 className="font-display text-lg text-warm-white leading-snug group-hover:text-amber transition-colors">
+                                    {mix.title}
+                                  </h5>
                                 </div>
-                              )}
-
-                              {/* Top Badge Overlay */}
-                              <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                                <span className="text-[10px] font-body bg-obsidian/80 text-amber border border-amber/30 px-2 py-0.5 rounded-sm shadow-sm backdrop-blur-md font-bold uppercase tracking-wider">
-                                  Community Mix
-                                </span>
                                 <button
                                   onClick={() => handleLike(mix.id, track.id)}
                                   disabled={likingMap[mix.id]}
-                                  className="flex items-center gap-1 text-[11px] bg-obsidian/90 border border-amber/40 text-amber px-2 py-0.5 rounded-sm font-bold shadow-md backdrop-blur-md pointer-events-auto cursor-pointer hover:bg-amber hover:text-obsidian transition-colors"
+                                  className="flex items-center gap-1 text-[11px] bg-amber/10 border border-amber/30 text-amber px-2 py-1 rounded-sm font-bold shrink-0 cursor-pointer hover:bg-amber hover:text-obsidian transition-colors"
                                 >
-                                  <Heart className="w-3 h-3 fill-amber group-hover/btn:fill-obsidian" />
+                                  <Heart className="w-3 h-3 fill-amber" />
                                   <span>{mix.likes_count}</span>
                                 </button>
                               </div>
+
+                              <p className="text-amber text-xs font-body font-semibold">
+                                by{' '}
+                                <Link
+                                  href={`/user/${encodeURIComponent(mix.user_handle.replace(/^@/, ''))}`}
+                                  className="hover:underline transition-colors"
+                                >
+                                  {mix.user_handle}
+                                </Link>
+                              </p>
+
+                              {mix.description && (
+                                <p className="text-mid text-xs font-body leading-relaxed line-clamp-3">
+                                  {mix.description}
+                                </p>
+                              )}
                             </div>
 
-                            {/* Middle Content */}
-                            <div className="p-4 flex-1 flex flex-col justify-between min-h-0 bg-surface">
-                              <div className="space-y-1.5 min-h-0">
-                                <h5 className="font-display text-lg text-warm-white leading-snug truncate group-hover:text-amber transition-colors">
-                                  {mix.title}
-                                </h5>
-                                <p className="text-amber text-xs font-body font-semibold">
-                                  by{' '}
-                                  <Link
-                                    href={`/user/${encodeURIComponent(mix.user_handle.replace(/^@/, ''))}`}
-                                    className="hover:underline transition-colors"
-                                  >
-                                    {mix.user_handle}
-                                  </Link>
-                                </p>
-                                {mix.description && (
-                                  <p className="text-mid text-xs font-body leading-relaxed line-clamp-3 mt-1">
-                                    {mix.description}
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Footer Action Button */}
-                              <div className="pt-3 border-t border-border flex items-center justify-between">
-                                <a
-                                  href={mix.mix_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="w-full inline-flex items-center justify-center gap-2 bg-surface-raised hover:bg-amber text-warm-white hover:text-obsidian border border-border hover:border-amber font-body font-bold text-xs py-2 rounded-sm transition-all duration-150 uppercase tracking-wider"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                  <span>Listen to Mix</span>
-                                </a>
-                              </div>
+                            <div className="pt-3 border-t border-border/60">
+                              <a
+                                href={mix.mix_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full inline-flex items-center justify-center gap-2 bg-surface-raised hover:bg-amber text-warm-white hover:text-obsidian border border-border hover:border-amber font-body font-bold text-xs py-2 rounded-sm transition-all uppercase tracking-wider shadow-sm"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>Listen to Mix</span>
+                              </a>
                             </div>
                           </article>
                         ))}
