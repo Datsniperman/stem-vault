@@ -1,0 +1,34 @@
+[
+  {
+    "version": "1.2.0",
+    "date": "2026-09-14",
+    "title": "Beta Workflow & Redesigned Session Cards",
+    "changes": [
+      "Added dedicated public Beta site deployment pipeline (origin/beta).",
+      "Redesigned session cards to place song title & church name at the top with full username visibility.",
+      "Promoted search bar to a full-width prominent banner above all stem cards.",
+      "Removed artwork dependency for cleaner audio-focused cards.",
+      "Simplified sidebar controls to focus strictly on search archive results."
+    ]
+  },
+  {
+    "version": "1.1.0",
+    "date": "2026-09-11",
+    "title": "Track of the Week Showcase & User Profiles",
+    "changes": [
+      "Added Track of the Week server actions and admin spotlight toggling.",
+      "Created dedicated Track of the Week Showcase page (/showcase).",
+      "Added user profile pages (/user/[handle]) and clickable handles across the site."
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "date": "2026-09-09",
+    "title": "Official Launch of the Stem Vault",
+    "changes": [
+      "Public launch of Stem Vault community worship multitrack archive.",
+      "Cloud link downloads, audio format badges, and submission workflow.",
+      "Built-in bug reporting and community mix challenges."
+    ]
+  }
+]

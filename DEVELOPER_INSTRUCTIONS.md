@@ -24,6 +24,10 @@
   git checkout beta
   ```
 
+### 3. Automatic Update Log Rule (Production Releases)
+- **Changelog Data File**: Update entries are stored in `src/data/changelog.json` and rendered live via the header's **✨ Update Logs** modal (`UpdateLogsModal.tsx`).
+- **Mandatory Update Rule**: Whenever an AI agent merges changes from `beta` to `main` for a production release, the agent MUST append a new version entry to `src/data/changelog.json` containing bullet points summarizing all changes included in that release.
+
 ---
 
 ## Environment & Build Safeguards
@@ -35,3 +39,4 @@
 ## Key UI & Feature Standards
 - **Track of the Week**: Single active stem tagged with `'track of the week'` in Supabase. Admin server actions in `src/app/actions/stems.ts` revalidate `/`, `/stems/[id]`, and `/showcase`.
 - **Track of the Week Showcase (`/showcase`)**: Dedicated strictly to the active Track of the Week banner, iTunes-fetched album artwork, and community-submitted mixes styled identically to main page `StemCard` grid items.
+- **Update Logs Modal (`✨ Update Logs`)**: Displays bullet point release notes from `src/data/changelog.json` next to the `🐛 Report Bug` button in the site header.
