@@ -39,7 +39,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
   const platformBadge = PLATFORM_BADGE[stem.host_platform] ?? PLATFORM_BADGE['Other'];
   const visibleTags = (stem.tags || []).slice(0, 3);
 
-  // Fetch album cover automatically from iTunes Search API if cover_url not provided
+  // Fetch album cover immediately on page load from iTunes Search API if cover_url not provided
   useEffect(() => {
     if (stem.cover_url) {
       setArtworkUrl(stem.cover_url);
@@ -50,22 +50,27 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
     let isMounted = true;
     const fetchArtwork = async () => {
       try {
-        // Search by song title first for cleaner match, or combined with artist
-        const query = encodeURIComponent(`${stem.title} ${stem.artist}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=3`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.results && data.results.length > 0) {
-            // Find best matching track or take top result
-            const match = data.results.find((r: any) =>
-              r.trackName.toLowerCase().includes(stem.title.toLowerCase())
-            ) || data.results[0];
-            const hiresUrl = match.artworkUrl100.replace('100x100bb', '600x600bb');
-            if (isMounted) setArtworkUrl(hiresUrl);
-          }
+        // First try title + artist
+        const query1 = encodeURIComponent(`${stem.title} ${stem.artist}`);
+        let res = await fetch(`https://itunes.apple.com/search?term=${query1}&entity=song&limit=3`);
+        let data = res.ok ? await res.json() : null;
+
+        // Fallback: search title only if no results
+        if (!data || !data.results || data.results.length === 0) {
+          const query2 = encodeURIComponent(stem.title);
+          res = await fetch(`https://itunes.apple.com/search?term=${query2}&entity=song&limit=3`);
+          data = res.ok ? await res.json() : null;
+        }
+
+        if (data && data.results && data.results.length > 0) {
+          const match = data.results.find((r: any) =>
+            r.trackName.toLowerCase().includes(stem.title.toLowerCase())
+          ) || data.results[0];
+          const hiresUrl = match.artworkUrl100.replace('100x100bb', '600x600bb');
+          if (isMounted) setArtworkUrl(hiresUrl);
         }
       } catch {
-        // Fallback to placeholder gradient
+        // Fallback to placeholder icon
       } finally {
         if (isMounted) setArtworkLoading(false);
       }
@@ -73,7 +78,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
     fetchArtwork();
     return () => { isMounted = false; };
-  }, [stem.artist, stem.title, stem.cover_url]);
+  }, [stem.id, stem.title, stem.artist, stem.cover_url]);
 
   const handleReport = async (e: React.MouseEvent) => {
     e.stopPropagation();
