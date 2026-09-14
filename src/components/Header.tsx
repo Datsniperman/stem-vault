@@ -66,6 +66,11 @@ export function Header({ onStemAdded }: HeaderProps) {
               <span className="font-body font-bold text-warm-white text-[15px] tracking-tight group-hover:text-amber transition-colors">
                 Stem Vault
               </span>
+              {process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' || process.env.NODE_ENV === 'development' ? (
+                <span className="text-[9px] font-mono font-bold bg-amber/20 text-amber border border-amber/40 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  BETA
+                </span>
+              ) : null}
             </Link>
 
             <Link
