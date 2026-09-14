@@ -55,7 +55,7 @@ export function FilterRail({
 
         {/* Search */}
         <div>
-          <label className="block text-xs text-dim font-body mb-2">Search</label>
+          <label className="block text-xs text-dim font-body mb-2">Search Archive</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dim pointer-events-none" />
             <input
@@ -65,8 +65,8 @@ export function FilterRail({
               placeholder="Song, church, handle..."
               className="
                 w-full bg-surface border border-border rounded-sm
-                pl-8 pr-8 py-2 font-body text-sm text-warm-white
-                placeholder:text-dim focus:outline-none focus:border-amber transition-colors
+                pl-8 pr-8 py-2.5 font-body text-sm text-warm-white
+                placeholder:text-dim focus:outline-none focus:border-amber transition-colors shadow-sm
               "
             />
             {search && (
@@ -81,32 +81,9 @@ export function FilterRail({
           </div>
         </div>
 
-        {/* Tags */}
-        <div>
-          <p className="text-xs text-dim font-body mb-2">Filter by tag</p>
-          <div className="flex flex-wrap gap-1.5">
-            {COMMON_TAGS.map(tag => {
-              const active = activeTag === tag;
-              return (
-                <button
-                  key={tag}
-                  onClick={() => onTagChange(active ? '' : tag)}
-                  className={`text-[11px] font-body px-2 py-0.5 rounded-sm border transition-colors ${
-                    active
-                      ? 'bg-amber-dim text-amber border-amber/40 font-semibold'
-                      : 'text-dim border-border hover:text-warm-white hover:border-border/80'
-                  }`}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Count */}
         <p className="text-xs text-dim font-body">
-          {resultCount} {resultCount === 1 ? 'session' : 'sessions'}
+          {resultCount} {resultCount === 1 ? 'session found' : 'sessions found'}
         </p>
 
       </div>
