@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resendApiKey = process.env.RESEND_API_KEY!;
+const resendApiKey = process.env.RESEND_API_KEY || 'dummy_key_for_build';
 export const resend = new Resend(resendApiKey);
 
 export async function sendReportEmail({
