@@ -20,26 +20,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: stem } = await supabase
     .from('stems')
-    .select('title, artist, description, cover_url')
+    .select('title, artist, description')
     .eq('id', id)
     .single();
 
   if (!stem) return { title: 'Stem Vault' };
-
-  // Try to get artwork
-  let artworkUrl = stem.cover_url || null;
-  if (!artworkUrl) {
-    try {
-      const query = encodeURIComponent(`${stem.artist} ${stem.title}`);
-      const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`, { next: { revalidate: 86400 } });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.results?.length > 0) {
-          artworkUrl = json.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
-        }
-      }
-    } catch { /* ignore */ }
-  }
 
   const title = `${stem.title} — ${stem.artist} | Stem Vault`;
   const description = stem.description
@@ -54,13 +39,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       type: 'music.song',
       siteName: 'Stem Vault',
-      ...(artworkUrl ? { images: [{ url: artworkUrl, width: 600, height: 600, alt: `${stem.title} album art` }] } : {}),
     },
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary',
       title,
       description,
-      ...(artworkUrl ? { images: [artworkUrl] } : {}),
     },
   };
 }
@@ -99,23 +82,6 @@ export default async function StemDetailPage({ params }: PageProps) {
         .eq('id', user.id)
         .single();
       if (profileData) currentUser = profileData;
-    }
-  }
-
-  // 3. Fetch iTunes Artwork if needed
-  let artworkUrl: string | null = stem.cover_url || null;
-  if (!artworkUrl) {
-    try {
-      const query = encodeURIComponent(`${stem.artist} ${stem.title}`);
-      const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`, { next: { revalidate: 86400 } });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.results && json.results.length > 0) {
-          artworkUrl = json.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
-        }
-      }
-    } catch {
-      // Fallback null
     }
   }
 
@@ -180,7 +146,6 @@ export default async function StemDetailPage({ params }: PageProps) {
   return (
     <StemDetailClient
       stem={stem}
-      artworkUrl={artworkUrl}
       profile={currentUser}
       initialComments={comments}
       initialMixes={mixes}

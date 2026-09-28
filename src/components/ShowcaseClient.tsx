@@ -28,36 +28,6 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
 
   const [likingMap, setLikingMap] = useState<Record<string, boolean>>({});
   const [localMixes, setLocalMixes] = useState<Record<string, StemMix[]>>({});
-  const [artworkUrl, setArtworkUrl] = useState<string | null>(trackOfTheWeek?.cover_url || null);
-
-  // Fetch artwork dynamically from iTunes Search API if not explicit on stem
-  useEffect(() => {
-    if (!trackOfTheWeek) return;
-    if (trackOfTheWeek.cover_url) {
-      setArtworkUrl(trackOfTheWeek.cover_url);
-      return;
-    }
-
-    let isMounted = true;
-    const fetchArtwork = async () => {
-      try {
-        const query = encodeURIComponent(`${trackOfTheWeek.artist} ${trackOfTheWeek.title}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.results && data.results.length > 0) {
-            const hiresUrl = data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
-            if (isMounted) setArtworkUrl(hiresUrl);
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    };
-
-    fetchArtwork();
-    return () => { isMounted = false; };
-  }, [trackOfTheWeek?.artist, trackOfTheWeek?.title, trackOfTheWeek?.cover_url]);
 
   const handleLike = async (mixId: string, stemId: string) => {
     if (!user) {
@@ -94,19 +64,9 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
       {trackOfTheWeek && (
         <div className="bg-gradient-to-r from-amber/15 via-surface-raised to-surface border border-amber/40 p-6 sm:p-8 rounded-sm relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-start md:items-center gap-6 sm:gap-8">
           
-          {/* Album Artwork Preview */}
-          <div className="w-32 h-32 sm:w-44 sm:h-44 bg-surface-raised border border-amber/30 rounded-sm overflow-hidden shrink-0 shadow-xl relative group">
-            {artworkUrl ? (
-              <img
-                src={artworkUrl}
-                alt={`${trackOfTheWeek.title} by ${trackOfTheWeek.artist}`}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-amber/20 via-obsidian to-surface flex items-center justify-center">
-                <Music2 className="w-12 h-12 text-amber/60" />
-              </div>
-            )}
+          {/* Banner Icon Preview */}
+          <div className="w-32 h-32 sm:w-44 sm:h-44 bg-gradient-to-br from-amber/20 via-obsidian to-surface border border-amber/30 rounded-sm overflow-hidden shrink-0 shadow-xl relative flex items-center justify-center">
+            <Music2 className="w-12 h-12 text-amber/60" />
           </div>
 
           <div className="relative z-10 space-y-4 flex-1">
@@ -234,19 +194,9 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                             key={mix.id}
                             className="group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm hover:border-amber/50 transition-all duration-200 hover:shadow-[0_0_15px_rgba(255,183,3,0.1)]"
                           >
-                            {/* Artwork Header */}
-                            <div className="relative h-1/3 w-full overflow-hidden bg-surface-raised border-b border-border shrink-0">
-                              {(artworkUrl || track.cover_url) ? (
-                                <img
-                                  src={(artworkUrl || track.cover_url) as string}
-                                  alt={mix.title}
-                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-surface-raised via-obsidian to-surface flex items-center justify-center">
-                                  <Music2 className="w-8 h-8 text-amber/40" />
-                                </div>
-                              )}
+                            {/* Header Banner */}
+                            <div className="relative h-1/3 w-full overflow-hidden bg-gradient-to-br from-surface-raised via-obsidian to-surface border-b border-border shrink-0 flex items-center justify-center">
+                              <Music2 className="w-8 h-8 text-amber/40" />
 
                               {/* Top Badge Overlay */}
                               <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">

@@ -31,44 +31,11 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
   const { addToast } = useToast();
   const [reporting, setReporting] = useState(false);
   const [localVerified, setLocalVerified] = useState(stem.is_verified);
-  const [artworkUrl, setArtworkUrl] = useState<string | null>(stem.cover_url || null);
-  const [artworkLoading, setArtworkLoading] = useState(!stem.cover_url);
   const [showNotes, setShowNotes] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
   const platformBadge = PLATFORM_BADGE[stem.host_platform] ?? PLATFORM_BADGE['Other'];
   const visibleTags = (stem.tags || []).slice(0, 3);
-
-  // Fetch album cover automatically from iTunes Search API if cover_url not provided
-  useEffect(() => {
-    if (stem.cover_url) {
-      setArtworkUrl(stem.cover_url);
-      setArtworkLoading(false);
-      return;
-    }
-
-    let isMounted = true;
-    const fetchArtwork = async () => {
-      try {
-        const query = encodeURIComponent(`${stem.artist} ${stem.title}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.results && data.results.length > 0) {
-            const hiresUrl = data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
-            if (isMounted) setArtworkUrl(hiresUrl);
-          }
-        }
-      } catch {
-        // Fallback to placeholder gradient
-      } finally {
-        if (isMounted) setArtworkLoading(false);
-      }
-    };
-
-    fetchArtwork();
-    return () => { isMounted = false; };
-  }, [stem.artist, stem.title, stem.cover_url]);
 
   const handleReport = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -103,19 +70,9 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
         localVerified && 'border-l-2 border-l-amber'
       )}
     >
-      {/* Upper 1/3: Album Artwork Cover */}
-      <div className="relative h-1/3 w-full overflow-hidden bg-surface-raised border-b border-border shrink-0">
-        {artworkUrl ? (
-          <img
-            src={artworkUrl}
-            alt={`${stem.title} by ${stem.artist}`}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-surface-raised via-obsidian to-surface flex items-center justify-center">
-            <Music className="w-8 h-8 text-amber/40" />
-          </div>
-        )}
+      {/* Upper 1/3: Top Header Banner */}
+      <div className="relative h-1/3 w-full overflow-hidden bg-gradient-to-br from-surface-raised via-obsidian to-surface border-b border-border shrink-0 flex items-center justify-center">
+        <Music className="w-8 h-8 text-amber/40" />
 
         {/* Top Badges overlay */}
         <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">

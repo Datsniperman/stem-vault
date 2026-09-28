@@ -33,7 +33,6 @@ import { AdminBar } from './AdminBar';
 
 interface StemDetailClientProps {
   stem: Stem;
-  artworkUrl: string | null;
   profile: Profile | null;
   initialComments: StemComment[];
   initialMixes: StemMix[];
@@ -44,7 +43,6 @@ interface StemDetailClientProps {
 
 export function StemDetailClient({
   stem,
-  artworkUrl,
   profile: serverProfile,
   initialComments,
   initialMixes,
@@ -258,19 +256,9 @@ export function StemDetailClient({
         <div className="bg-surface border border-border rounded-sm p-6 sm:p-10 space-y-8 shadow-xl">
 
           <div className="flex flex-col md:flex-row gap-8 items-start">
-            {/* Album Cover */}
-            <div className="w-44 h-44 sm:w-56 sm:h-56 rounded-sm overflow-hidden bg-surface-raised border border-border shrink-0 shadow-lg relative group">
-              {artworkUrl ? (
-                <img
-                  src={artworkUrl}
-                  alt={`${stem.title} by ${stem.artist}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-surface-raised via-obsidian to-surface flex items-center justify-center">
-                  <Music className="w-16 h-16 text-amber/40" />
-                </div>
-              )}
+            {/* Track Placeholder Banner */}
+            <div className="w-44 h-44 sm:w-56 sm:h-56 rounded-sm overflow-hidden bg-gradient-to-br from-surface-raised via-obsidian to-surface border border-border shrink-0 shadow-lg relative flex items-center justify-center">
+              <Music className="w-16 h-16 text-amber/40" />
             </div>
 
             {/* Track Info & Actions */}
