@@ -157,10 +157,10 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
           {/* Hidden handle automatically pulled from user profile */}
           <input type="hidden" name="uploader_handle" value={uploaderHandle} />
 
-          {/* Row 1: Title + Artist */}
+          {/* Row 1: Title + Church/Artist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Song Title *" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Gratitude" error={state.errors?.title} />
-            <Field label="Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Brandon Lake" error={state.errors?.artist} />
+            <Field label="Church Name / Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Elevation Worship" error={state.errors?.artist} />
           </div>
 
           {/* Row 2: Cloud Link */}

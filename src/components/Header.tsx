@@ -11,6 +11,7 @@ import { SubmitStemModal } from './SubmitStemModal';
 import { AdminModal } from './AdminModal';
 import { SettingsModal } from './SettingsModal';
 import { BugReportModal } from './BugReportModal';
+import { UpdateLogsModal } from './UpdateLogsModal';
 import { DisclaimerModal } from './DisclaimerModal';
 import Link from 'next/link';
 import { Stem } from '@/types';
@@ -34,6 +35,7 @@ export function Header({ onStemAdded }: HeaderProps) {
   const [adminOpen, setAdminOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bugReportOpen, setBugReportOpen] = useState(false);
+  const [updateLogsOpen, setUpdateLogsOpen] = useState(false);
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -66,6 +68,11 @@ export function Header({ onStemAdded }: HeaderProps) {
               <span className="font-body font-bold text-warm-white text-[15px] tracking-tight group-hover:text-amber transition-colors">
                 Stem Vault
               </span>
+              {process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' || process.env.NODE_ENV === 'development' ? (
+                <span className="text-[9px] font-mono font-bold bg-amber/20 text-amber border border-amber/40 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  BETA
+                </span>
+              ) : null}
             </Link>
 
             <Link
@@ -78,6 +85,13 @@ export function Header({ onStemAdded }: HeaderProps) {
 
           {/* Right */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setUpdateLogsOpen(true)}
+              className="hidden sm:flex items-center gap-1 text-xs font-body text-dim hover:text-amber border border-border hover:border-amber/40 px-2.5 py-1 rounded-sm transition-colors"
+            >
+              <span>✨ Update Logs</span>
+            </button>
+
             <button
               onClick={() => setBugReportOpen(true)}
               className="hidden sm:flex items-center gap-1 text-xs font-body text-dim hover:text-amber border border-border hover:border-amber/40 px-2.5 py-1 rounded-sm transition-colors"
@@ -176,6 +190,7 @@ export function Header({ onStemAdded }: HeaderProps) {
       />
       <AdminModal isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <UpdateLogsModal isOpen={updateLogsOpen} onClose={() => setUpdateLogsOpen(false)} />
       <BugReportModal isOpen={bugReportOpen} onClose={() => setBugReportOpen(false)} />
       <DisclaimerModal isOpen={disclaimerOpen} onClose={() => setDisclaimerOpen(false)} />
     </>

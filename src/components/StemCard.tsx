@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Flag, ExternalLink, Music, Info, Check, Tag } from 'lucide-react';
+import { Download, Flag, ExternalLink, Music2, Info, Check, Tag, Layers, Disc3 } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
 import { flagStem, incrementDownloadCount } from '@/app/actions/stems';
@@ -11,10 +11,10 @@ import { useToast } from '@/context/ToastContext';
 import { clsx } from 'clsx';
 
 const PLATFORM_BADGE: Record<string, string> = {
-  'Google Drive': 'bg-blue-950/70 text-blue-300 border-blue-800/60',
-  'Dropbox':      'bg-sky-950/70 text-sky-300 border-sky-800/60',
-  'OneDrive':     'bg-indigo-950/70 text-indigo-300 border-indigo-800/60',
-  'Box':          'bg-purple-950/70 text-purple-300 border-purple-800/60',
+  'Google Drive': 'bg-blue-950/60 text-blue-300 border-blue-800/50',
+  'Dropbox':      'bg-sky-950/60 text-sky-300 border-sky-800/50',
+  'OneDrive':     'bg-indigo-950/60 text-indigo-300 border-indigo-800/50',
+  'Box':          'bg-purple-950/60 text-purple-300 border-purple-800/50',
   'Other':        'bg-surface-raised text-mid border-border',
 };
 
@@ -55,7 +55,6 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Non-blocking download count increment
     incrementDownloadCount(stem.id).catch(() => {});
   };
 
@@ -65,82 +64,75 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
     <article
       onClick={() => router.push(`/stems/${stem.id}`)}
       className={clsx(
-        'group relative bg-surface border border-border flex flex-col aspect-square overflow-hidden rounded-sm cursor-pointer',
-        'hover:border-amber/50 transition-all duration-200 hover:shadow-[0_0_15px_rgba(0,229,255,0.08)]',
+        'group relative bg-surface border border-border flex flex-col justify-between overflow-hidden rounded-sm cursor-pointer p-5 space-y-4',
+        'hover:border-amber/60 transition-all duration-200 hover:shadow-[0_4px_24px_rgba(255,183,3,0.08)] hover:-translate-y-0.5',
         localVerified && 'border-l-2 border-l-amber'
       )}
     >
-      {/* Upper 1/3: Top Header Banner */}
-      <div className="relative h-1/3 w-full overflow-hidden bg-gradient-to-br from-surface-raised via-obsidian to-surface border-b border-border shrink-0 flex items-center justify-center">
-        <Music className="w-8 h-8 text-amber/40" />
-
-        {/* Top Badges overlay */}
-        <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-          <span className={clsx(
-            'text-[10px] font-body px-2 py-0.5 rounded-sm border shadow-sm backdrop-blur-md font-semibold pointer-events-auto',
-            platformBadge
-          )}>
-            {stem.host_platform}
-          </span>
-
-          {localVerified && (
-            <span className="text-[10px] font-body text-amber bg-obsidian/80 border border-amber/30 px-2 py-0.5 rounded-sm shadow-sm backdrop-blur-md font-bold flex items-center gap-1">
-              <Check className="w-3 h-3" /> PRO SESSION
-            </span>
+      {/* Top Header: Song Title & Church/Artist */}
+      <div className="space-y-1">
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="font-display text-xl text-warm-white leading-snug group-hover:text-amber transition-colors font-semibold">
+            {stem.title}
+          </h2>
+          {stem.description && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowNotes(n => !n); }}
+              title="Toggle special notes"
+              className="bg-obsidian border border-border hover:border-amber text-amber p-1.5 rounded transition-colors shrink-0 mt-0.5"
+            >
+              <Info className="w-3.5 h-3.5" />
+            </button>
           )}
         </div>
+        <p className="text-mid text-xs font-body font-medium">{stem.artist}</p>
+      </div>
 
-        {/* Description toggle button if description exists */}
-        {stem.description && (
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowNotes(n => !n); }}
-            title="Toggle special notes"
-            className="absolute bottom-2 right-2 bg-obsidian/80 hover:bg-obsidian border border-border hover:border-amber text-amber p-1 rounded transition-colors backdrop-blur-md"
-          >
-            <Info className="w-3.5 h-3.5" />
-          </button>
+      {/* Badges & Meta Info Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="w-7 h-7 bg-amber/10 border border-amber/30 rounded-sm flex items-center justify-center shrink-0 text-amber">
+          <Disc3 className="w-4 h-4 group-hover:rotate-45 transition-transform duration-300" />
+        </div>
+        <span className={clsx(
+          'text-[10px] font-body px-2 py-0.5 rounded-sm border font-semibold',
+          platformBadge
+        )}>
+          {stem.host_platform}
+        </span>
+        {localVerified && (
+          <span className="text-[10px] font-body text-amber bg-amber/10 border border-amber/30 px-2 py-0.5 rounded-sm font-bold flex items-center gap-1">
+            <Check className="w-3 h-3" /> PRO SESSION
+          </span>
         )}
       </div>
 
-      {/* Middle Content Section */}
-      <div className="p-4 flex-1 flex flex-col justify-between min-h-0 bg-surface">
-
+      {/* Main Content / Notes */}
+      <div className="space-y-3 flex-1">
         {showNotes && stem.description ? (
-          /* Notes overlay tab */
-          <div className="flex-1 overflow-y-auto pr-1 text-xs text-mid font-body space-y-1 animate-[fade-in_0.2s_ease-out]">
-            <p className="text-[10px] font-mono text-amber uppercase tracking-wider font-semibold">Special Notes / Details:</p>
+          <div className="bg-obsidian/60 border border-border/80 p-3 rounded text-xs font-body space-y-1 animate-[fade-in_0.2s_ease-out]">
+            <p className="text-[10px] font-mono text-amber uppercase tracking-wider font-semibold">Special Notes:</p>
             <p className="leading-relaxed text-warm-white whitespace-pre-wrap">{stem.description}</p>
           </div>
         ) : (
-          /* Title & Metadata */
-          <div className="space-y-2 min-h-0">
-            <div>
-              <h2 className="font-display text-lg sm:text-xl text-warm-white leading-snug truncate group-hover:text-amber transition-colors">
-                {stem.title}
-              </h2>
-              <p className="text-mid text-xs sm:text-sm font-body truncate mt-0.5">{stem.artist}</p>
-            </div>
-
+          <div className="space-y-2.5">
             {/* Metadata Pills */}
             <div className="flex flex-wrap items-center gap-1.5">
               {stem.avg_rating !== undefined && stem.avg_rating > 0 && (
-                <div className="flex items-center gap-1 bg-amber/10 border border-amber/30 text-amber rounded-sm px-1.5 py-0.5 text-xs font-body font-bold">
+                <div className="flex items-center gap-1 bg-amber/10 border border-amber/30 text-amber rounded-sm px-2 py-0.5 text-xs font-body font-bold">
                   <span>★</span>
                   <span>{stem.avg_rating}</span>
-                  <span className="text-[10px] text-amber/70 font-normal">({stem.rating_count || 0})</span>
                 </div>
               )}
               {stem.comment_count !== undefined && stem.comment_count > 0 && (
-                <div className="flex items-center gap-1 bg-surface-raised border border-border text-mid rounded-sm px-1.5 py-0.5 text-xs font-body font-semibold">
-                  <span>💬</span>
-                  <span>{stem.comment_count}</span>
+                <div className="flex items-center gap-1 bg-surface-raised border border-border text-mid rounded-sm px-2 py-0.5 text-xs font-body font-semibold">
+                  <span>💬 {stem.comment_count}</span>
                 </div>
               )}
               {stem.bpm && <MetaPill label="BPM" value={String(stem.bpm)} />}
               {stem.key && <MetaPill label="KEY" value={stem.key} />}
-              {stem.track_count && <MetaPill label="TRACKS" value={String(stem.track_count)} />}
+              {stem.track_count && <MetaPill label="STEMS" value={String(stem.track_count)} />}
               {stem.format && (
-                <span className="text-[10px] font-body text-dim border border-border px-1.5 py-0.5 rounded-sm">
+                <span className="text-[10px] font-body text-dim border border-border px-2 py-0.5 rounded-sm">
                   {formatShort(stem.format)}
                 </span>
               )}
@@ -148,64 +140,63 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
             {/* Tags */}
             {visibleTags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {visibleTags.map(tag => (
-                  <span key={tag} className="text-[10px] font-body text-dim/80 bg-surface-raised border border-border/60 px-1.5 py-0.5 rounded-sm">
-                    {tag}
+                  <span key={tag} className="text-[10px] font-body text-dim/80 bg-surface-raised border border-border/60 px-2 py-0.5 rounded-sm">
+                    #{tag}
                   </span>
                 ))}
               </div>
             )}
           </div>
         )}
+      </div>
 
-        {/* Footer row inside 1:1 box */}
-        <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2 mt-auto shrink-0">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Link
-              href={`/user/${encodeURIComponent(stem.uploader_handle.replace(/^@/, ''))}`}
-              onClick={e => e.stopPropagation()}
-              className="text-[11px] text-dim font-body truncate hover:text-amber hover:underline transition-colors"
-            >
-              {stem.uploader_handle}
-            </Link>
-            <span className="text-dim text-[10px]">-</span>
-            <span className="text-[11px] text-dim font-body shrink-0">{timeAgo}</span>
-            {isAdmin && (
-              <div onClick={e => e.stopPropagation()}>
-                <AdminBar
-                  stemId={stem.id}
-                  uploaderId={stem.user_id}
-                  isVerified={localVerified}
-                  onDelete={onDelete}
-                  onVerifyToggle={handleVerifyToggle}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={handleReport}
-              disabled={reporting}
-              title="Report link"
-              className="p-1 text-dim hover:text-error transition-colors disabled:opacity-40"
-            >
-              <Flag className="w-3.5 h-3.5" />
-            </button>
-            <a
-              href={stem.download_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={handleDownload}
-              className="flex items-center gap-1 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-2.5 py-1.5 rounded-sm transition-colors uppercase tracking-wider"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Get</span>
-            </a>
-          </div>
+      {/* Footer / Uploader & Actions */}
+      <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-dim font-body">
+          <Link
+            href={`/user/${encodeURIComponent(stem.uploader_handle.replace(/^@/, ''))}`}
+            onClick={e => e.stopPropagation()}
+            className="hover:text-amber hover:underline transition-colors font-medium text-warm-white/90"
+          >
+            {stem.uploader_handle}
+          </Link>
+          <span>•</span>
+          <span>{timeAgo}</span>
+          {isAdmin && (
+            <div onClick={e => e.stopPropagation()}>
+              <AdminBar
+                stemId={stem.id}
+                uploaderId={stem.user_id}
+                isVerified={localVerified}
+                onDelete={onDelete}
+                onVerifyToggle={handleVerifyToggle}
+              />
+            </div>
+          )}
         </div>
 
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleReport}
+            disabled={reporting}
+            title="Report link"
+            className="p-1 text-dim hover:text-error transition-colors disabled:opacity-40"
+          >
+            <Flag className="w-3.5 h-3.5" />
+          </button>
+          <a
+            href={stem.download_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleDownload}
+            className="flex items-center gap-1.5 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-4 py-2 rounded-sm transition-colors uppercase tracking-wider shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Get Stems</span>
+          </a>
+        </div>
       </div>
     </article>
   );
