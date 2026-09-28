@@ -28,39 +28,6 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
 
   const [likingMap, setLikingMap] = useState<Record<string, boolean>>({});
   const [localMixes, setLocalMixes] = useState<Record<string, StemMix[]>>({});
-  const [artworkUrl, setArtworkUrl] = useState<string | null>(trackOfTheWeek?.cover_url || null);
-
-  // Fetch artwork dynamically from iTunes Search API if not explicit on stem
-  useEffect(() => {
-    if (!trackOfTheWeek) return;
-    if (trackOfTheWeek.cover_url) {
-      setArtworkUrl(trackOfTheWeek.cover_url);
-      return;
-    }
-
-    let isMounted = true;
-    const fetchArtwork = async () => {
-      try {
-        const query = encodeURIComponent(`${trackOfTheWeek.title} ${trackOfTheWeek.artist}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=3`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.results && data.results.length > 0) {
-            const match = data.results.find((r: any) =>
-              r.trackName.toLowerCase().includes(trackOfTheWeek.title.toLowerCase())
-            ) || data.results[0];
-            const hiresUrl = match.artworkUrl100.replace('100x100bb', '600x600bb');
-            if (isMounted) setArtworkUrl(hiresUrl);
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    };
-
-    fetchArtwork();
-    return () => { isMounted = false; };
-  }, [trackOfTheWeek?.artist, trackOfTheWeek?.title, trackOfTheWeek?.cover_url]);
 
   const handleLike = async (mixId: string, stemId: string) => {
     if (!user) {
