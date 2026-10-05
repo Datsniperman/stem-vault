@@ -1,13 +1,14 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Music2, Clock, CheckCircle, Flag, Trash2, ExternalLink, Check, Tag } from 'lucide-react';
+import { ArrowLeft, Music2, Clock, CheckCircle, Flag, Trash2, ExternalLink, Check, Tag, Edit3 } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { deleteStem } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
 import { Header } from '@/components/Header';
 import { clsx } from 'clsx';
+import { EditStemModal } from './EditStemModal';
 
 interface ProfileClientProps {
   profile: Profile | null;
@@ -24,6 +25,7 @@ export function ProfileClient({ profile, stems: initialStems }: ProfileClientPro
   const { addToast } = useToast();
   const [stems, setStems] = useState<Stem[]>(initialStems);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [editingStem, setEditingStem] = useState<Stem | null>(null);
 
   const handle = profile?.display_name
     ? `@${profile.display_name}`
@@ -40,6 +42,10 @@ export function ProfileClient({ profile, stems: initialStems }: ProfileClientPro
       addToast(res.message, 'error');
     }
     setDeleting(null);
+  };
+
+  const handleStemUpdated = (updatedStem: Stem) => {
+    setStems(prev => prev.map(s => s.id === updatedStem.id ? updatedStem : s));
   };
 
   const publishedCount = stems.filter(s => s.status === 'published').length;
@@ -158,7 +164,7 @@ export function ProfileClient({ profile, stems: initialStems }: ProfileClientPro
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-2 shrink-0">
+                  <div className="flex flex-col gap-2 shrink-0 items-end">
                     {stem.status === 'published' && (
                       <Link
                         href={`/stems/${stem.id}`}
@@ -167,6 +173,13 @@ export function ProfileClient({ profile, stems: initialStems }: ProfileClientPro
                         View <ExternalLink className="w-3 h-3" />
                       </Link>
                     )}
+                    <button
+                      onClick={() => setEditingStem(stem)}
+                      title="Edit submission"
+                      className="p-1.5 text-dim hover:text-amber hover:bg-amber/10 rounded transition-colors"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleDelete(stem.id)}
                       disabled={deleting === stem.id}
@@ -182,6 +195,13 @@ export function ProfileClient({ profile, stems: initialStems }: ProfileClientPro
           )}
         </div>
       </div>
+
+      <EditStemModal
+        isOpen={!!editingStem}
+        stem={editingStem}
+        onClose={() => setEditingStem(null)}
+        onStemUpdated={handleStemUpdated}
+      />
     </div>
   );
 }

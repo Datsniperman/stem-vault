@@ -21,6 +21,7 @@ import {
   ArrowLeft,
   Trash2,
   Tag,
+  Edit3,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Stem, Profile, StemComment, StemMix } from '@/types';
@@ -30,6 +31,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/Header';
 import { clsx } from 'clsx';
 import { AdminBar } from './AdminBar';
+import { EditStemModal } from './EditStemModal';
 
 interface StemDetailClientProps {
   stem: Stem;
@@ -83,12 +85,19 @@ export function StemDetailClient({
   const [mixDesc, setMixDesc] = useState('');
   const [mixLoading, setMixLoading] = useState(false);
 
+  // Stem local state & Edit Modal
+  const [stemData, setStemData] = useState<Stem>(stem);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   // Status & Local state
   const [reporting, setReporting] = useState(false);
   const [localVerified, setLocalVerified] = useState(stem.is_verified);
 
   const isAdmin = profile?.role === 'admin';
-  const formattedDate = new Date(stem.created_at).toLocaleDateString('en-US', {
+  const isOwner = user?.id && user.id === stemData.user_id;
+  const canEdit = isOwner || isAdmin;
+
+  const formattedDate = new Date(stemData.created_at).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -332,21 +341,31 @@ export function StemDetailClient({
               {/* Primary Action Buttons */}
               <div className="pt-4 flex flex-wrap items-center gap-4">
                 <a
-                  href={stem.download_url}
+                  href={stemData.download_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={handleDownload}
                   className="flex items-center gap-2 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-sm px-6 py-3 rounded-sm transition-colors uppercase tracking-wider shadow-lg hover:shadow-amber/20"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download Stems ({stem.host_platform})</span>
+                  <span>Download Stems ({stemData.host_platform})</span>
                   <ExternalLink className="w-4 h-4 opacity-75 ml-1" />
                 </a>
+
+                {canEdit && (
+                  <button
+                    onClick={() => setIsEditOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-body font-bold text-warm-white bg-surface-raised border border-border hover:border-amber hover:text-amber px-4 py-3 rounded-sm transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4 text-amber" />
+                    <span>Edit Session</span>
+                  </button>
+                )}
 
                 {isAdmin && (
                   <button
                     onClick={async () => {
-                      const res = await setTrackOfTheWeek(stem.id);
+                      const res = await setTrackOfTheWeek(stemData.id);
                       if (res.success) {
                         addToast(res.message, 'success');
                       } else {
@@ -356,7 +375,7 @@ export function StemDetailClient({
                     className="flex items-center gap-1.5 text-xs font-body font-bold text-amber border border-amber/50 hover:bg-amber/10 px-4 py-3 rounded-sm transition-colors"
                   >
                     <Star className="w-4 h-4 fill-amber" />
-                    <span>{stem.tags?.includes('track of the week') ? 'Track of the Week Active' : 'Make Track of the Week'}</span>
+                    <span>{stemData.tags?.includes('track of the week') ? 'Track of the Week Active' : 'Make Track of the Week'}</span>
                   </button>
                 )}
 
@@ -372,6 +391,13 @@ export function StemDetailClient({
 
             </div>
           </div>
+
+          <EditStemModal
+            isOpen={isEditOpen}
+            stem={stemData}
+            onClose={() => setIsEditOpen(false)}
+            onStemUpdated={(updated) => setStemData(updated)}
+          />
 
           {/* Technical Specs Grid */}
           <div className="space-y-3 pt-2">

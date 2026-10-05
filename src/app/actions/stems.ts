@@ -141,6 +141,132 @@ export async function submitStem(
   }
 }
 
+export async function updateStem(
+  stemId: string,
+  formData: FormData
+): Promise<{ success: boolean; message: string; stem?: Stem; errors?: Record<string, string> }> {
+  const errors: Record<string, string> = {};
+
+  const title        = sanitizeText(formData.get('title') as string || '', 200);
+  const artist       = sanitizeText(formData.get('artist') as string || '', 200);
+  const downloadUrl  = (formData.get('download_url') as string || '').trim();
+  const hostPlatform = sanitizeText(formData.get('host_platform') as string || 'Google Drive', 50);
+  const format       = sanitizeText(formData.get('format') as string || 'WAV (48kHz/24-bit)', 50);
+  const keyVal       = sanitizeText(formData.get('key') as string || '', 10);
+  const description  = sanitizeText(formData.get('description') as string || '', 1000);
+  const tagsRaw      = (formData.get('tags') as string || '');
+  const tags         = parseTags(tagsRaw);
+
+  const bpmRaw        = parseInt(formData.get('bpm') as string || '');
+  const trackCountRaw = parseInt(formData.get('track_count') as string || '');
+
+  if (!title) errors.title = 'Song title is required.';
+  if (!artist) errors.artist = 'Artist name is required.';
+  if (!downloadUrl) {
+    errors.download_url = 'Download link is required.';
+  } else if (!isValidUrl(downloadUrl)) {
+    errors.download_url = 'Must be a valid https:// URL.';
+  }
+
+  const bpm        = isNaN(bpmRaw) ? null : bpmRaw;
+  const trackCount = isNaN(trackCountRaw) ? null : trackCountRaw;
+
+  if (bpm !== null && (bpm < 30 || bpm > 300))           errors.bpm = 'BPM must be between 30 and 300.';
+  if (trackCount !== null && (trackCount < 1 || trackCount > 128)) errors.track_count = 'Track count must be between 1 and 128.';
+
+  if (Object.keys(errors).length > 0) {
+    return { success: false, message: 'Please fix the errors below.', errors };
+  }
+
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const supabase = supabaseAdmin || supabaseServer;
+
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    // Fetch existing stem to check ownership & current profile role
+    const { data: existingStem, error: fetchErr } = await supabase
+      .from('stems')
+      .select('*')
+      .eq('id', stemId)
+      .single();
+
+    if (fetchErr || !existingStem) {
+      return { success: false, message: 'Stem not found.' };
+    }
+
+    let isAllowed = false;
+    let isAdmin = false;
+
+    if (supabaseServer) {
+      const { data: { user } } = await supabaseServer.auth.getUser();
+      if (user) {
+        if (user.id === existingStem.user_id) {
+          isAllowed = true;
+        }
+        const { data: profile } = await supabaseServer
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (profile?.role === 'admin') {
+          isAllowed = true;
+          isAdmin = true;
+        }
+      }
+    }
+
+    // Fallback: if supabaseAdmin was created, allow admin update
+    if (!isAllowed && supabaseAdmin) {
+      isAllowed = true;
+      isAdmin = true;
+    }
+
+    if (!isAllowed) {
+      return { success: false, message: 'Unauthorized. You can only edit your own submissions unless you are an admin.' };
+    }
+
+    // Perform update
+    const { data: updatedStem, error: updateErr } = await supabase
+      .from('stems')
+      .update({
+        title,
+        artist,
+        bpm,
+        key: keyVal || null,
+        track_count: trackCount,
+        format,
+        host_platform: hostPlatform,
+        download_url: downloadUrl,
+        description: description || null,
+        tags,
+      })
+      .eq('id', stemId)
+      .select()
+      .single();
+
+    if (updateErr) {
+      console.error('[updateStem] Update error:', updateErr);
+      return { success: false, message: `Update failed: ${updateErr.message}` };
+    }
+
+    revalidatePath('/');
+    revalidatePath('/profile');
+    revalidatePath(`/stems/${stemId}`);
+    revalidatePath('/showcase');
+
+    return {
+      success: true,
+      message: '✓ Stem session updated successfully!',
+      stem: updatedStem as Stem,
+    };
+  } catch (err: any) {
+    console.error('[updateStem] Unexpected error:', err);
+    return { success: false, message: 'An unexpected error occurred while updating.' };
+  }
+}
+
 export async function deleteStem(id: string): Promise<{ success: boolean; message: string }> {
   try {
     const supabaseServer = await createSupabaseServerClient();

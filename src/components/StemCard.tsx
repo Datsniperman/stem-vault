@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Flag, ExternalLink, Music2, Info, Check, Tag, Layers, Disc3 } from 'lucide-react';
+import { Download, Flag, ExternalLink, Music2, Info, Check, Tag, Layers, Disc3, Edit3 } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
 import { flagStem, incrementDownloadCount } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
 import { clsx } from 'clsx';
+import { EditStemModal } from './EditStemModal';
 
 const PLATFORM_BADGE: Record<string, string> = {
   'Google Drive': 'bg-blue-950/60 text-blue-300 border-blue-800/50',
@@ -24,23 +25,37 @@ interface StemCardProps {
   onDelete: (id: string) => void;
   onVerifyToggle: (id: string, verified: boolean) => void;
   onClick?: (artworkUrl: string | null) => void;
+  onStemUpdated?: (updatedStem: Stem) => void;
 }
 
-export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: StemCardProps) {
+export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle, onClick, onStemUpdated }: StemCardProps) {
   const router = useRouter();
   const { addToast } = useToast();
+  const [stemData, setStemData] = useState<Stem>(initialStem);
   const [reporting, setReporting] = useState(false);
-  const [localVerified, setLocalVerified] = useState(stem.is_verified);
+  const [localVerified, setLocalVerified] = useState(initialStem.is_verified);
   const [showNotes, setShowNotes] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
-  const platformBadge = PLATFORM_BADGE[stem.host_platform] ?? PLATFORM_BADGE['Other'];
-  const visibleTags = (stem.tags || []).slice(0, 3);
+  const isOwner = profile?.id && profile.id === stemData.user_id;
+  const canEdit = isOwner || isAdmin;
+
+  const platformBadge = PLATFORM_BADGE[stemData.host_platform] ?? PLATFORM_BADGE['Other'];
+  const visibleTags = (stemData.tags || []).slice(0, 3);
+
+  const handleStemUpdated = (updatedStem: Stem) => {
+    setStemData(updatedStem);
+    setLocalVerified(updatedStem.is_verified);
+    if (onStemUpdated) {
+      onStemUpdated(updatedStem);
+    }
+  };
 
   const handleReport = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setReporting(true);
-    const result = await flagStem(stem.id);
+    const result = await flagStem(stemData.id);
     addToast(
       result.success ? 'Link reported - thanks for keeping the archive clean.' : result.message,
       result.success ? 'info' : 'error'
@@ -55,14 +70,14 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    incrementDownloadCount(stem.id).catch(() => {});
+    incrementDownloadCount(stemData.id).catch(() => {});
   };
 
-  const timeAgo = getTimeAgo(stem.created_at);
+  const timeAgo = getTimeAgo(stemData.created_at);
 
   return (
     <article
-      onClick={() => router.push(`/stems/${stem.id}`)}
+      onClick={() => router.push(`/stems/${stemData.id}`)}
       className={clsx(
         'group relative bg-surface border border-border flex flex-col justify-between overflow-hidden rounded-sm cursor-pointer p-5 space-y-4',
         'hover:border-amber/60 transition-all duration-200 hover:shadow-[0_4px_24px_rgba(255,183,3,0.08)] hover:-translate-y-0.5',
@@ -73,9 +88,9 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
       <div className="space-y-1">
         <div className="flex items-start justify-between gap-3">
           <h2 className="font-display text-xl text-warm-white leading-snug group-hover:text-amber transition-colors font-semibold">
-            {stem.title}
+            {stemData.title}
           </h2>
-          {stem.description && (
+          {stemData.description && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowNotes(n => !n); }}
               title="Toggle special notes"
@@ -85,7 +100,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
             </button>
           )}
         </div>
-        <p className="text-mid text-xs font-body font-medium">{stem.artist}</p>
+        <p className="text-mid text-xs font-body font-medium">{stemData.artist}</p>
       </div>
 
       {/* Badges & Meta Info Row */}
@@ -97,7 +112,7 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
           'text-[10px] font-body px-2 py-0.5 rounded-sm border font-semibold',
           platformBadge
         )}>
-          {stem.host_platform}
+          {stemData.host_platform}
         </span>
         {localVerified && (
           <span className="text-[10px] font-body text-amber bg-amber/10 border border-amber/30 px-2 py-0.5 rounded-sm font-bold flex items-center gap-1">
@@ -108,32 +123,32 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
 
       {/* Main Content / Notes */}
       <div className="space-y-3 flex-1">
-        {showNotes && stem.description ? (
+        {showNotes && stemData.description ? (
           <div className="bg-obsidian/60 border border-border/80 p-3 rounded text-xs font-body space-y-1 animate-[fade-in_0.2s_ease-out]">
             <p className="text-[10px] font-mono text-amber uppercase tracking-wider font-semibold">Special Notes:</p>
-            <p className="leading-relaxed text-warm-white whitespace-pre-wrap">{stem.description}</p>
+            <p className="leading-relaxed text-warm-white whitespace-pre-wrap">{stemData.description}</p>
           </div>
         ) : (
           <div className="space-y-2.5">
             {/* Metadata Pills */}
             <div className="flex flex-wrap items-center gap-1.5">
-              {stem.avg_rating !== undefined && stem.avg_rating > 0 && (
+              {stemData.avg_rating !== undefined && stemData.avg_rating > 0 && (
                 <div className="flex items-center gap-1 bg-amber/10 border border-amber/30 text-amber rounded-sm px-2 py-0.5 text-xs font-body font-bold">
                   <span>★</span>
-                  <span>{stem.avg_rating}</span>
+                  <span>{stemData.avg_rating}</span>
                 </div>
               )}
-              {stem.comment_count !== undefined && stem.comment_count > 0 && (
+              {stemData.comment_count !== undefined && stemData.comment_count > 0 && (
                 <div className="flex items-center gap-1 bg-surface-raised border border-border text-mid rounded-sm px-2 py-0.5 text-xs font-body font-semibold">
-                  <span>💬 {stem.comment_count}</span>
+                  <span>💬 {stemData.comment_count}</span>
                 </div>
               )}
-              {stem.bpm && <MetaPill label="BPM" value={String(stem.bpm)} />}
-              {stem.key && <MetaPill label="KEY" value={stem.key} />}
-              {stem.track_count && <MetaPill label="STEMS" value={String(stem.track_count)} />}
-              {stem.format && (
+              {stemData.bpm && <MetaPill label="BPM" value={String(stemData.bpm)} />}
+              {stemData.key && <MetaPill label="KEY" value={stemData.key} />}
+              {stemData.track_count && <MetaPill label="STEMS" value={String(stemData.track_count)} />}
+              {stemData.format && (
                 <span className="text-[10px] font-body text-dim border border-border px-2 py-0.5 rounded-sm">
-                  {formatShort(stem.format)}
+                  {formatShort(stemData.format)}
                 </span>
               )}
             </div>
@@ -156,19 +171,19 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
       <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex flex-wrap items-center gap-1.5 text-xs text-dim font-body">
           <Link
-            href={`/user/${encodeURIComponent(stem.uploader_handle.replace(/^@/, ''))}`}
+            href={`/user/${encodeURIComponent(stemData.uploader_handle.replace(/^@/, ''))}`}
             onClick={e => e.stopPropagation()}
             className="hover:text-amber hover:underline transition-colors font-medium text-warm-white/90"
           >
-            {stem.uploader_handle}
+            {stemData.uploader_handle}
           </Link>
           <span>•</span>
           <span>{timeAgo}</span>
           {isAdmin && (
             <div onClick={e => e.stopPropagation()}>
               <AdminBar
-                stemId={stem.id}
-                uploaderId={stem.user_id}
+                stemId={stemData.id}
+                uploaderId={stemData.user_id}
                 isVerified={localVerified}
                 onDelete={onDelete}
                 onVerifyToggle={handleVerifyToggle}
@@ -186,8 +201,17 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
           >
             <Flag className="w-3.5 h-3.5" />
           </button>
+          {canEdit && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsEditOpen(true); }}
+              title="Edit session details"
+              className="p-1 text-dim hover:text-amber transition-colors"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </button>
+          )}
           <a
-            href={stem.download_url}
+            href={stemData.download_url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleDownload}
@@ -198,6 +222,13 @@ export function StemCard({ stem, profile, onDelete, onVerifyToggle, onClick }: S
           </a>
         </div>
       </div>
+
+      <EditStemModal
+        isOpen={isEditOpen}
+        stem={stemData}
+        onClose={() => setIsEditOpen(false)}
+        onStemUpdated={handleStemUpdated}
+      />
     </article>
   );
 }
