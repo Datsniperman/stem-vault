@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.3.0",
+    "date": "2026-10-05",
+    "title": "Stem Session Editing & Management",
+    "changes": [
+      "Added ability for session uploaders to edit session details (title, artist, cloud link, format, BPM, key, tags, description) post-approval.",
+      "Admin override functionality allowing administrators to edit any submission across the platform.",
+      "Integrated edit modals across main cards, detail pages, and personal profile dashboards."
+    ]
+  },
+  {
     "version": "1.2.0",
     "date": "2026-09-14",
     "title": "Beta Workflow & Redesigned Session Cards",
