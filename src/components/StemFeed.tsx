@@ -3,12 +3,12 @@
 import { useState, useMemo } from 'react';
 import { Stem, FilterType, SortType } from '@/types';
 import { StemCard } from './StemCard';
-import { StemDetailModal } from './StemDetailModal';
 import { FilterRail } from './FilterRail';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { DisclaimerModal } from './DisclaimerModal';
 import { useAuth } from '@/context/AuthContext';
+import { Search, Music2, SlidersHorizontal, Sparkles } from 'lucide-react';
 
 interface StemFeedProps {
   initialStems: Stem[];
@@ -22,7 +22,6 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('');
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
-  const [selectedStem, setSelectedStem] = useState<{ stem: Stem; artworkUrl: string | null } | null>(null);
 
   const handleStemAdded = (stem: Stem) => {
     setStems(prev => [stem, ...prev]);
@@ -64,16 +63,15 @@ export function StemFeed({ initialStems }: StemFeedProps) {
     } else if (sort === 'most_downloaded') {
       result = [...result].sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0));
     }
-    // 'newest' is already the default order from the server
 
     return result;
   }, [stems, search, activeFilter, activeTag, sort]);
 
-  const totalTracks    = stems.reduce((sum, s) => sum + (s.track_count ?? 0), 0);
+  const totalTracks = stems.reduce((sum, s) => sum + (s.track_count ?? 0), 0);
   const activeEngineers = new Set(stems.map(s => s.uploader_handle)).size;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-surface text-warm-white">
       <Header onStemAdded={handleStemAdded} />
 
       <Hero
@@ -82,84 +80,89 @@ export function StemFeed({ initialStems }: StemFeedProps) {
         activeEngineers={activeEngineers}
       />
 
-      {/* Main content */}
-      <div className="max-w-7xl mx-auto w-full px-5 sm:px-8 py-10 space-y-8">
+      {/* Main Content Layout with M3 FilterRail & Stem Cards */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-        {/* Prominent Full-Width Search Header */}
-        <div className="bg-surface border border-amber/30 p-5 sm:p-6 rounded-sm shadow-xl space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="font-display text-xl sm:text-2xl text-warm-white font-semibold">Search Session Archive</h2>
-              <p className="text-xs text-dim font-body mt-0.5">Find worship multitracks by song title, church/artist name, or uploader handle.</p>
-            </div>
-            <span className="text-xs font-mono text-amber bg-amber/10 border border-amber/30 px-3 py-1 rounded-sm shrink-0 self-start sm:self-auto font-semibold">
-              {filtered.length} {filtered.length === 1 ? 'session' : 'sessions'} available
-            </span>
-          </div>
+          {/* Left Rail: M3 Filter, Search & Tag Drawer */}
+          <FilterRail
+            activeFilter={activeFilter}
+            sort={sort}
+            search={search}
+            activeTag={activeTag}
+            onFilterChange={setActiveFilter}
+            onSortChange={setSort}
+            onSearchChange={setSearch}
+            onTagChange={setActiveTag}
+            resultCount={filtered.length}
+          />
 
-          <div className="relative pt-1">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none text-amber">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+          {/* Main Feed */}
+          <main className="flex-1 w-full min-w-0">
+            {/* Feed Top Status Bar */}
+            <div className="flex items-center justify-between mb-6 pb-2 border-b border-border/40">
+              <div className="flex items-center gap-2">
+                <Music2 className="w-5 h-5 text-amber" />
+                <h2 className="font-display text-lg sm:text-xl font-bold tracking-tight text-warm-white">
+                  Session Feed
+                </h2>
+                {activeFilter !== 'All' && (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber/15 text-amber border border-amber/30 font-medium">
+                    {activeFilter}
+                  </span>
+                )}
+                {activeTag && (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-surface-high text-warm-white border border-border font-medium">
+                    #{activeTag}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-mono text-dim">
+                Showing {filtered.length} of {stems.length}
+              </span>
             </div>
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by song name, church/artist, or handle (e.g. Compassion, Elevation, @tyler)..."
-              className="
-                w-full bg-obsidian border border-border focus:border-amber rounded-sm
-                pl-12 pr-10 py-3.5 font-body text-base text-warm-white
-                placeholder:text-dim/70 focus:outline-none focus:ring-1 focus:ring-amber/50 transition-all shadow-inner
-              "
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dim hover:text-amber transition-colors p-1"
-                aria-label="Clear search"
-              >
-                ✕
-              </button>
+
+            {filtered.length === 0 ? (
+              <EmptyState
+                query={search}
+                hasStems={stems.length > 0}
+                onReset={() => { setSearch(''); setActiveFilter('All'); setActiveTag(''); }}
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-5">
+                {filtered.map(stem => (
+                  <StemCard
+                    key={stem.id}
+                    stem={stem}
+                    profile={profile}
+                    onDelete={handleDelete}
+                    onVerifyToggle={handleVerifyToggle}
+                  />
+                ))}
+              </div>
             )}
-          </div>
-        </div>
+          </main>
 
-        {/* Stem Feed Grid */}
-        <main className="w-full">
-          {filtered.length === 0 ? (
-            <EmptyState query={search} hasStems={stems.length > 0} />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map(stem => (
-                <StemCard
-                  key={stem.id}
-                  stem={stem}
-                  profile={profile}
-                  onDelete={handleDelete}
-                  onVerifyToggle={handleVerifyToggle}
-                />
-              ))}
-            </div>
-          )}
-        </main>
+        </div>
       </div>
 
-      <footer className="mt-auto border-t border-border">
+      {/* M3 Tonal Footer */}
+      <footer className="mt-auto border-t border-border/60 bg-surface-raised/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-xs font-body text-dim">
-            <span>Stem Vault - Community worship multitrack archive</span>
+          <div className="flex items-center gap-3 text-xs font-body text-dim">
+            <span className="font-medium text-warm-white">The Mixing Vault</span>
+            <span>•</span>
+            <span>Tyler Kerpsack All Access</span>
             <span>•</span>
             <button
               onClick={() => setDisclaimerOpen(true)}
               className="text-amber hover:underline transition-colors font-medium"
             >
-              Disclaimer & Terms
+              Terms & Legal
             </button>
           </div>
           <p className="text-dim text-xs font-body">
-            All links are community-sourced. Verify before use.
+            Community Multitrack Audio Exchange • All links verified by member submissions
           </p>
         </div>
       </footer>
@@ -169,23 +172,36 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   );
 }
 
-function EmptyState({ query, hasStems }: { query: string; hasStems: boolean }) {
+function EmptyState({
+  query,
+  hasStems,
+  onReset,
+}: {
+  query: string;
+  hasStems: boolean;
+  onReset: () => void;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center py-28 text-center">
-      <h3
-        className="font-display italic text-dim mb-3"
-        style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}
-      >
-        {hasStems ? 'No matches' : 'Nothing here yet'}
+    <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-surface-raised/40 border border-border/60 rounded-3xl p-8 shadow-m3-1">
+      <div className="w-16 h-16 rounded-full bg-surface-high border border-border/80 flex items-center justify-center text-dim mb-4">
+        <Search className="w-8 h-8 text-amber/60" />
+      </div>
+      <h3 className="font-display text-2xl font-bold text-warm-white mb-2">
+        {hasStems ? 'No matching multitracks' : 'Vault archive is empty'}
       </h3>
-      <p className="text-dim text-sm font-body max-w-sm">
-        {query
-          ? <>No results for <span className="text-amber">"{query}"</span>. Try a different search.</>
-          : hasStems
-          ? 'Try adjusting your filters.'
-          : 'Be the first to submit a multitrack session to the archive.'
-        }
+      <p className="text-sm font-body text-dim max-w-md mb-6 leading-relaxed">
+        {hasStems
+          ? `We couldn't find any sessions matching your query "${query}". Try adjusting keywords, removing tag filters, or resetting your search.`
+          : 'Be the first engineer to publish a multitrack pack to the community!'}
       </p>
+      {hasStems && (
+        <button
+          onClick={onReset}
+          className="inline-flex items-center gap-2 bg-surface-high hover:bg-surface-raised text-warm-white border border-border px-5 py-2.5 rounded-full text-xs font-medium transition-all shadow-m3-1 hover:shadow-m3-2"
+        >
+          Reset All Filters
+        </button>
+      )}
     </div>
   );
 }

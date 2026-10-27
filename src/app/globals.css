@@ -1,38 +1,63 @@
 @import "tailwindcss";
 
-/* ── Design Tokens ─────────────────────────────────────────────────────── */
+/* ── Material Design 3 Design Tokens ───────────────────────────────────────── */
 @theme {
-  /* Palette */
-  --color-obsidian:      #08090B;
-  --color-surface:       #111215;
-  --color-surface-raised: #18191E;
-  --color-border:        #23252B;
-  --color-border-warm:   #1E2C33;
-  --color-amber:         #00E5FF; /* Cyan Primary */
-  --color-amber-muted:   #33ECFF;
-  --color-amber-dim:     rgba(0, 229, 255, 0.12);
-  --color-cyan-glow:     rgba(0, 229, 255, 0.25);
-  --color-warm-white:    #E8E4DE;
-  --color-mid:           #9A9690;
-  --color-dim:           #5E5C58;
-  --color-error:         #D95252;
-  --color-verified:      #00E5FF;
-  --color-verified-dim:  rgba(0, 229, 255, 0.12);
+  /* M3 Dark Surfaces & Containers */
+  --color-obsidian:             #0E1015; /* Base Scaffold */
+  --color-surface:              #14171E; /* Surface Container Low */
+  --color-surface-raised:       #1B1E26; /* Surface Container */
+  --color-surface-high:         #232733; /* Surface Container High */
+  --color-surface-highest:      #2B303E; /* Surface Container Highest */
+  
+  /* M3 Outlines & Dividers */
+  --color-border:               #2E3342; /* Outline Variant */
+  --color-border-warm:          #3E4456; /* Outline */
+  
+  /* M3 Primary (Material Amber / Sun Accent) */
+  --color-amber:                #FFB836; /* Primary */
+  --color-amber-muted:          #FFC866; /* Primary Hover */
+  --color-amber-dim:            rgba(255, 184, 54, 0.14); /* Primary Container Tonal */
+  --color-amber-container:      #332200; /* Dark Primary Container */
+  
+  /* M3 Secondary (Discord Iris / Blurple) */
+  --color-discord:              #5865F2;
+  --color-discord-hover:        #4752C4;
+  --color-discord-dim:          rgba(88, 101, 242, 0.16);
+  
+  /* M3 Tertiary (Studio Mint / Cyan) */
+  --color-cyan:                 #38BDF8;
+  --color-cyan-glow:            rgba(56, 189, 248, 0.2);
+  
+  /* Typography Colors */
+  --color-warm-white:           #ECEFF4; /* On-Surface */
+  --color-mid:                  #C3C8D4; /* On-Surface Variant */
+  --color-dim:                  #7B8294; /* Outline / Subtext */
+  
+  /* System States */
+  --color-error:                #FF6B6B;
+  --color-verified:             #FFB836;
+  --color-verified-dim:         rgba(255, 184, 54, 0.14);
 
   /* Typography */
-  --font-display: var(--font-playfair), Georgia, 'Times New Roman', serif;
-  --font-body:    var(--font-space-grotesk), system-ui, sans-serif;
-  --font-mono:    ui-monospace, 'Courier New', monospace;
+  --font-display: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body:    var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* M3 Elevation Shadows */
+  --shadow-m3-1: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+  --shadow-m3-2: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -2px rgba(0, 0, 0, 0.35);
+  --shadow-m3-3: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-m3-4: 0 20px 25px -5px rgba(0, 0, 0, 0.45), 0 8px 10px -6px rgba(0, 0, 0, 0.45);
 
   /* Animations */
-  --animate-reveal-up:    reveal-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-fade-in:      fade-in 0.25s ease-out forwards;
-  --animate-fade-slide-in: fade-slide-in 0.28s ease-out forwards;
+  --animate-reveal-up:    reveal-up 0.5s cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-fade-in:      fade-in 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+  --animate-fade-slide-in: fade-slide-in 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 /* ── Keyframes ──────────────────────────────────────────────────────────── */
 @keyframes reveal-up {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -42,7 +67,7 @@
 }
 
 @keyframes fade-slide-in {
-  from { opacity: 0; transform: translateX(10px); }
+  from { opacity: 0; transform: translateX(8px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 
@@ -53,8 +78,8 @@
   html { scroll-behavior: smooth; }
 
   body {
-    background-color: #08090B;
-    color: #E8E4DE;
+    background-color: #0E1015;
+    color: #ECEFF4;
     font-family: var(--font-body);
     min-height: 100vh;
   }
@@ -62,24 +87,23 @@
   button { cursor: pointer; }
 
   *:focus-visible {
-    outline: 2px solid #00E5FF;
+    outline: 2px solid #FFB836;
     outline-offset: 2px;
   }
 
   ::selection {
-    background: rgba(0, 229, 255, 0.22);
-    color: #E8E4DE;
+    background: rgba(255, 184, 54, 0.25);
+    color: #FFFFFF;
   }
 
-  ::-webkit-scrollbar       { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: #08090B; }
-  ::-webkit-scrollbar-thumb { background: #23252B; border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: #00E5FF; }
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0E1015; }
+  ::-webkit-scrollbar-thumb { background: #2E3342; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #FFB836; }
 }
 
 /* ── Utilities ──────────────────────────────────────────────────────────── */
 @layer utilities {
-  /* Stagger delays */
   .delay-0   { animation-delay: 0ms; }
   .delay-80  { animation-delay: 80ms; }
   .delay-160 { animation-delay: 160ms; }

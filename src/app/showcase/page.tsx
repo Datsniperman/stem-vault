@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { ShowcaseClient, ShowcaseTrackItem } from '@/components/ShowcaseClient';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { Music2, ArrowLeft, Disc3 } from 'lucide-react';
+import { Music2, ArrowLeft, Disc3, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ShowcasePage() {
@@ -75,38 +75,39 @@ export default function ShowcasePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-obsidian text-warm-white pb-20">
+    <div className="min-h-screen bg-surface text-warm-white pb-20">
       <Header onStemAdded={() => {}} />
 
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 space-y-8">
 
         {/* Header Banner */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-body text-dim hover:text-amber transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-medium text-dim hover:text-amber bg-surface-raised/80 hover:bg-surface-high border border-border/70 px-4 py-2 rounded-full transition-all shadow-sm"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Multitrack Archive
+            <span>Back to Multitrack Archive</span>
           </Link>
 
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber rounded-sm flex items-center justify-center shadow-lg shadow-amber/10">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 bg-amber rounded-full flex items-center justify-center shadow-m3-1 shrink-0">
               <Disc3 className="w-6 h-6 text-obsidian" />
             </div>
             <div>
-              <h1 className="font-display text-3xl sm:text-4xl text-warm-white">Community Mix Showcase</h1>
-              <p className="text-dim text-sm font-body mt-0.5">
-                Stream finished mixes and DAW sessions submitted by Tyler Kerpsack All Access mixers.
+              <h1 className="font-display text-3xl sm:text-4xl font-bold text-warm-white tracking-tight">Community Mix Showcase</h1>
+              <p className="text-dim text-xs sm:text-sm font-body mt-0.5">
+                Stream finished mixes and DAW sessions submitted by Tyler Kerpsack All Access engineers.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Interactive Showcase Feed */}
+        {/* Content Feed */}
         {loading ? (
-          <div className="bg-surface border border-border p-12 text-center rounded-sm space-y-2">
-            <p className="text-sm font-body text-dim animate-pulse">Loading community mix showcase...</p>
+          <div className="flex flex-col items-center justify-center py-24 space-y-3">
+            <div className="w-10 h-10 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+            <p className="text-xs text-dim font-medium">Loading community showcase...</p>
           </div>
         ) : (
           <ShowcaseClient tracks={tracks} />

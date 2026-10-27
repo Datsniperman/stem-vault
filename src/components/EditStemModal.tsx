@@ -5,6 +5,7 @@ import { X, AlertCircle, Link as LinkIcon, Edit3 } from 'lucide-react';
 import { updateStem } from '@/app/actions/stems';
 import { Stem } from '@/types';
 import { useToast } from '@/context/ToastContext';
+import { clsx } from 'clsx';
 
 const HOST_PLATFORMS = ['Google Drive', 'Dropbox', 'OneDrive', 'Box', 'Other'];
 const FORMATS = [
@@ -95,36 +96,39 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-md animate-[fade-in_0.15s_ease-out]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-surface border border-border rounded-sm w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div className="bg-surface-raised border border-border/80 rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-m3-3 flex flex-col">
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-amber/10 border border-amber/30 flex items-center justify-center text-amber">
+        <div className="px-6 py-5 border-b border-border/60 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-amber/15 border border-amber/30 flex items-center justify-center text-amber">
               <Edit3 className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-display text-2xl text-warm-white">Edit Stem Session</h2>
+              <h2 className="font-display text-2xl font-bold text-warm-white">Edit Stem Session</h2>
               <p className="text-dim text-xs font-body mt-0.5">
-                Update details for <span className="text-amber font-medium">{stem.title}</span>
+                Updating <span className="text-amber font-medium">{stem.title}</span>
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-dim hover:text-warm-white p-1.5 transition-colors rounded-sm">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-dim hover:text-warm-white hover:bg-white/10 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Errors list if any */}
         {errors && Object.keys(errors).length > 0 && (
-          <div className="mx-6 mt-4 border border-error/30 bg-error/10 rounded-sm px-4 py-3 shrink-0">
-            <p className="text-sm font-body text-error mb-2 font-medium">Please fix these errors:</p>
+          <div className="mx-6 mt-4 border border-error/30 bg-error/10 rounded-2xl px-4 py-3 shrink-0">
+            <p className="text-xs text-error mb-1.5 font-semibold">Please fix these errors:</p>
             <ul className="space-y-1">
               {Object.entries(errors).map(([field, msg]) => (
-                <li key={field} className="text-sm text-error font-body flex items-center gap-1.5">
+                <li key={field} className="text-xs text-error flex items-center gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   {msg}
                 </li>
@@ -139,7 +143,7 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
           {/* Row 1: Title + Church/Artist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Song Title *" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Gratitude" error={errors?.title} />
-            <Field label="Church Name / Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Elevation Worship" error={errors?.artist} />
+            <Field label="Church / Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Elevation Worship" error={errors?.artist} />
           </div>
 
           {/* Row 2: Cloud Link */}
@@ -179,9 +183,9 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
 
           {/* Row 5: Description / Special Notes */}
           <div className="space-y-1.5">
-            <label htmlFor="edit-description" className="block text-xs text-dim font-body flex items-center justify-between">
+            <label htmlFor="edit-description" className="block text-xs text-mid font-medium flex items-center justify-between">
               <span>Special Notes / Description (Optional)</span>
-              <span className="text-[10px] text-dim/60">Key changes, extra stems, instructions</span>
+              <span className="text-[10px] text-dim">Key changes, extra stems, instructions</span>
             </label>
             <textarea
               id="edit-description"
@@ -190,15 +194,15 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
               value={formData.description}
               onChange={handleChange}
               placeholder="e.g. Includes live drums, click track in Bb, and organ stems..."
-              className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors resize-none"
+              className="w-full bg-surface-high border border-border/80 rounded-xl px-3.5 py-2.5 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 placeholder:text-dim/40 transition-colors resize-none"
             />
           </div>
 
           {/* Row 6: Tags */}
           <div className="space-y-1.5">
-            <label htmlFor="edit-tags" className="block text-xs text-dim font-body flex items-center justify-between">
+            <label htmlFor="edit-tags" className="block text-xs text-mid font-medium flex items-center justify-between">
               <span>Tags (Optional)</span>
-              <span className="text-[10px] text-dim/60">Comma-separated, max 8</span>
+              <span className="text-[10px] text-dim">Comma-separated, max 8</span>
             </label>
             <input
               id="edit-tags"
@@ -206,26 +210,30 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
               type="text"
               value={formData.tags}
               onChange={handleChange}
-              placeholder="e.g. click track, live recording, keys heavy, multibus"
-              className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors"
+              placeholder="e.g. worship, live, click track, drums split"
+              className="w-full bg-surface-high border border-border/80 rounded-xl px-3.5 py-2 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 placeholder:text-dim/40 transition-colors"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-3 border-t border-border">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-border/60">
             <button
               type="button"
               onClick={onClose}
-              className="font-body text-sm text-dim hover:text-warm-white px-4 py-2 border border-border hover:border-border-warm rounded-sm transition-colors"
+              className="text-xs text-dim hover:text-warm-white px-4 py-2.5 rounded-full hover:bg-surface-high font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="bg-amber hover:bg-amber-muted disabled:opacity-50 text-obsidian font-body font-semibold text-sm px-6 py-2 rounded-sm transition-colors"
+              className={clsx(
+                'bg-amber hover:bg-amber-muted text-obsidian font-bold text-xs px-6 py-2.5 rounded-full',
+                'transition-all shadow-m3-1 hover:shadow-m3-2 active:scale-95',
+                isPending && 'opacity-60 cursor-not-allowed'
+              )}
             >
-              {isPending ? 'Saving...' : 'Save Changes'}
+              {isPending ? 'Saving Changes…' : 'Save Session Changes'}
             </button>
           </div>
         </form>
@@ -234,83 +242,54 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
   );
 }
 
-function Field({
-  label,
-  name,
-  type = 'text',
-  value,
-  onChange,
-  placeholder,
-  error,
-  inputMode,
-  min,
-  max,
-}: {
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   name: string;
-  type?: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
   error?: string;
-  inputMode?: 'numeric' | 'text' | 'decimal' | 'tel' | 'search' | 'email' | 'url';
-  min?: number;
-  max?: number;
-}) {
+}
+
+function Field({ label, name, error, ...rest }: FieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={`edit-${name}`} className="block text-xs text-dim font-body">
+      <label htmlFor={name} className="block text-xs text-mid font-medium">
         {label}
       </label>
       <input
-        id={`edit-${name}`}
+        id={name}
         name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        inputMode={inputMode}
-        min={min}
-        max={max}
-        className={`w-full bg-obsidian border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none placeholder:text-dim/40 transition-colors ${
-          error ? 'border-error focus:border-error' : 'border-border focus:border-amber'
-        }`}
+        {...rest}
+        className={clsx(
+          'w-full bg-surface-high border rounded-xl px-3.5 py-2 text-warm-white text-xs',
+          'focus:outline-none placeholder:text-dim/40 transition-colors',
+          error ? 'border-error focus:border-error' : 'border-border/80 focus:border-amber focus:ring-1 focus:ring-amber/40'
+        )}
       />
-      {error && <p className="text-[11px] text-error font-body">{error}</p>}
+      {error && <p className="text-xs text-error font-medium">{error}</p>}
     </div>
   );
 }
 
-function SelectField({
-  label,
-  name,
-  value,
-  onChange,
-  options,
-}: {
+interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
   name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: string[];
-}) {
+}
+
+function SelectField({ label, name, options, ...rest }: SelectFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={`edit-${name}`} className="block text-xs text-dim font-body">
+      <label htmlFor={name} className="block text-xs text-mid font-medium">
         {label}
       </label>
       <select
-        id={`edit-${name}`}
+        id={name}
         name={name}
-        value={value}
-        onChange={onChange}
-        className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber transition-colors"
+        {...rest}
+        className="w-full bg-surface-high border border-border/80 rounded-xl px-3.5 py-2 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 transition-colors appearance-none cursor-pointer"
       >
-        {options.map(opt => (
-          <option key={opt} value={opt} className="bg-surface text-warm-white">
-            {opt}
-          </option>
-        ))}
+        {options.map(o => <option key={o} value={o} className="bg-surface">{o}</option>)}
       </select>
     </div>
   );

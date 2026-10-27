@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Flag, ExternalLink, Music2, Info, Check, Tag, Layers, Disc3, Edit3 } from 'lucide-react';
+import { Download, Flag, ExternalLink, Music2, Info, Check, Tag, Layers, Disc3, Edit3, MessageCircle } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
 import { flagStem, incrementDownloadCount } from '@/app/actions/stems';
@@ -12,11 +12,11 @@ import { clsx } from 'clsx';
 import { EditStemModal } from './EditStemModal';
 
 const PLATFORM_BADGE: Record<string, string> = {
-  'Google Drive': 'bg-blue-950/60 text-blue-300 border-blue-800/50',
-  'Dropbox':      'bg-sky-950/60 text-sky-300 border-sky-800/50',
-  'OneDrive':     'bg-indigo-950/60 text-indigo-300 border-indigo-800/50',
-  'Box':          'bg-purple-950/60 text-purple-300 border-purple-800/50',
-  'Other':        'bg-surface-raised text-mid border-border',
+  'Google Drive': 'bg-blue-950/60 text-blue-300 border-blue-800/40',
+  'Dropbox':      'bg-sky-950/60 text-sky-300 border-sky-800/40',
+  'OneDrive':     'bg-indigo-950/60 text-indigo-300 border-indigo-800/40',
+  'Box':          'bg-purple-950/60 text-purple-300 border-purple-800/40',
+  'Other':        'bg-surface-high text-mid border-border/70',
 };
 
 interface StemCardProps {
@@ -28,7 +28,14 @@ interface StemCardProps {
   onStemUpdated?: (updatedStem: Stem) => void;
 }
 
-export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle, onClick, onStemUpdated }: StemCardProps) {
+export function StemCard({
+  stem: initialStem,
+  profile,
+  onDelete,
+  onVerifyToggle,
+  onClick,
+  onStemUpdated,
+}: StemCardProps) {
   const router = useRouter();
   const { addToast } = useToast();
   const [stemData, setStemData] = useState<Stem>(initialStem);
@@ -57,7 +64,7 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
     setReporting(true);
     const result = await flagStem(stemData.id);
     addToast(
-      result.success ? 'Link reported - thanks for keeping the archive clean.' : result.message,
+      result.success ? 'Link reported - thanks for keeping the vault clean.' : result.message,
       result.success ? 'info' : 'error'
     );
     setReporting(false);
@@ -79,9 +86,8 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
     <article
       onClick={() => router.push(`/stems/${stemData.id}`)}
       className={clsx(
-        'group relative bg-surface border border-border flex flex-col justify-between overflow-hidden rounded-sm cursor-pointer p-5 space-y-4',
-        'hover:border-amber/60 transition-all duration-200 hover:shadow-[0_4px_24px_rgba(255,183,3,0.08)] hover:-translate-y-0.5',
-        localVerified && 'border-l-2 border-l-amber'
+        'group relative bg-surface-raised/80 hover:bg-surface-raised border border-border/80 flex flex-col justify-between overflow-hidden rounded-2xl cursor-pointer p-5 space-y-4 shadow-m3-1 hover:shadow-m3-3 transition-all duration-300 hover:-translate-y-1',
+        localVerified && 'ring-1 ring-amber/40 border-amber/30'
       )}
     >
       {/* Top Header: Song Title & Church/Artist */}
@@ -93,40 +99,40 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
           {stemData.description && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowNotes(n => !n); }}
-              title="Toggle special notes"
-              className="bg-obsidian border border-border hover:border-amber text-amber p-1.5 rounded transition-colors shrink-0 mt-0.5"
+              title="Toggle notes"
+              className="w-7 h-7 rounded-full bg-surface-high border border-border/60 hover:border-amber/50 text-amber flex items-center justify-center transition-colors shrink-0"
             >
               <Info className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
-        <p className="text-mid text-xs font-body font-medium">{stemData.artist}</p>
+        <p className="text-mid text-xs font-medium">{stemData.artist}</p>
       </div>
 
-      {/* Badges & Meta Info Row */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="w-7 h-7 bg-amber/10 border border-amber/30 rounded-sm flex items-center justify-center shrink-0 text-amber">
-          <Disc3 className="w-4 h-4 group-hover:rotate-45 transition-transform duration-300" />
+      {/* M3 Chips Row */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div className="w-6 h-6 rounded-full bg-amber/15 border border-amber/30 flex items-center justify-center shrink-0 text-amber">
+          <Disc3 className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform duration-300" />
         </div>
         <span className={clsx(
-          'text-[10px] font-body px-2 py-0.5 rounded-sm border font-semibold',
+          'text-[10px] font-medium px-2.5 py-0.5 rounded-full border',
           platformBadge
         )}>
           {stemData.host_platform}
         </span>
         {localVerified && (
-          <span className="text-[10px] font-body text-amber bg-amber/10 border border-amber/30 px-2 py-0.5 rounded-sm font-bold flex items-center gap-1">
-            <Check className="w-3 h-3" /> PRO SESSION
+          <span className="text-[10px] font-semibold text-amber bg-amber/15 border border-amber/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <Check className="w-3 h-3 stroke-[3]" /> PRO SESSION
           </span>
         )}
         {stemData.daw_template_url && (
-          <span className="text-[10px] font-body text-cyan-400 bg-cyan-950/50 border border-cyan-800/60 px-2 py-0.5 rounded-sm font-semibold flex items-center gap-1">
+          <span className="text-[10px] font-medium text-cyan-300 bg-cyan-950/60 border border-cyan-700/50 px-2.5 py-0.5 rounded-full flex items-center gap-1">
             <Layers className="w-3 h-3" /> DAW TEMPLATE
           </span>
         )}
         {stemData.discord_thread_id && (
-          <span className="text-[10px] font-body text-[#5865F2] bg-[#5865F2]/10 border border-[#5865F2]/30 px-2 py-0.5 rounded-sm font-semibold">
-            DISCORD THREAD
+          <span className="text-[10px] font-medium text-[#5865F2] bg-[#5865F2]/15 border border-[#5865F2]/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <MessageCircle className="w-3 h-3" /> FEEDBACK THREAD
           </span>
         )}
       </div>
@@ -134,7 +140,7 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
       {/* Main Content / Notes */}
       <div className="space-y-3 flex-1">
         {showNotes && stemData.description ? (
-          <div className="bg-obsidian/60 border border-border/80 p-3 rounded text-xs font-body space-y-1 animate-[fade-in_0.2s_ease-out]">
+          <div className="bg-surface-high/80 border border-border/70 p-3.5 rounded-xl text-xs font-body space-y-1 animate-[fade-in_0.2s_ease-out]">
             <p className="text-[10px] font-mono text-amber uppercase tracking-wider font-semibold">Special Notes:</p>
             <p className="leading-relaxed text-warm-white whitespace-pre-wrap">{stemData.description}</p>
           </div>
@@ -143,13 +149,13 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
             {/* Metadata Pills */}
             <div className="flex flex-wrap items-center gap-1.5">
               {stemData.avg_rating !== undefined && stemData.avg_rating > 0 && (
-                <div className="flex items-center gap-1 bg-amber/10 border border-amber/30 text-amber rounded-sm px-2 py-0.5 text-xs font-body font-bold">
+                <div className="flex items-center gap-1 bg-amber/15 border border-amber/30 text-amber rounded-full px-2.5 py-0.5 text-xs font-bold">
                   <span>★</span>
                   <span>{stemData.avg_rating}</span>
                 </div>
               )}
               {stemData.comment_count !== undefined && stemData.comment_count > 0 && (
-                <div className="flex items-center gap-1 bg-surface-raised border border-border text-mid rounded-sm px-2 py-0.5 text-xs font-body font-semibold">
+                <div className="flex items-center gap-1 bg-surface-high border border-border/70 text-mid rounded-full px-2.5 py-0.5 text-xs font-medium">
                   <span>💬 {stemData.comment_count}</span>
                 </div>
               )}
@@ -157,7 +163,7 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
               {stemData.key && <MetaPill label="KEY" value={stemData.key} />}
               {stemData.track_count && <MetaPill label="STEMS" value={String(stemData.track_count)} />}
               {stemData.format && (
-                <span className="text-[10px] font-body text-dim border border-border px-2 py-0.5 rounded-sm">
+                <span className="text-[10px] font-medium text-dim bg-surface-high/60 border border-border/50 px-2.5 py-0.5 rounded-full">
                   {formatShort(stemData.format)}
                 </span>
               )}
@@ -167,7 +173,7 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
             {visibleTags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {visibleTags.map(tag => (
-                  <span key={tag} className="text-[10px] font-body text-dim/80 bg-surface-raised border border-border/60 px-2 py-0.5 rounded-sm">
+                  <span key={tag} className="text-[10px] font-medium text-dim/80 bg-surface-high/50 border border-border/50 px-2.5 py-0.5 rounded-full">
                     #{tag}
                   </span>
                 ))}
@@ -178,8 +184,8 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
       </div>
 
       {/* Footer / Uploader & Actions */}
-      <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="flex flex-wrap items-center gap-1.5 text-xs text-dim font-body">
+      <div className="pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-dim">
           <Link
             href={`/user/${encodeURIComponent(stemData.uploader_handle.replace(/^@/, ''))}`}
             onClick={e => e.stopPropagation()}
@@ -207,7 +213,7 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
             onClick={handleReport}
             disabled={reporting}
             title="Report link"
-            className="p-1 text-dim hover:text-error transition-colors disabled:opacity-40"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-dim hover:text-error hover:bg-white/5 transition-colors disabled:opacity-40"
           >
             <Flag className="w-3.5 h-3.5" />
           </button>
@@ -215,7 +221,7 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
             <button
               onClick={(e) => { e.stopPropagation(); setIsEditOpen(true); }}
               title="Edit session details"
-              className="p-1 text-dim hover:text-amber transition-colors"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-dim hover:text-amber hover:bg-white/5 transition-colors"
             >
               <Edit3 className="w-3.5 h-3.5" />
             </button>
@@ -225,7 +231,7 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleDownload}
-            className="flex items-center gap-1.5 bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-xs px-4 py-2 rounded-sm transition-colors uppercase tracking-wider shadow-sm"
+            className="flex items-center gap-1.5 bg-amber hover:bg-amber-muted text-obsidian font-semibold text-xs px-4 py-2 rounded-full transition-all shadow-m3-1 hover:shadow-m3-2 active:scale-95"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Get Stems</span>
@@ -245,9 +251,9 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
 
 function MetaPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline gap-1 bg-surface-raised border border-border rounded-sm px-1.5 py-0.5">
-      <span className="text-[9px] font-body text-dim uppercase tracking-wide">{label}</span>
-      <span className="text-xs font-body font-semibold text-warm-white">{value}</span>
+    <div className="flex items-baseline gap-1 bg-surface-high/90 border border-border/70 rounded-full px-2.5 py-0.5">
+      <span className="text-[9px] font-mono text-dim uppercase tracking-wide">{label}</span>
+      <span className="text-xs font-medium text-warm-white">{value}</span>
     </div>
   );
 }
