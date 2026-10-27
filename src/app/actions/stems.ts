@@ -51,6 +51,7 @@ export async function submitStem(
   const title          = sanitizeText(formData.get('title') as string || '', 200);
   const artist         = sanitizeText(formData.get('artist') as string || '', 200);
   const downloadUrl    = (formData.get('download_url') as string || '').trim();
+  const dawTemplateUrl = (formData.get('daw_template_url') as string || '').trim();
   const hostPlatform   = sanitizeText(formData.get('host_platform') as string || 'Google Drive', 50);
   const format         = sanitizeText(formData.get('format') as string || 'WAV (48kHz/24-bit)', 50);
   const uploaderHandle = sanitizeText(formData.get('uploader_handle') as string || 'Anonymous', 50);
@@ -68,6 +69,9 @@ export async function submitStem(
     errors.download_url = 'Download link is required.';
   } else if (!isValidUrl(downloadUrl)) {
     errors.download_url = 'Must be a valid https:// URL.';
+  }
+  if (dawTemplateUrl && !isValidUrl(dawTemplateUrl)) {
+    errors.daw_template_url = 'DAW template must be a valid https:// URL.';
   }
 
   const bpm        = isNaN(bpmRaw) ? null : bpmRaw;
@@ -105,6 +109,20 @@ export async function submitStem(
       }
     }
 
+    let resolvedHandle = uploaderHandle || 'Anonymous';
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, server_display_name')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile?.server_display_name || profile?.display_name) {
+        resolvedHandle = profile.server_display_name || profile.display_name;
+      }
+    }
+
+    // Insert directly as published — no approval barrier!
     const { data, error } = await supabase
       .from('stems')
       .insert([{
@@ -117,10 +135,11 @@ export async function submitStem(
         format,
         host_platform: hostPlatform,
         download_url: downloadUrl,
-        uploader_handle: uploaderHandle || 'Anonymous',
+        daw_template_url: dawTemplateUrl || null,
+        uploader_handle: resolvedHandle,
         description: description || null,
         tags,
-        status: 'pending', // all new submissions require admin review
+        status: 'published',
       }])
       .select()
       .single();
@@ -130,11 +149,40 @@ export async function submitStem(
       return { success: false, message: `Submission failed: ${error.message}` };
     }
 
+    const stem = data as Stem;
+
+    // Immediately announce to Discord & start mix feedback thread
+    try {
+      const { messageId, threadId } = await announceMultitrack({
+        stemId: stem.id,
+        title: stem.title,
+        artist: stem.artist,
+        bpm: stem.bpm,
+        key: stem.key,
+        trackCount: stem.track_count,
+        downloadUrl: stem.download_url,
+        dawTemplateUrl: stem.daw_template_url,
+        uploaderHandle: stem.uploader_handle,
+      });
+
+      if (messageId || threadId) {
+        await supabase
+          .from('stems')
+          .update({ discord_message_id: messageId, discord_thread_id: threadId })
+          .eq('id', stem.id);
+        stem.discord_message_id = messageId;
+        stem.discord_thread_id = threadId;
+      }
+    } catch (discErr) {
+      console.error('[submitStem] Discord announcement error:', discErr);
+    }
+
     revalidatePath('/');
+    revalidatePath('/showcase');
     return {
       success: true,
-      message: '✓ Submitted! Your stems are pending review and will appear in the archive once approved.',
-      stem: data as Stem,
+      message: '✓ Published! Your multitrack pack is live in The Mixing Vault and announced on Discord.',
+      stem,
     };
   } catch (err) {
     console.error('[submitStem] Unexpected error:', err);
@@ -150,7 +198,8 @@ export async function updateStem(
 
   const title        = sanitizeText(formData.get('title') as string || '', 200);
   const artist       = sanitizeText(formData.get('artist') as string || '', 200);
-  const downloadUrl  = (formData.get('download_url') as string || '').trim();
+  const downloadUrl    = (formData.get('download_url') as string || '').trim();
+  const dawTemplateUrl = (formData.get('daw_template_url') as string || '').trim();
   const hostPlatform = sanitizeText(formData.get('host_platform') as string || 'Google Drive', 50);
   const format       = sanitizeText(formData.get('format') as string || 'WAV (48kHz/24-bit)', 50);
   const keyVal       = sanitizeText(formData.get('key') as string || '', 10);
@@ -240,6 +289,7 @@ export async function updateStem(
         format,
         host_platform: hostPlatform,
         download_url: downloadUrl,
+        daw_template_url: dawTemplateUrl || null,
         description: description || null,
         tags,
       })
@@ -331,65 +381,6 @@ export async function toggleStemVerification(
   } catch (err: any) {
     console.error('[toggleStemVerification] Error:', err);
     return { success: false, message: 'Failed to update stem verification status.' };
-  }
-}
-
-export async function setTrackOfTheWeek(
-  stemId: string
-): Promise<{ success: boolean; message: string; isSpotlight?: boolean }> {
-  try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
-
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
-
-    // 1. Clear 'track of the week' tag from all existing stems so only 1 is active
-    const { data: allStems } = await supabase.from('stems').select('id, tags');
-    if (allStems) {
-      for (const s of allStems) {
-        if (s.tags && s.tags.includes('track of the week')) {
-          const updatedTags = s.tags.filter((t: string) => t !== 'track of the week');
-          await supabase.from('stems').update({ tags: updatedTags }).eq('id', s.id);
-        }
-      }
-    }
-
-    // 2. Fetch target stem and toggle tag
-    const { data: targetStem } = await supabase.from('stems').select('tags').eq('id', stemId).single();
-    let isSpotlight = true;
-    let newTags: string[] = ['track of the week'];
-
-    if (targetStem && targetStem.tags) {
-      if (targetStem.tags.includes('track of the week')) {
-        isSpotlight = false;
-        newTags = targetStem.tags.filter((t: string) => t !== 'track of the week');
-      } else {
-        newTags = Array.from(new Set([...targetStem.tags, 'track of the week']));
-      }
-    }
-
-    const { error } = await supabase
-      .from('stems')
-      .update({ tags: newTags })
-      .eq('id', stemId);
-
-    if (error) {
-      console.error('[setTrackOfTheWeek] Error:', error.message);
-      return { success: false, message: `Failed to update Track of the Week: ${error.message}` };
-    }
-
-    revalidatePath('/');
-    revalidatePath(`/stems/${stemId}`);
-    revalidatePath('/showcase');
-    return {
-      success: true,
-      message: isSpotlight ? '★ Designated as Official Track of the Week!' : 'Removed Track of the Week spotlight.',
-      isSpotlight
-    };
-  } catch (err: any) {
-    console.error('[setTrackOfTheWeek] Error:', err);
-    return { success: false, message: 'Failed to update Track of the Week.' };
   }
 }
 

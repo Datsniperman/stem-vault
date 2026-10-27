@@ -25,7 +25,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   const [selectedStem, setSelectedStem] = useState<{ stem: Stem; artworkUrl: string | null } | null>(null);
 
   const handleStemAdded = (stem: Stem) => {
-    // Pending stems don't appear in the public feed
+    setStems(prev => [stem, ...prev]);
   };
 
   const handleDelete = (id: string) => {

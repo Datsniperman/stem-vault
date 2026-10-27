@@ -30,6 +30,7 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
     title: '',
     artist: '',
     download_url: '',
+    daw_template_url: '',
     host_platform: 'Google Drive',
     format: 'WAV (48kHz/24-bit)',
     bpm: '',
@@ -45,6 +46,7 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
         title: stem.title || '',
         artist: stem.artist || '',
         download_url: stem.download_url || '',
+        daw_template_url: stem.daw_template_url || '',
         host_platform: stem.host_platform || 'Google Drive',
         format: stem.format || 'WAV (48kHz/24-bit)',
         bpm: stem.bpm ? String(stem.bpm) : '',
@@ -149,6 +151,17 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
             onChange={handleChange}
             placeholder="https://drive.google.com/…"
             error={errors?.download_url}
+          />
+
+          {/* Row 2.5: DAW Template Link */}
+          <Field
+            label="DAW Template Link (Optional)"
+            name="daw_template_url"
+            type="url"
+            value={formData.daw_template_url}
+            onChange={handleChange}
+            placeholder="https://drive.google.com/… (Logic Pro, Pro Tools, Reaper session)"
+            error={errors?.daw_template_url}
           />
 
           {/* Row 3: Platform + Format */}

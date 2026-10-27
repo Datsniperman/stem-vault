@@ -29,10 +29,11 @@ create table if not exists public.stems (
   format text not null,
   host_platform text not null,
   download_url text not null,
+  daw_template_url text,
   uploader_handle text not null,
   tags text[] default array[]::text[],
   is_verified boolean default false,
-  status text default 'pending' check (status in ('pending', 'published', 'flagged')),
+  status text default 'published' check (status in ('pending', 'published', 'flagged')),
   download_count integer default 0,
   discord_message_id text,
   discord_thread_id text,
@@ -201,5 +202,9 @@ create policy "Authenticated delete mix_likes" on public.mix_likes for delete us
 -- ADD COLUMN IF NOT EXISTS musical_key TEXT,
 -- ADD COLUMN IF NOT EXISTS bpm NUMERIC,
 -- ADD COLUMN IF NOT EXISTS discord_post_id TEXT;
+
+-- 4. Instant publishing & DAW template link
+-- ALTER TABLE public.stems ADD COLUMN IF NOT EXISTS daw_template_url TEXT;
+-- ALTER TABLE public.stems ALTER COLUMN status SET DEFAULT 'published';
 
 -- CREATE INDEX IF NOT EXISTS idx_stems_discord_thread_id ON public.stems(discord_thread_id);

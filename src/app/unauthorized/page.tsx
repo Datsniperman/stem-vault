@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ShieldAlert, ExternalLink, ArrowLeft } from 'lucide-react';
 
 export const metadata = {
-  title: 'Access Required | Stem Vault',
+  title: 'Access Required | The Mixing Vault',
 };
 
 export default function UnauthorizedPage() {
@@ -22,7 +22,7 @@ export default function UnauthorizedPage() {
         </h1>
 
         <p className="mt-3 text-dim text-sm leading-relaxed font-body">
-          Stem Vault is exclusive to members of the <span className="text-amber font-medium">Tyler Kerpsack All Access</span> community.
+          The Mixing Vault is exclusive to members of the <span className="text-amber font-medium">Tyler Kerpsack All Access</span> community.
         </p>
 
         <p className="mt-2 text-dim text-xs leading-relaxed font-body">

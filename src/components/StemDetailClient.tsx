@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Stem, Profile, StemComment, StemMix } from '@/types';
-import { rateStem, addComment, submitMix, submitCommunityMix, toggleMixLike, flagStem, deleteStem, deleteComment, incrementDownloadCount, setTrackOfTheWeek } from '@/app/actions/stems';
+import { rateStem, addComment, submitMix, submitCommunityMix, toggleMixLike, flagStem, deleteStem, deleteComment, incrementDownloadCount } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/Header';
@@ -397,21 +397,6 @@ export function StemDetailClient({
               </div>
 
               {/* Track of the Week Banner if spotlighted */}
-              {stem.tags?.includes('track of the week') && (
-                <div className="bg-gradient-to-r from-amber/20 via-surface-raised to-surface border border-amber/50 p-4 rounded-sm flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 text-amber font-body text-xs font-bold uppercase tracking-wider">
-                    <Star className="w-4 h-4 fill-amber" />
-                    <span>Featured Track of the Week — Official Mix Challenge</span>
-                  </div>
-                  <a
-                    href="#mixes-section"
-                    className="text-xs text-warm-white hover:text-amber font-body underline font-semibold transition-colors"
-                  >
-                    View Community Mixes Below ↓
-                  </a>
-                </div>
-              )}
-
               {/* Primary Action Buttons */}
               <div className="pt-4 flex flex-wrap items-center gap-4">
                 <a
@@ -425,6 +410,19 @@ export function StemDetailClient({
                   <span>Download Stems ({stemData.host_platform})</span>
                   <ExternalLink className="w-4 h-4 opacity-75 ml-1" />
                 </a>
+
+                {stemData.daw_template_url && (
+                  <a
+                    href={stemData.daw_template_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-cyan-950/70 border border-cyan-800/80 hover:bg-cyan-900/80 text-cyan-300 font-body font-bold text-sm px-5 py-3 rounded-sm transition-colors shadow-md"
+                  >
+                    <Layers className="w-4 h-4" />
+                    <span>Download DAW Template</span>
+                    <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                  </a>
+                )}
 
                 {stemData.discord_thread_id && (
                   <a
@@ -446,23 +444,6 @@ export function StemDetailClient({
                   >
                     <Edit3 className="w-4 h-4 text-amber" />
                     <span>Edit Session</span>
-                  </button>
-                )}
-
-                {isAdmin && (
-                  <button
-                    onClick={async () => {
-                      const res = await setTrackOfTheWeek(stemData.id);
-                      if (res.success) {
-                        addToast(res.message, 'success');
-                      } else {
-                        addToast(res.message, 'error');
-                      }
-                    }}
-                    className="flex items-center gap-1.5 text-xs font-body font-bold text-amber border border-amber/50 hover:bg-amber/10 px-4 py-3 rounded-sm transition-colors"
-                  >
-                    <Star className="w-4 h-4 fill-amber" />
-                    <span>{stemData.tags?.includes('track of the week') ? 'Track of the Week Active' : 'Make Track of the Week'}</span>
                   </button>
                 )}
 

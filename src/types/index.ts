@@ -29,6 +29,7 @@ export interface Stem {
   format: string;
   host_platform: string;
   download_url: string;
+  daw_template_url?: string | null;
   uploader_handle: string;
   description?: string | null;
   cover_url?: string | null;

@@ -22,22 +22,22 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Stem Vault — Community Worship Multitrack Archive',
-    template: '%s | Stem Vault',
+    default: 'The Mixing Vault — Tyler Kerpsack All Access',
+    template: '%s | The Mixing Vault',
   },
   description:
-    'A community directory for worship sound engineers to discover and share high-quality multitrack stem sessions.',
+    'Exclusive in-house multitrack session archive & mix critique hub for Tyler Kerpsack All Access. Powered by KerpBot.',
   metadataBase: new URL('https://stem-vault-tau.vercel.app'),
   openGraph: {
-    title: 'Stem Vault — Community Worship Multitrack Archive',
-    description: 'The community worship multitrack stem archive.',
+    title: 'The Mixing Vault — Tyler Kerpsack All Access',
+    description: 'In-house multitrack session archive & mix critique hub powered by KerpBot.',
     type: 'website',
-    siteName: 'Stem Vault',
+    siteName: 'The Mixing Vault',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Stem Vault — Community Worship Multitrack Archive',
-    description: 'The community worship multitrack stem archive.',
+    title: 'The Mixing Vault — Tyler Kerpsack All Access',
+    description: 'In-house multitrack session archive & mix critique hub powered by KerpBot.',
   },
 };
 

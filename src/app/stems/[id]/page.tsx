@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const supabaseServer = await createSupabaseServerClient();
   const supabase = supabaseAdmin || supabaseServer;
 
-  if (!supabase) return { title: 'Stem Vault' };
+  if (!supabase) return { title: 'The Mixing Vault' };
 
   const { data: stem } = await supabase
     .from('stems')
@@ -24,12 +24,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .eq('id', id)
     .single();
 
-  if (!stem) return { title: 'Stem Vault' };
+  if (!stem) return { title: 'The Mixing Vault' };
 
-  const title = `${stem.title} — ${stem.artist} | Stem Vault`;
+  const title = `${stem.title} — ${stem.artist} | The Mixing Vault`;
   const description = stem.description
     ? stem.description.slice(0, 160)
-    : `Download the multitrack session for "${stem.title}" by ${stem.artist} from Stem Vault — the community worship archive.`;
+    : `Download the multitrack session for "${stem.title}" by ${stem.artist} from The Mixing Vault — Tyler Kerpsack All Access.`;
 
   return {
     title,
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       type: 'music.song',
-      siteName: 'Stem Vault',
+      siteName: 'The Mixing Vault',
     },
     twitter: {
       card: 'summary',

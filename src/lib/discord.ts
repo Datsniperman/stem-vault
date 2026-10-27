@@ -16,6 +16,7 @@ export interface StemAnnouncementPayload {
   key: string | null;
   trackCount: number | null;
   downloadUrl: string;
+  dawTemplateUrl?: string | null;
   uploaderHandle: string;
 }
 
@@ -29,6 +30,45 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
   }
 
   try {
+    const actionButtons: any[] = [
+      {
+        type: 2, // Button
+        style: 5, // Link
+        label: 'Download Stems',
+        url: payload.downloadUrl,
+      },
+    ];
+
+    if (payload.dawTemplateUrl) {
+      actionButtons.push({
+        type: 2,
+        style: 5,
+        label: 'DAW Template',
+        url: payload.dawTemplateUrl,
+      });
+    }
+
+    actionButtons.push({
+      type: 2,
+      style: 5,
+      label: 'Submit Your Mix',
+      url: `${SITE_URL}/stems/${payload.stemId}?action=submit`,
+    });
+
+    const fields = [
+      { name: 'Key', value: payload.key || 'N/A', inline: true },
+      { name: 'BPM', value: payload.bpm ? `${payload.bpm}` : 'N/A', inline: true },
+      { name: 'Track Count', value: payload.trackCount ? `${payload.trackCount} Channels` : 'N/A', inline: true },
+    ];
+
+    if (payload.dawTemplateUrl) {
+      fields.push({
+        name: 'DAW Template',
+        value: `[Download Template](${payload.dawTemplateUrl})`,
+        inline: true,
+      });
+    }
+
     // 1. Post Embed with Link Buttons
     const message = (await rest.post(Routes.channelMessages(MULTITRACK_CHANNEL_ID), {
       body: {
@@ -37,31 +77,14 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
             title: `🎛️ New Multitrack Pack: ${payload.title}`,
             description: `Artist: **${payload.artist}**\nUploaded by: **${payload.uploaderHandle}**`,
             color: 0x00ffaa, // Brand accent color
-            fields: [
-              { name: 'Key', value: payload.key || 'N/A', inline: true },
-              { name: 'BPM', value: payload.bpm ? `${payload.bpm}` : 'N/A', inline: true },
-              { name: 'Track Count', value: payload.trackCount ? `${payload.trackCount} Channels` : 'N/A', inline: true },
-            ],
-            footer: { text: 'Download the stems and submit your mix for community feedback!' },
+            fields,
+            footer: { text: 'The Mixing Vault • Download stems and post your mix for feedback!' },
           },
         ],
         components: [
           {
             type: 1, // ActionRow
-            components: [
-              {
-                type: 2, // Button
-                style: 5, // Link
-                label: 'Download Stems',
-                url: payload.downloadUrl,
-              },
-              {
-                type: 2, // Button
-                style: 5, // Link
-                label: 'Submit Your Mix',
-                url: `${SITE_URL}/stems/${payload.stemId}?action=submit`,
-              },
-            ],
+            components: actionButtons,
           },
         ],
       },

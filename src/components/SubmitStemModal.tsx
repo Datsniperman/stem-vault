@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
-import { X, AlertCircle, Link } from 'lucide-react';
+import { X, AlertCircle, Link, Music2, FileAudio } from 'lucide-react';
 import { submitStem } from '@/app/actions/stems';
 import { FormState, Stem } from '@/types';
 import { useToast } from '@/context/ToastContext';
@@ -30,17 +30,20 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
   const [state, formAction, isPending] = useActionState(submitStem, INITIAL_STATE);
   const hasHandledSuccess = useRef(false);
 
-  const uploaderHandle = profile?.display_name
+  const uploaderHandle = profile?.server_display_name
+    ? profile.server_display_name
+    : profile?.display_name
     ? `@${profile.display_name.replace(/^@/, '')}`
     : user?.email
     ? `@${user.email.split('@')[0]}`
-    : '@anonymous';
+    : '@member';
 
   // Controlled form state to preserve input values on submit errors
   const [formData, setFormData] = useState({
     title: '',
     artist: '',
     download_url: '',
+    daw_template_url: '',
     host_platform: 'Google Drive',
     format: 'WAV (48kHz/24-bit)',
     bpm: '',
@@ -60,6 +63,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
       title: '',
       artist: '',
       download_url: '',
+      daw_template_url: '',
       host_platform: 'Google Drive',
       format: 'WAV (48kHz/24-bit)',
       bpm: '',
@@ -75,7 +79,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
     if (state.success && !hasHandledSuccess.current) {
       hasHandledSuccess.current = true;
       if (state.stem) onStemAdded(state.stem);
-      addToast(state.message || 'Stems submitted to the archive.', 'success');
+      addToast(state.message || 'Multitrack pack published and announced on Discord.', 'success');
       resetForm();
       onClose();
     } else if (!state.success && state.message) {
@@ -96,9 +100,9 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       >
         <div className="bg-surface border border-border rounded-sm w-full max-w-sm shadow-2xl text-center p-8">
-          <h2 className="font-display text-2xl text-warm-white mb-2">Sign in to submit</h2>
+          <h2 className="font-display text-2xl text-warm-white mb-2">Discord Login Required</h2>
           <p className="font-body text-sm text-dim mb-6">
-            You need an account to submit stems to the archive.
+            You must be logged in with your Discord account to publish stems to The Mixing Vault.
           </p>
           <button onClick={onClose} className="text-sm text-dim hover:text-warm-white underline font-body transition-colors">
             Close
@@ -118,9 +122,12 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
         {/* Header */}
         <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
           <div>
-            <h2 className="font-display text-2xl text-warm-white">Submit to Vault</h2>
+            <h2 className="font-display text-2xl text-warm-white flex items-center gap-2">
+              <Music2 className="w-5 h-5 text-amber" />
+              Publish Multitrack Pack
+            </h2>
             <p className="text-dim text-sm font-body mt-0.5">
-              Submitting as <span className="text-amber font-medium">{uploaderHandle}</span>
+              Publishing as <span className="text-amber font-medium">{uploaderHandle}</span> • <span className="text-emerald-400">Instant Live Release</span>
             </p>
           </div>
           <button onClick={onClose} className="text-dim hover:text-warm-white p-1.5 transition-colors rounded-sm">
@@ -128,12 +135,12 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
           </button>
         </div>
 
-        {/* Share link notice */}
+        {/* Share link & instant release notice */}
         <div className="px-6 pt-5 shrink-0">
           <div className="flex items-start gap-3 bg-amber-dim border border-amber/20 rounded-sm px-4 py-3">
             <Link className="w-4 h-4 text-amber shrink-0 mt-0.5" />
             <p className="text-sm text-amber font-body leading-relaxed">
-              Make sure your link is set to <strong>"Anyone with the link can view"</strong> before submitting. Private or quota-exceeded links will be flagged and removed.
+              Your multitrack pack will go live <strong>immediately</strong> in The Mixing Vault, and KerpBot will post an announcement and mix critique thread to the Discord server. Make sure your link permissions are set to <strong>"Anyone with the link can view/download"</strong>.
             </p>
           </div>
 
@@ -160,38 +167,49 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
           {/* Row 1: Title + Church/Artist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Song Title *" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Gratitude" error={state.errors?.title} />
-            <Field label="Church Name / Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Elevation Worship" error={state.errors?.artist} />
+            <Field label="Church Name / Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Brandon Lake / Bethel" error={state.errors?.artist} />
           </div>
 
-          {/* Row 2: Cloud Link */}
+          {/* Row 2: Multitrack Stems Cloud Link */}
           <Field
-            label="Cloud Link *"
+            label="Multitrack Stems Download Link *"
             name="download_url"
             type="url"
             value={formData.download_url}
             onChange={handleChange}
-            placeholder="https://drive.google.com/…"
+            placeholder="https://drive.google.com/… or https://dropbox.com/…"
             error={state.errors?.download_url}
           />
 
-          {/* Row 3: Platform + Format */}
+          {/* Row 3: Optional DAW Template Link */}
+          <Field
+            label="DAW Template Link (Optional)"
+            name="daw_template_url"
+            type="url"
+            value={formData.daw_template_url}
+            onChange={handleChange}
+            placeholder="https://drive.google.com/… (Logic Pro, Pro Tools, Reaper, Ableton session)"
+            error={state.errors?.daw_template_url}
+          />
+
+          {/* Row 4: Platform + Format */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <SelectField label="Host Platform" name="host_platform" value={formData.host_platform} onChange={handleChange} options={HOST_PLATFORMS} />
             <SelectField label="Audio Format" name="format" value={formData.format} onChange={handleChange} options={FORMATS} />
           </div>
 
-          {/* Row 4: BPM + Key + Track Count */}
+          {/* Row 5: BPM + Key + Track Count */}
           <div className="grid grid-cols-3 gap-4">
             <Field label="BPM" name="bpm" type="number" value={formData.bpm} onChange={handleChange} placeholder="72" inputMode="numeric" min={30} max={300} error={state.errors?.bpm} />
             <Field label="Key" name="key" value={formData.key} onChange={handleChange} placeholder="Bb" />
             <Field label="Track Count" name="track_count" type="number" value={formData.track_count} onChange={handleChange} placeholder="36" inputMode="numeric" min={1} max={128} error={state.errors?.track_count} />
           </div>
 
-          {/* Row 5: Description / Special Notes */}
+          {/* Row 6: Description / Special Notes */}
           <div className="space-y-1.5">
             <label htmlFor="description" className="block text-xs text-dim font-body flex items-center justify-between">
-              <span>Special Notes / Description (Optional)</span>
-              <span className="text-[10px] text-dim/60">Key changes, extra stems, instructions</span>
+              <span>Special Notes / Multitrack Specs (Optional)</span>
+              <span className="text-[10px] text-dim/60">Console routing, sample rate, extra stems</span>
             </label>
             <textarea
               id="description"
@@ -199,12 +217,12 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               rows={3}
               value={formData.description}
               onChange={handleChange}
-              placeholder="e.g. Includes live drums, click track in Bb, and organ stems. Drums split into kick, snare, toms..."
+              placeholder="e.g. Recorded live at 48kHz/24-bit. Includes click & cues, split kick in/out, snare top/bottom, stereo room mics, and stem group tracks..."
               className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors resize-none"
             />
           </div>
 
-          {/* Row 6: Tags */}
+          {/* Row 7: Tags */}
           <div className="space-y-1.5">
             <label htmlFor="tags" className="block text-xs text-dim font-body flex items-center justify-between">
               <span>Tags (Optional)</span>
@@ -216,13 +234,12 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               type="text"
               value={formData.tags}
               onChange={handleChange}
-              placeholder="e.g. click track, live recording, keys heavy, multibus"
+              placeholder="e.g. live, worship, daw template, multibus, logic, avid"
               className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors"
             />
-            <p className="text-[10px] text-dim/60 font-body">Suggested: click track, live recording, studio, multibus, keys heavy, drums split, broadcast</p>
           </div>
 
-          {/* Row 7: Rights Certification Checkbox */}
+          {/* Row 8: Rights Certification Checkbox */}
           <div className="flex items-start gap-2.5 pt-2 border-t border-border/60">
             <input
               type="checkbox"
@@ -231,10 +248,9 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               className="mt-0.5 accent-amber rounded-sm cursor-pointer"
             />
             <label htmlFor="certify-rights" className="text-xs text-mid font-body leading-relaxed cursor-pointer">
-              I certify that these audio files are my own or that I am explicitly authorized to distribute them for non-commercial educational & mixing use on Stem Vault.
+              I certify that these audio files and templates are authorized for non-commercial mixing practice within the Tyler Kerpsack All Access community.
             </label>
           </div>
-
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-3 border-t border-border">
@@ -250,11 +266,11 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               disabled={isPending}
               className={clsx(
                 'bg-amber hover:bg-amber-muted text-obsidian font-body font-bold text-sm px-8 py-2 rounded-sm',
-                'transition-colors uppercase tracking-wider',
+                'transition-colors uppercase tracking-wider shadow-md',
                 isPending && 'opacity-60 cursor-not-allowed'
               )}
             >
-              {isPending ? 'Submitting…' : 'Submit to Vault'}
+              {isPending ? 'Publishing to Vault & Discord…' : 'Publish Multitrack Pack'}
             </button>
           </div>
         </form>

@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
-import { ShowcaseClient } from '@/components/ShowcaseClient';
+import { ShowcaseClient, ShowcaseTrackItem } from '@/components/ShowcaseClient';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { Music2, ArrowLeft } from 'lucide-react';
+import { Music2, ArrowLeft, Disc3 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ShowcasePage() {
-  const [tracks, setTracks] = useState<any[]>([]);
+  const [tracks, setTracks] = useState<ShowcaseTrackItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +31,8 @@ export default function ShowcasePage() {
             const { data: mixesData } = await supabase
               .from('stem_mixes')
               .select('*')
-              .in('stem_id', stemIds);
+              .in('stem_id', stemIds)
+              .order('likes_count', { ascending: false });
 
             // Fetch comments for these tracks
             const { data: commentsData } = await supabase
@@ -53,11 +54,10 @@ export default function ShowcasePage() {
               commentMap.set(c.stem_id, list);
             });
 
-            const formatted = stemsData.map((s: any) => ({
+            const formatted: ShowcaseTrackItem[] = stemsData.map((s: any) => ({
               ...s,
               mixes: mixMap.get(s.id) || [],
               comments: commentMap.get(s.id) || [],
-              is_track_of_week: (s.tags || []).includes('track of the week')
             }));
 
             if (isMounted) setTracks(formatted);
@@ -87,26 +87,26 @@ export default function ShowcasePage() {
             className="inline-flex items-center gap-2 text-xs font-body text-dim hover:text-amber transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Vault Archive
+            Back to Multitrack Archive
           </Link>
 
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber rounded-sm flex items-center justify-center">
-              <Music2 className="w-6 h-6 text-obsidian" />
+            <div className="w-10 h-10 bg-amber rounded-sm flex items-center justify-center shadow-lg shadow-amber/10">
+              <Disc3 className="w-6 h-6 text-obsidian" />
             </div>
             <div>
-              <h1 className="font-display text-3xl sm:text-4xl text-warm-white">Track of the Week Showcase</h1>
+              <h1 className="font-display text-3xl sm:text-4xl text-warm-white">Community Mix Showcase</h1>
               <p className="text-dim text-sm font-body mt-0.5">
-                Listen to community mixes submitted for the official Track of the Week multitrack session!
+                Stream finished mixes and DAW sessions submitted by Tyler Kerpsack All Access mixers.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Interactive Track of the Week Showcase Feed */}
+        {/* Interactive Showcase Feed */}
         {loading ? (
           <div className="bg-surface border border-border p-12 text-center rounded-sm space-y-2">
-            <p className="text-sm font-body text-dim animate-pulse">Loading Track of the Week showcase...</p>
+            <p className="text-sm font-body text-dim animate-pulse">Loading community mix showcase...</p>
           </div>
         ) : (
           <ShowcaseClient tracks={tracks} />

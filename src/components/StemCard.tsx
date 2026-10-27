@@ -119,6 +119,16 @@ export function StemCard({ stem: initialStem, profile, onDelete, onVerifyToggle,
             <Check className="w-3 h-3" /> PRO SESSION
           </span>
         )}
+        {stemData.daw_template_url && (
+          <span className="text-[10px] font-body text-cyan-400 bg-cyan-950/50 border border-cyan-800/60 px-2 py-0.5 rounded-sm font-semibold flex items-center gap-1">
+            <Layers className="w-3 h-3" /> DAW TEMPLATE
+          </span>
+        )}
+        {stemData.discord_thread_id && (
+          <span className="text-[10px] font-body text-[#5865F2] bg-[#5865F2]/10 border border-[#5865F2]/30 px-2 py-0.5 rounded-sm font-semibold">
+            DISCORD THREAD
+          </span>
+        )}
       </div>
 
       {/* Main Content / Notes */}
