@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { FormState, Stem, Profile } from '@/types';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sendReportEmail, sendBugReportEmail } from '@/lib/email';
+import { announceMultitrack, postMixToThread } from '@/lib/discord';
 
 const ADMIN_EMAIL = 'connorwbrown07@gmail.com';
 const MAX_SUBMISSIONS_PER_DAY = 5;
@@ -435,6 +436,16 @@ export async function approveStem(id: string): Promise<{ success: boolean; messa
 
     if (!supabase) return { success: false, message: 'Database connection failed.' };
 
+    const { data: stem, error: stemErr } = await supabase
+      .from('stems')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (stemErr || !stem) {
+      return { success: false, message: 'Stem not found.' };
+    }
+
     const { error } = await supabase
       .from('stems')
       .update({ status: 'published' })
@@ -442,8 +453,33 @@ export async function approveStem(id: string): Promise<{ success: boolean; messa
 
     if (error) return { success: false, message: error.message };
 
+    // Discord Multitrack Announcement & Thread Creation
+    try {
+      const { messageId, threadId } = await announceMultitrack({
+        stemId: stem.id,
+        title: stem.title,
+        artist: stem.artist,
+        bpm: stem.bpm,
+        key: stem.key,
+        trackCount: stem.track_count,
+        downloadUrl: stem.download_url,
+        uploaderHandle: stem.uploader_handle,
+      });
+
+      if (messageId || threadId) {
+        await supabase
+          .from('stems')
+          .update({ discord_message_id: messageId, discord_thread_id: threadId })
+          .eq('id', stem.id);
+      }
+    } catch (discordErr) {
+      console.error('[approveStem] Discord announcement error:', discordErr);
+    }
+
     revalidatePath('/');
-    return { success: true, message: 'Stem approved and published.' };
+    revalidatePath(`/stems/${id}`);
+    revalidatePath('/showcase');
+    return { success: true, message: 'Stem approved and published to vault & Discord!' };
   } catch {
     return { success: false, message: 'Approval failed.' };
   }
@@ -948,51 +984,152 @@ export async function deleteComment(
   }
 }
 
+export interface SubmitMixPayload {
+  stemId: string;
+  songName: string;
+  key: string;
+  bpm: number;
+  mixUrl: string;
+  notes?: string;
+  accessToken?: string;
+}
+
+export async function submitMix(payload: SubmitMixPayload): Promise<{
+  success: boolean;
+  message: string;
+  mixId?: string;
+  discordPostId?: string | null;
+  discordThreadUrl?: string | null;
+  discordThreadId?: string | null;
+}> {
+  try {
+    const supabaseServer = await createSupabaseServerClient();
+    const supabaseAdmin = await createSupabaseAdminClient();
+    const user = await getAuthenticatedUser(supabaseServer, payload.accessToken);
+
+    if (!user) {
+      return { success: false, message: 'You must be logged in with your Discord account to submit a mix.' };
+    }
+
+    const songName = sanitizeText(payload.songName || '', 200);
+    const key = sanitizeText(payload.key || '', 20);
+    const bpm = Number(payload.bpm);
+    const mixUrl = (payload.mixUrl || '').trim();
+    const notes = sanitizeText(payload.notes || '', 1000);
+
+    if (!songName) return { success: false, message: 'Song name is required.' };
+    if (!key) return { success: false, message: 'Musical key is required.' };
+    if (!bpm || isNaN(bpm) || bpm <= 0) return { success: false, message: 'A valid positive BPM is required.' };
+    if (!mixUrl || !isValidUrl(mixUrl)) {
+      return { success: false, message: 'Please provide a valid cloud audio URL (Google Drive, Dropbox, Box, etc.).' };
+    }
+
+    const supabase = supabaseAdmin || supabaseServer;
+    if (!supabase) return { success: false, message: 'Database connection failed.' };
+
+    // Query user profile for server_display_name and discord_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, server_display_name, discord_id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const submitterHandle = profile?.server_display_name || profile?.display_name || 'Member';
+
+    // Insert into public.stem_mixes
+    const { data: newMix, error: insertErr } = await supabase
+      .from('stem_mixes')
+      .insert({
+        stem_id: payload.stemId,
+        user_id: user.id,
+        user_handle: submitterHandle,
+        song_name: songName,
+        musical_key: key,
+        bpm: bpm,
+        mix_url: mixUrl,
+        description: notes || null,
+        title: `${songName} (${key} @ ${bpm} BPM)`,
+        likes_count: 0,
+      })
+      .select()
+      .single();
+
+    if (insertErr || !newMix) {
+      return { success: false, message: insertErr?.message || 'Failed to record mix in database.' };
+    }
+
+    // Lookup parent stem for Discord thread ID
+    const { data: stem } = await supabase
+      .from('stems')
+      .select('title, artist, discord_thread_id')
+      .eq('id', payload.stemId)
+      .single();
+
+    let discordPostId: string | null = null;
+    let discordThreadUrl: string | null = null;
+
+    if (stem?.discord_thread_id) {
+      try {
+        discordPostId = await postMixToThread(stem.discord_thread_id, {
+          songName,
+          artist: stem.artist,
+          key,
+          bpm,
+          mixUrl,
+          notes: notes || undefined,
+          submitterHandle,
+          discordId: profile?.discord_id || undefined,
+        });
+
+        if (discordPostId) {
+          await supabase
+            .from('stem_mixes')
+            .update({ discord_post_id: discordPostId })
+            .eq('id', newMix.id);
+        }
+
+        const guildId = process.env.DISCORD_GUILD_ID;
+        if (guildId && stem.discord_thread_id) {
+          discordThreadUrl = `https://discord.com/channels/${guildId}/${stem.discord_thread_id}`;
+        }
+      } catch (postErr) {
+        console.error('[submitMix] Discord thread post error:', postErr);
+      }
+    }
+
+    revalidatePath(`/stems/${payload.stemId}`);
+    revalidatePath('/showcase');
+
+    return {
+      success: true,
+      message: 'Mix submitted successfully!',
+      mixId: newMix.id,
+      discordPostId,
+      discordThreadUrl,
+      discordThreadId: stem?.discord_thread_id || null,
+    };
+  } catch (err: any) {
+    console.error('[submitMix] Error:', err);
+    return { success: false, message: err.message || 'Failed to submit mix.' };
+  }
+}
+
 export async function submitCommunityMix(
   stemId: string,
   title: string,
   mixUrl: string,
   description?: string,
   accessToken?: string
-): Promise<{ success: boolean; message: string }> {
-  try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const user = await getAuthenticatedUser(supabaseServer, accessToken);
-
-    if (!user) return { success: false, message: 'You must be signed in to post a mix.' };
-
-    const cleanTitle = title.trim().slice(0, 200);
-    const cleanUrl = mixUrl.trim();
-    if (!cleanTitle) return { success: false, message: 'Mix title is required.' };
-    if (!cleanUrl || !isValidUrl(cleanUrl)) return { success: false, message: 'Please provide a valid https:// audio or video URL.' };
-
-    const supabase = supabaseAdmin || supabaseServer;
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
-
-    const handle = await ensureUserProfile(supabase, user);
-
-    const { error } = await supabase
-      .from('stem_mixes')
-      .insert([{
-        stem_id: stemId,
-        user_id: user.id,
-        user_handle: handle,
-        title: cleanTitle,
-        mix_url: cleanUrl,
-        description: description?.trim().slice(0, 1000) || null,
-        likes_count: 0
-      }]);
-
-    if (error) return { success: false, message: error.message };
-
-    revalidatePath(`/stems/${stemId}`);
-    revalidatePath('/showcase');
-    return { success: true, message: 'Community mix submitted!' };
-  } catch (err) {
-    console.error('[submitCommunityMix] Error:', err);
-    return { success: false, message: 'Failed to submit mix.' };
-  }
+): Promise<{ success: boolean; message: string; discordThreadUrl?: string | null }> {
+  return submitMix({
+    stemId,
+    songName: title,
+    key: 'Standard',
+    bpm: 120,
+    mixUrl,
+    notes: description,
+    accessToken,
+  });
 }
 
 export async function toggleMixLike(

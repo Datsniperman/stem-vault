@@ -11,6 +11,8 @@ export interface Profile {
   id: string;
   email: string | null;
   display_name: string | null;
+  server_display_name?: string | null;
+  discord_id?: string | null;
   role: UserRole;
   avatar_url: string | null;
   created_at: string;
@@ -34,6 +36,8 @@ export interface Stem {
   is_verified: boolean;
   status: StemStatus;
   download_count?: number;
+  discord_message_id?: string | null;
+  discord_thread_id?: string | null;
   created_at: string;
   avg_rating?: number;
   rating_count?: number;
@@ -81,7 +85,10 @@ export interface StemMix {
   mix_url: string;
   description: string | null;
   likes_count: number;
+  song_name?: string | null;
+  musical_key?: string | null;
+  bpm?: number | null;
+  discord_post_id?: string | null;
   user_has_liked?: boolean;
   created_at: string;
 }
-

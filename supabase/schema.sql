@@ -9,6 +9,8 @@ create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
   email text,
   display_name text unique,
+  server_display_name text,
+  discord_id text unique,
   role text default 'user' check (role in ('user', 'verified', 'admin')),
   avatar_url text,
   created_at timestamp with time zone default timezone('utc'::text, now())
@@ -32,8 +34,12 @@ create table if not exists public.stems (
   is_verified boolean default false,
   status text default 'pending' check (status in ('pending', 'published', 'flagged')),
   download_count integer default 0,
+  discord_message_id text,
+  discord_thread_id text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+create index if not exists idx_stems_discord_thread_id on public.stems(discord_thread_id);
 
 -- Row Level Security
 alter table public.profiles enable row level security;
@@ -131,6 +137,10 @@ create table if not exists public.stem_mixes (
   mix_url text not null,
   description text,
   likes_count integer default 0,
+  song_name text,
+  musical_key text,
+  bpm numeric,
+  discord_post_id text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -175,9 +185,21 @@ create policy "Authenticated delete mix_likes" on public.mix_likes for delete us
 -- ============================================================
 -- MIGRATION SNIPPETS: Run these on an existing database
 -- ============================================================
--- alter table public.stems add column if not exists download_count integer default 0;
--- alter table public.stems add column if not exists tags text[] default array[]::text[];
--- alter table public.stems alter column status set default 'pending';
--- alter table public.profiles add constraint profiles_display_name_unique unique (display_name);
--- alter table public.stems add policy "Users view own stems" on public.stems for select using (auth.uid() = user_id);
+-- 1. Track Discord Announcement & Feedback Thread on Stems
+-- ALTER TABLE public.stems 
+-- ADD COLUMN IF NOT EXISTS discord_message_id TEXT,
+-- ADD COLUMN IF NOT EXISTS discord_thread_id TEXT;
 
+-- 2. Extend Profiles for Discord Guild Nicknames & Discord IDs
+-- ALTER TABLE public.profiles 
+-- ADD COLUMN IF NOT EXISTS discord_id TEXT UNIQUE,
+-- ADD COLUMN IF NOT EXISTS server_display_name TEXT;
+
+-- 3. Update stem_mixes to support Song Name, Key, BPM, and Discord Message tracking
+-- ALTER TABLE public.stem_mixes 
+-- ADD COLUMN IF NOT EXISTS song_name TEXT,
+-- ADD COLUMN IF NOT EXISTS musical_key TEXT,
+-- ADD COLUMN IF NOT EXISTS bpm NUMERIC,
+-- ADD COLUMN IF NOT EXISTS discord_post_id TEXT;
+
+-- CREATE INDEX IF NOT EXISTS idx_stems_discord_thread_id ON public.stems(discord_thread_id);
