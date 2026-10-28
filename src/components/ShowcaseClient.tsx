@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ExternalLink, Heart, Music2, MessageSquare, Layers, Download, Search, MessageCircle } from 'lucide-react';
+import { ExternalLink, Heart, Music2, MessageSquare, Layers, Download, Search, MessageCircle, Hash } from 'lucide-react';
 import Link from 'next/link';
 import { toggleMixLike } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
@@ -24,7 +24,6 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
   const [likingMap, setLikingMap] = useState<Record<string, boolean>>({});
   const [localMixes, setLocalMixes] = useState<Record<string, StemMix[]>>({});
 
-  // Filter tracks by search query (title, artist, or mix handles)
   const filteredTracks = tracks.filter(t => {
     const q = search.toLowerCase();
     const matchesTrack = t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q);
@@ -36,7 +35,6 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
     return matchesTrack || matchesMixes;
   });
 
-  // Sort tracks: tracks with mixes appear first
   const sortedTracks = [...filteredTracks].sort((a, b) => {
     const aMixes = (localMixes[a.id] || a.mixes).length;
     const bMixes = (localMixes[b.id] || b.mixes).length;
@@ -47,7 +45,7 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
 
   const handleLike = async (mixId: string, stemId: string) => {
     if (!user) {
-      addToast('Please sign in with Discord to like mixes.', 'error');
+      addToast('Please sign in with Discord to react to mixes.', 'error');
       return;
     }
 
@@ -74,39 +72,39 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
-      {/* Search & Quick Stats Bar (M3 Search Pill Bar) */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-surface-raised/80 border border-border/80 p-4 sm:p-5 rounded-3xl shadow-m3-1 backdrop-blur-md">
+      {/* Search & Channel Header */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#2b2d31] border border-[#1f2023] p-3 sm:p-4 rounded shadow-sm">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#949ba4] pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search by song title, church/artist, or mixer..."
-            className="w-full bg-surface-high border border-border/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-warm-white placeholder:text-dim/60 focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 transition-all"
+            placeholder="Search by song, artist, mixer..."
+            className="w-full bg-[#1e1f22] border border-[#1f2023] rounded pl-8 pr-3 py-1.5 text-xs text-[#dbdee1] placeholder-[#949ba4] focus:outline-none focus:border-[#5865F2]"
           />
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="bg-surface-high border border-border/70 px-3.5 py-1.5 rounded-full text-dim">
-            <strong className="text-amber font-semibold">{totalMixes}</strong> Total Mixes
+        <div className="flex items-center gap-2 text-xs text-[#949ba4]">
+          <span className="bg-[#1e1f22] border border-[#1f2023] px-2.5 py-1 rounded">
+            <strong className="text-[#f2f3f5]">{totalMixes}</strong> Community Mixes
           </span>
-          <span className="bg-surface-high border border-border/70 px-3.5 py-1.5 rounded-full text-dim">
-            <strong className="text-warm-white font-semibold">{tracks.length}</strong> Sessions
+          <span className="bg-[#1e1f22] border border-[#1f2023] px-2.5 py-1 rounded">
+            <strong className="text-[#f2f3f5]">{tracks.length}</strong> Multitrack Sessions
           </span>
         </div>
       </div>
 
       {/* Track Feed Grid */}
       {sortedTracks.length === 0 ? (
-        <div className="bg-surface-raised/70 border border-border/70 p-12 text-center rounded-3xl space-y-2 shadow-m3-1">
-          <p className="text-base text-warm-white font-semibold">No mixes found matching your search.</p>
-          <p className="text-xs text-dim">Try searching for a different song or artist title.</p>
+        <div className="bg-[#2b2d31] border border-[#1f2023] p-10 text-center rounded text-xs text-[#949ba4] space-y-1">
+          <p className="text-sm font-semibold text-[#f2f3f5]">No mixes found.</p>
+          <p>Try searching for a different song or church name.</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {sortedTracks.map(track => {
             const mixesList = localMixes[track.id] || track.mixes;
             const guildId = process.env.NEXT_PUBLIC_DISCORD_GUILD_ID || '';
@@ -117,32 +115,32 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
             return (
               <div
                 key={track.id}
-                className="bg-surface-raised/80 border border-border/80 hover:border-amber/40 p-6 sm:p-8 rounded-3xl space-y-6 transition-all shadow-m3-1 hover:shadow-m3-2 backdrop-blur-md"
+                className="bg-[#2b2d31] border border-[#1f2023] border-l-4 border-l-[#5865F2] p-5 rounded space-y-4 shadow-sm"
               >
                 {/* Track Info Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
-                  <div className="space-y-1.5">
-                    <h3 className="font-display text-2xl font-bold text-warm-white tracking-tight">{track.title}</h3>
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="text-amber font-semibold">{track.artist}</span>
-                      {track.bpm && <span className="text-dim">• {track.bpm} BPM</span>}
-                      {track.key && <span className="text-dim">• Key: {track.key}</span>}
-                      {track.track_count && <span className="text-dim">• {track.track_count} Stems</span>}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1f2023] pb-3">
+                  <div>
+                    <h3 className="text-base font-bold text-[#f2f3f5]">{track.title}</h3>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#949ba4] mt-0.5">
+                      <span className="text-[#dbdee1] font-medium">{track.artist}</span>
+                      {track.bpm && <span>• {track.bpm} BPM</span>}
+                      {track.key && <span>• Key: {track.key}</span>}
+                      {track.track_count && <span>• {track.track_count} Stems</span>}
                       {track.daw_template_url && (
-                        <span className="text-[10px] font-medium text-cyan-300 bg-cyan-950/60 border border-cyan-700/50 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                          <Layers className="w-3 h-3" /> DAW TEMPLATE
+                        <span className="text-[10px] text-[#23a55a] bg-[#23a55a]/10 border border-[#23a55a]/30 px-1.5 py-0.2 rounded font-medium flex items-center gap-1">
+                          <Layers className="w-3 h-3" /> DAW Template
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {discordThreadUrl && (
                       <a
                         href={discordThreadUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 bg-[#5865F2]/15 hover:bg-[#5865F2] border border-[#5865F2]/40 text-[#5865F2] hover:text-white font-semibold text-xs px-4 py-2 rounded-full transition-all active:scale-95 shadow-sm"
+                        className="bg-[#1e1f22] hover:bg-[#35373c] text-[#5865F2] border border-[#1f2023] text-xs font-medium px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                         <span>Discord Thread</span>
@@ -150,7 +148,7 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                     )}
                     <Link
                       href={`/stems/${track.id}`}
-                      className="inline-flex items-center gap-1.5 bg-amber hover:bg-amber-muted text-obsidian font-bold text-xs px-5 py-2 rounded-full transition-all shadow-m3-1 hover:shadow-m3-2 active:scale-95"
+                      className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-sm"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Get Stems & Mix</span>
@@ -159,89 +157,81 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                 </div>
 
                 {/* Community Mixes for this Session */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-mono uppercase text-dim font-semibold flex items-center gap-1.5">
-                      <Music2 className="w-3.5 h-3.5 text-amber" />
-                      <span>Community Mix Submissions ({mixesList.length})</span>
-                    </h4>
-                  </div>
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#949ba4] block">
+                    Community Mixes ({mixesList.length})
+                  </span>
 
                   {mixesList.length === 0 ? (
-                    <div className="bg-surface-high/50 border border-border/60 p-6 rounded-2xl text-center space-y-2">
-                      <p className="text-xs text-dim">No mixes submitted for this track yet.</p>
-                      <Link href={`/stems/${track.id}?action=submit`} className="text-xs text-amber hover:underline font-semibold inline-block">
-                        Be the first engineer to submit your mix →
+                    <div className="bg-[#1e1f22] border border-[#1f2023] p-4 rounded text-center text-xs text-[#949ba4] space-y-1">
+                      <p>No community mixes submitted yet for this pack.</p>
+                      <Link href={`/stems/${track.id}?action=submit`} className="text-xs text-[#5865F2] hover:underline font-medium inline-block">
+                        Submit the first mix →
                       </Link>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                       {mixesList.map(mix => (
                         <article
                           key={mix.id}
-                          className="group relative bg-surface-high/70 border border-border/70 p-4 sm:p-5 rounded-2xl flex flex-col justify-between space-y-3 hover:border-amber/40 transition-all shadow-sm hover:shadow-m3-1"
+                          className="bg-[#1e1f22] border border-[#1f2023] p-3 rounded flex flex-col justify-between space-y-2 text-xs"
                         >
-                          <div className="space-y-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="space-y-1">
-                                <span className="text-[10px] font-mono text-amber bg-amber/15 border border-amber/30 px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-block">
-                                  Mix Submission
-                                </span>
-                                <h5 className="font-display text-base font-bold text-warm-white leading-snug group-hover:text-amber transition-colors line-clamp-1">
-                                  {mix.song_name || mix.title}
-                                </h5>
-                              </div>
+                          <div className="space-y-1">
+                            <div className="flex items-start justify-between gap-1">
+                              <h5 className="font-semibold text-[#f2f3f5] truncate">
+                                {mix.song_name || mix.title}
+                              </h5>
                               <button
                                 onClick={() => handleLike(mix.id, track.id)}
                                 disabled={likingMap[mix.id]}
-                                className="flex items-center gap-1 text-[11px] bg-amber/15 border border-amber/30 text-amber px-2.5 py-1 rounded-full font-bold shrink-0 cursor-pointer hover:bg-amber hover:text-obsidian transition-colors shadow-sm"
+                                className="flex items-center gap-1 text-[11px] bg-[#2b2d31] hover:bg-[#35373c] border border-[#3f4147] text-[#dbdee1] px-1.5 py-0.5 rounded shrink-0 transition-colors"
                               >
-                                <Heart className="w-3 h-3 fill-amber" />
+                                <Heart className="w-3 h-3 fill-[#5865F2] text-[#5865F2]" />
                                 <span>{mix.likes_count}</span>
                               </button>
                             </div>
 
-                            <p className="text-mid text-xs font-medium">
+                            <p className="text-[11px] text-[#949ba4]">
                               by{' '}
                               <Link
                                 href={`/user/${encodeURIComponent(mix.user_handle.replace(/^@/, ''))}`}
-                                className="text-warm-white hover:text-amber hover:underline transition-colors font-semibold"
+                                className="text-[#dbdee1] hover:text-[#5865F2] hover:underline font-medium"
                               >
                                 {mix.user_handle}
                               </Link>
                             </p>
 
                             {(mix.musical_key || mix.bpm) && (
-                              <div className="flex items-center gap-2 text-[10px] font-mono text-dim">
+                              <p className="text-[10px] text-[#80848e] font-mono">
                                 {mix.musical_key && <span>Key: {mix.musical_key}</span>}
-                                {mix.bpm && <span>• {mix.bpm} BPM</span>}
-                              </div>
+                                {mix.bpm && <span> • {mix.bpm} BPM</span>}
+                              </p>
                             )}
 
                             {mix.description && (
-                              <p className="text-mid text-xs leading-relaxed line-clamp-2 bg-surface/50 p-2.5 rounded-xl border border-border/50">
+                              <p className="text-[11px] text-[#949ba4] line-clamp-2 bg-[#2b2d31] p-1.5 rounded">
                                 {mix.description}
                               </p>
                             )}
                           </div>
 
-                          <div className="pt-2 border-t border-border/60 flex items-center gap-2">
+                          <div className="pt-1.5 border-t border-[#232428] flex items-center justify-between">
                             <a
                               href={mix.mix_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 inline-flex items-center justify-center gap-1.5 bg-surface hover:bg-amber text-warm-white hover:text-obsidian border border-border/80 hover:border-amber font-semibold text-xs py-2 rounded-full transition-all shadow-sm active:scale-95"
+                              className="text-xs text-[#5865F2] hover:underline font-medium flex items-center gap-1"
                             >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>Listen to Mix</span>
+                              <span>Listen</span>
+                              <ExternalLink className="w-3 h-3" />
                             </a>
                             {discordThreadUrl && (
                               <a
                                 href={discordThreadUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                title="Critique on Discord Thread"
-                                className="w-8 h-8 rounded-full flex items-center justify-center bg-[#5865F2]/15 hover:bg-[#5865F2] text-[#5865F2] hover:text-white border border-[#5865F2]/40 transition-colors shrink-0 shadow-sm"
+                                title="Critique in Discord thread"
+                                className="text-[#949ba4] hover:text-[#5865F2] p-1"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" />
                               </a>
@@ -255,18 +245,13 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
 
                 {/* Discussion Snippet */}
                 {track.comments.length > 0 && (
-                  <div className="pt-2 border-t border-border/40 space-y-1.5">
-                    <h5 className="text-[10px] font-mono uppercase text-dim font-semibold flex items-center gap-1.5">
-                      <MessageSquare className="w-3 h-3 text-mid" />
-                      <span>Recent Notes ({track.comments.length})</span>
-                    </h5>
-                    <div className="bg-surface-high/50 border border-border/50 rounded-2xl p-3 text-xs text-mid space-y-1">
-                      {track.comments.slice(0, 2).map((c: StemComment) => (
-                        <p key={c.id} className="truncate text-xs">
-                          <strong className="text-amber font-semibold">{c.user_handle}:</strong> {c.content}
-                        </p>
-                      ))}
-                    </div>
+                  <div className="pt-2 border-t border-[#1f2023] text-xs text-[#949ba4] space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-[#80848e]">Recent Notes:</span>
+                    {track.comments.slice(0, 1).map((c: StemComment) => (
+                      <p key={c.id} className="truncate">
+                        <strong className="text-[#f2f3f5]">{c.user_handle}:</strong> {c.content}
+                      </p>
+                    ))}
                   </div>
                 )}
 

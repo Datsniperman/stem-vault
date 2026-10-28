@@ -1,74 +1,44 @@
 @import "tailwindcss";
 
-/* ── Material Design 3 Design Tokens ───────────────────────────────────────── */
+/* ── Discord Server Clean Theme Tokens ──────────────────────────────────────── */
 @theme {
-  /* M3 Dark Surfaces & Containers */
-  --color-obsidian:             #0E1015; /* Base Scaffold */
-  --color-surface:              #14171E; /* Surface Container Low */
-  --color-surface-raised:       #1B1E26; /* Surface Container */
-  --color-surface-high:         #232733; /* Surface Container High */
-  --color-surface-highest:      #2B303E; /* Surface Container Highest */
+  /* Discord Dark Surfaces */
+  --color-obsidian:             #1e1f22; /* Discord Darkest (Search/Inputs/Wells) */
+  --color-surface:              #313338; /* Discord Main Chat/Content Background */
+  --color-surface-raised:       #2b2d31; /* Discord Channels/Sidebar/Card Background */
+  --color-surface-high:         #383a40; /* Discord Hover/Active Elements */
+  --color-surface-highest:      #404249; /* Discord Elevated Popovers */
   
-  /* M3 Outlines & Dividers */
-  --color-border:               #2E3342; /* Outline Variant */
-  --color-border-warm:          #3E4456; /* Outline */
+  /* Discord Dividers & Borders */
+  --color-border:               #3f4147; /* Standard Divider */
+  --color-border-warm:          #4e5058; /* Active/Hover Border */
   
-  /* M3 Primary (Material Amber / Sun Accent) */
-  --color-amber:                #FFB836; /* Primary */
-  --color-amber-muted:          #FFC866; /* Primary Hover */
-  --color-amber-dim:            rgba(255, 184, 54, 0.14); /* Primary Container Tonal */
-  --color-amber-container:      #332200; /* Dark Primary Container */
-  
-  /* M3 Secondary (Discord Iris / Blurple) */
-  --color-discord:              #5865F2;
+  /* Discord Accent Colors */
+  --color-discord:              #5865F2; /* Discord Blurple */
   --color-discord-hover:        #4752C4;
-  --color-discord-dim:          rgba(88, 101, 242, 0.16);
+  --color-discord-dim:          rgba(88, 101, 242, 0.15);
   
-  /* M3 Tertiary (Studio Mint / Cyan) */
-  --color-cyan:                 #38BDF8;
-  --color-cyan-glow:            rgba(56, 189, 248, 0.2);
+  --color-amber:                #f0b232; /* Discord Yellow / Gold */
+  --color-amber-muted:          #e0a020;
+  --color-amber-dim:            rgba(240, 178, 50, 0.12);
   
-  /* Typography Colors */
-  --color-warm-white:           #ECEFF4; /* On-Surface */
-  --color-mid:                  #C3C8D4; /* On-Surface Variant */
-  --color-dim:                  #7B8294; /* Outline / Subtext */
+  --color-online:               #23a55a; /* Discord Green */
+  --color-online-dim:           rgba(35, 165, 90, 0.15);
+  
+  /* Text Colors */
+  --color-warm-white:           #f2f3f5; /* Primary Text */
+  --color-mid:                  #dbdee1; /* Standard Body Text */
+  --color-dim:                  #949ba4; /* Muted Channel Names & Labels */
   
   /* System States */
-  --color-error:                #FF6B6B;
-  --color-verified:             #FFB836;
-  --color-verified-dim:         rgba(255, 184, 54, 0.14);
+  --color-error:                #f23f43; /* Discord Red */
+  --color-verified:             #23a55a; /* Discord Green */
+  --color-verified-dim:         rgba(35, 165, 90, 0.15);
 
-  /* Typography */
-  --font-display: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body:    var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono:    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  /* M3 Elevation Shadows */
-  --shadow-m3-1: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
-  --shadow-m3-2: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -2px rgba(0, 0, 0, 0.35);
-  --shadow-m3-3: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
-  --shadow-m3-4: 0 20px 25px -5px rgba(0, 0, 0, 0.45), 0 8px 10px -6px rgba(0, 0, 0, 0.45);
-
-  /* Animations */
-  --animate-reveal-up:    reveal-up 0.5s cubic-bezier(0.2, 0, 0, 1) both;
-  --animate-fade-in:      fade-in 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
-  --animate-fade-slide-in: fade-slide-in 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
-}
-
-/* ── Keyframes ──────────────────────────────────────────────────────────── */
-@keyframes reveal-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes fade-slide-in {
-  from { opacity: 0; transform: translateX(8px); }
-  to   { opacity: 1; transform: translateX(0); }
+  /* Clean Discord-style sans typography */
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono:    'Consolas', 'Courier New', Courier, monospace;
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
@@ -78,8 +48,8 @@
   html { scroll-behavior: smooth; }
 
   body {
-    background-color: #0E1015;
-    color: #ECEFF4;
+    background-color: #313338;
+    color: #dbdee1;
     font-family: var(--font-body);
     min-height: 100vh;
   }
@@ -87,28 +57,17 @@
   button { cursor: pointer; }
 
   *:focus-visible {
-    outline: 2px solid #FFB836;
-    outline-offset: 2px;
+    outline: 2px solid #5865F2;
+    outline-offset: 1px;
   }
 
   ::selection {
-    background: rgba(255, 184, 54, 0.25);
-    color: #FFFFFF;
+    background: rgba(88, 101, 242, 0.35);
+    color: #ffffff;
   }
 
-  ::-webkit-scrollbar       { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0E1015; }
-  ::-webkit-scrollbar-thumb { background: #2E3342; border-radius: 9999px; }
-  ::-webkit-scrollbar-thumb:hover { background: #FFB836; }
-}
-
-/* ── Utilities ──────────────────────────────────────────────────────────── */
-@layer utilities {
-  .delay-0   { animation-delay: 0ms; }
-  .delay-80  { animation-delay: 80ms; }
-  .delay-160 { animation-delay: 160ms; }
-  .delay-240 { animation-delay: 240ms; }
-  .delay-320 { animation-delay: 320ms; }
-  .delay-400 { animation-delay: 400ms; }
-  .delay-500 { animation-delay: 500ms; }
+  ::-webkit-scrollbar       { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #2b2d31; }
+  ::-webkit-scrollbar-thumb { background: #1e1f22; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #18191c; }
 }

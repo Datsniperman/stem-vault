@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Sparkles, History, GitCommit } from 'lucide-react';
+import { X, Sparkles, GitCommit } from 'lucide-react';
 import changelogData from '@/data/changelog.json';
 
 interface UpdateLogEntry {
@@ -22,51 +22,45 @@ export function UpdateLogsModal({ isOpen, onClose }: UpdateLogsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-surface border border-border rounded-sm w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-[#313338] border border-[#1f2023] rounded-lg w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh] text-xs">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-amber/10 border border-amber/30 flex items-center justify-center text-amber">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-display text-xl text-warm-white">System Update Logs</h2>
-              <p className="text-dim text-xs font-body">Latest releases & platform updates for Stem Vault</p>
-            </div>
+        <div className="px-5 py-4 border-b border-[#1f2023] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#5865F2]" />
+            <h2 className="text-sm font-bold text-[#f2f3f5]">System Changelog & Updates</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-dim hover:text-warm-white transition-colors p-1"
-            aria-label="Close modal"
+            className="text-[#949ba4] hover:text-[#f2f3f5] p-1 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div className="p-5 overflow-y-auto space-y-4 flex-1">
           {changelog.map((entry, idx) => (
             <div
               key={entry.version}
-              className={`space-y-3 ${idx < changelog.length - 1 ? 'pb-6 border-b border-border/60' : ''}`}
+              className={`space-y-2 ${idx < changelog.length - 1 ? 'pb-4 border-b border-[#1f2023]' : ''}`}
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold bg-amber/10 text-amber border border-amber/30 px-2 py-0.5 rounded-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono font-bold bg-[#5865F2]/15 text-[#5865F2] px-1.5 py-0.2 rounded">
                     v{entry.version}
                   </span>
-                  <h3 className="font-display text-lg text-warm-white font-semibold">{entry.title}</h3>
+                  <h3 className="text-xs text-[#f2f3f5] font-semibold">{entry.title}</h3>
                 </div>
-                <span className="text-xs font-mono text-dim">{entry.date}</span>
+                <span className="text-[10px] text-[#80848e]">{entry.date}</span>
               </div>
 
-              <ul className="space-y-2 pl-1">
+              <ul className="space-y-1 pl-1">
                 {entry.changes.map((change, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs font-body text-mid leading-relaxed">
-                    <span className="text-amber mt-0.5 shrink-0">•</span>
+                  <li key={i} className="flex items-start gap-1.5 text-xs text-[#dbdee1] leading-relaxed">
+                    <span className="text-[#5865F2] shrink-0">•</span>
                     <span>{change}</span>
                   </li>
                 ))}
@@ -76,14 +70,14 @@ export function UpdateLogsModal({ isOpen, onClose }: UpdateLogsModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border bg-surface-raised flex items-center justify-between text-xs text-dim font-body shrink-0">
+        <div className="px-5 py-3 border-t border-[#1f2023] bg-[#2b2d31] flex items-center justify-between text-[#949ba4] shrink-0">
           <div className="flex items-center gap-1.5">
-            <GitCommit className="w-3.5 h-3.5 text-amber" />
-            <span>Updated automatically on production release</span>
+            <GitCommit className="w-3.5 h-3.5 text-[#5865F2]" />
+            <span>The Mixing Vault &bull; KerpBot</span>
           </div>
           <button
             onClick={onClose}
-            className="bg-obsidian border border-border hover:border-amber text-warm-white px-4 py-1.5 rounded-sm transition-colors"
+            className="bg-[#1e1f22] hover:bg-[#35373c] text-[#dbdee1] px-3 py-1 rounded transition-colors"
           >
             Close
           </button>

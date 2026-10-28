@@ -38,7 +38,6 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
     ? `@${user.email.split('@')[0]}`
     : '@member';
 
-  // Controlled form state to preserve input values on submit errors
   const [formData, setFormData] = useState({
     title: '',
     artist: '',
@@ -78,7 +77,7 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
     if (!state.success && !state.message) return;
     if (state.success && !hasHandledSuccess.current) {
       hasHandledSuccess.current = true;
-      addToast('Multitrack session published live & announced to Discord!', 'success');
+      addToast('Multitrack session published & posted to Discord!', 'success');
       if (state.stem) {
         onStemAdded(state.stem);
       }
@@ -100,20 +99,17 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
   if (!user) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-md"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       >
-        <div className="bg-surface-raised border border-border/80 rounded-3xl w-full max-w-sm shadow-m3-3 text-center p-8 space-y-4">
-          <div className="w-12 h-12 rounded-full bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center mx-auto text-[#5865F2]">
-            <Music2 className="w-6 h-6" />
-          </div>
-          <h2 className="font-display text-2xl font-bold text-warm-white">Discord Login Required</h2>
-          <p className="font-body text-xs text-dim leading-relaxed">
-            You must be logged in with your Discord account in the All Access server to publish stems to The Mixing Vault.
+        <div className="bg-[#313338] border border-[#1f2023] rounded-lg w-full max-w-sm shadow-2xl text-center p-6 space-y-3">
+          <h2 className="text-base font-bold text-[#f2f3f5]">Discord Connection Required</h2>
+          <p className="text-xs text-[#949ba4] leading-relaxed">
+            You must be signed in with your Discord account in Tyler Kerpsack All Access to upload multitrack stems.
           </p>
           <button
             onClick={onClose}
-            className="text-xs font-semibold text-amber hover:underline pt-2 block mx-auto"
+            className="text-xs text-[#5865F2] hover:underline pt-2 block mx-auto font-medium"
           >
             Close
           </button>
@@ -124,50 +120,44 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-md animate-[fade-in_0.15s_ease-out]"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-surface-raised border border-border/80 rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-m3-3 flex flex-col">
+      <div className="bg-[#313338] border border-[#1f2023] rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
 
-        {/* Header (M3 Dialog Header) */}
-        <div className="px-6 py-5 border-b border-border/60 flex items-center justify-between shrink-0">
+        {/* Discord Modal Header */}
+        <div className="px-6 py-4 border-b border-[#1f2023] flex items-center justify-between shrink-0">
           <div>
-            <h2 className="font-display text-2xl font-bold text-warm-white flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-amber/15 border border-amber/30 flex items-center justify-center text-amber">
-                <Music2 className="w-4 h-4" />
-              </div>
+            <h2 className="text-base font-bold text-[#f2f3f5]">
               Publish Multitrack Pack
             </h2>
-            <p className="text-dim text-xs font-body mt-1">
-              Publishing as <span className="text-amber font-semibold">{uploaderHandle}</span> • <span className="text-emerald-400 font-medium">Instant Release</span>
+            <p className="text-[#949ba4] text-xs mt-0.5">
+              Posting as <span className="text-[#f2f3f5] font-semibold">{uploaderHandle}</span> • Live Discord Release
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-dim hover:text-warm-white hover:bg-white/10 transition-colors"
+            className="text-[#949ba4] hover:text-[#f2f3f5] p-1 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Share link & instant release notice */}
-        <div className="px-6 pt-5 shrink-0">
-          <div className="flex items-start gap-3 bg-amber/10 border border-amber/30 rounded-2xl px-4 py-3.5">
-            <Link className="w-4 h-4 text-amber shrink-0 mt-0.5" />
-            <p className="text-xs text-amber leading-relaxed">
-              Your multitrack pack will go live <strong>immediately</strong> in The Mixing Vault, and KerpBot will post an announcement and mix critique thread to Discord. Set permissions to <strong>"Anyone with the link can view/download"</strong>.
-            </p>
+        {/* Info notice */}
+        <div className="px-6 pt-4 shrink-0">
+          <div className="bg-[#1e1f22] border border-[#1f2023] rounded p-3 text-xs text-[#949ba4] leading-relaxed">
+            Multitracks publish <strong>instantly</strong> to the library and KerpBot creates a dedicated mix feedback thread in Discord. Make sure cloud links are set to <strong>"Anyone with the link can view/download"</strong>.
           </div>
 
           {/* Validation errors */}
           {state.errors && Object.keys(state.errors).length > 0 && !state.success && (
-            <div className="mt-3 border border-error/30 bg-error/10 rounded-2xl px-4 py-3">
-              <p className="text-xs text-error mb-1.5 font-semibold">Please fix the following:</p>
-              <ul className="space-y-1">
+            <div className="mt-2.5 border border-[#f23f43]/40 bg-[#f23f43]/10 rounded p-3">
+              <p className="text-xs text-[#f23f43] mb-1 font-semibold">Please fix:</p>
+              <ul className="space-y-0.5 text-xs text-[#f23f43]">
                 {Object.entries(state.errors).map(([field, msg]) => (
-                  <li key={field} className="text-xs text-error flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    {msg}
+                  <li key={field} className="flex items-center gap-1.5">
+                    <AlertCircle className="w-3 h-3 shrink-0" />
+                    <span>{msg}</span>
                   </li>
                 ))}
               </ul>
@@ -175,18 +165,18 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
           )}
         </div>
 
-        <form action={formAction} className="px-6 pb-6 pt-5 space-y-4 flex-1">
+        <form action={formAction} className="px-6 py-4 space-y-3.5 flex-1 text-xs">
           <input type="hidden" name="uploader_handle" value={uploaderHandle} />
 
-          {/* Row 1: Title + Church/Artist */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Row 1: Title + Artist */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Song Title *" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Gratitude" error={state.errors?.title} />
             <Field label="Church / Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Brandon Lake / Bethel" error={state.errors?.artist} />
           </div>
 
           {/* Row 2: Multitrack Stems Cloud Link */}
           <Field
-            label="Multitrack Stems Download Link *"
+            label="Multitrack Stems Link (Drive, Dropbox) *"
             name="download_url"
             type="url"
             value={formData.download_url}
@@ -202,45 +192,43 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
             type="url"
             value={formData.daw_template_url}
             onChange={handleChange}
-            placeholder="https://drive.google.com/… (Logic Pro, Pro Tools, Reaper, Studio One template)"
+            placeholder="https://drive.google.com/… (Logic, Pro Tools, Reaper session)"
             error={state.errors?.daw_template_url}
           />
 
           {/* Row 4: Platform + Format */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <SelectField label="Host Platform" name="host_platform" value={formData.host_platform} onChange={handleChange} options={HOST_PLATFORMS} />
             <SelectField label="Audio Format" name="format" value={formData.format} onChange={handleChange} options={FORMATS} />
           </div>
 
           {/* Row 5: BPM + Key + Track Count */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <Field label="BPM" name="bpm" type="number" value={formData.bpm} onChange={handleChange} placeholder="72" inputMode="numeric" min={30} max={300} error={state.errors?.bpm} />
             <Field label="Key" name="key" value={formData.key} onChange={handleChange} placeholder="Bb" />
-            <Field label="Track Count" name="track_count" type="number" value={formData.track_count} onChange={handleChange} placeholder="36" inputMode="numeric" min={1} max={128} error={state.errors?.track_count} />
+            <Field label="Tracks" name="track_count" type="number" value={formData.track_count} onChange={handleChange} placeholder="36" inputMode="numeric" min={1} max={128} error={state.errors?.track_count} />
           </div>
 
-          {/* Row 6: Description / Special Notes */}
-          <div className="space-y-1.5">
-            <label htmlFor="description" className="block text-xs text-mid font-medium flex items-center justify-between">
-              <span>Special Notes / Multitrack Specs (Optional)</span>
-              <span className="text-[10px] text-dim">Console routing, sample rate, extra stems</span>
+          {/* Row 6: Description */}
+          <div className="space-y-1">
+            <label htmlFor="description" className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+              Session Details (Optional)
             </label>
             <textarea
               id="description"
               name="description"
-              rows={3}
+              rows={2}
               value={formData.description}
               onChange={handleChange}
-              placeholder="e.g. Recorded live at 48kHz/24-bit. Includes click & cues, split kick in/out, snare top/bottom, stereo room mics, and stem group tracks..."
-              className="w-full bg-surface-high border border-border/80 rounded-xl px-3.5 py-2.5 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 placeholder:text-dim/40 transition-colors resize-none"
+              placeholder="Recording specs, console routing, extra cues..."
+              className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-2 text-[#dbdee1] text-xs focus:outline-none focus:border-[#5865F2] placeholder-[#80848e] resize-none"
             />
           </div>
 
           {/* Row 7: Tags */}
-          <div className="space-y-1.5">
-            <label htmlFor="tags" className="block text-xs text-mid font-medium flex items-center justify-between">
-              <span>Tags (Optional)</span>
-              <span className="text-[10px] text-dim">Comma-separated, max 8</span>
+          <div className="space-y-1">
+            <label htmlFor="tags" className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+              Tags (Optional)
             </label>
             <input
               id="tags"
@@ -248,30 +236,30 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               type="text"
               value={formData.tags}
               onChange={handleChange}
-              placeholder="e.g. live, worship, daw template, multibus, logic, avid"
-              className="w-full bg-surface-high border border-border/80 rounded-xl px-3.5 py-2 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 placeholder:text-dim/40 transition-colors"
+              placeholder="e.g. live, worship, click track, drums split"
+              className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-[#dbdee1] text-xs focus:outline-none focus:border-[#5865F2] placeholder-[#80848e]"
             />
           </div>
 
-          {/* Row 8: Rights Certification Checkbox */}
-          <div className="flex items-start gap-2.5 pt-2 border-t border-border/60">
+          {/* Row 8: Rights Checkbox */}
+          <div className="flex items-start gap-2 pt-1 border-t border-[#1f2023]">
             <input
               type="checkbox"
               id="certify-rights"
               required
-              className="mt-0.5 accent-amber rounded cursor-pointer"
+              className="mt-0.5 accent-[#5865F2] rounded cursor-pointer"
             />
-            <label htmlFor="certify-rights" className="text-xs text-mid leading-relaxed cursor-pointer">
-              I certify that these audio files and templates are authorized for non-commercial mixing practice within the Tyler Kerpsack All Access community.
+            <label htmlFor="certify-rights" className="text-[11px] text-[#949ba4] leading-tight cursor-pointer">
+              I certify that these audio files and templates are authorized for non-commercial community mixing practice.
             </label>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-border/60">
+          {/* Actions / Discord Dialog Footer */}
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#1f2023]">
             <button
               type="button"
               onClick={onClose}
-              className="text-xs text-dim hover:text-warm-white px-4 py-2.5 rounded-full hover:bg-surface-high font-medium transition-colors"
+              className="text-xs text-[#dbdee1] hover:underline px-3 py-1.5 font-medium transition-colors"
             >
               Cancel
             </button>
@@ -279,12 +267,11 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               type="submit"
               disabled={isPending}
               className={clsx(
-                'bg-amber hover:bg-amber-muted text-obsidian font-bold text-xs px-6 py-2.5 rounded-full',
-                'transition-all shadow-m3-1 hover:shadow-m3-2 active:scale-95',
+                'bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold text-xs px-4 py-1.5 rounded transition-colors shadow-sm',
                 isPending && 'opacity-60 cursor-not-allowed'
               )}
             >
-              {isPending ? 'Publishing to Vault & Discord…' : 'Publish Multitrack Pack'}
+              {isPending ? 'Publishing…' : 'Publish Multitrack'}
             </button>
           </div>
         </form>
@@ -292,8 +279,6 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
     </div>
   );
 }
-
-// ── Sub-components ───────────────────────────────────────────────────────────
 
 interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -303,8 +288,8 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 function Field({ label, name, error, ...rest }: FieldProps) {
   return (
-    <div className="space-y-1.5">
-      <label htmlFor={name} className="block text-xs text-mid font-medium">
+    <div className="space-y-1">
+      <label htmlFor={name} className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
         {label}
       </label>
       <input
@@ -312,12 +297,11 @@ function Field({ label, name, error, ...rest }: FieldProps) {
         name={name}
         {...rest}
         className={clsx(
-          'w-full bg-surface-high border rounded-xl px-3.5 py-2 text-warm-white text-xs',
-          'focus:outline-none placeholder:text-dim/40 transition-colors',
-          error ? 'border-error focus:border-error' : 'border-border/80 focus:border-amber focus:ring-1 focus:ring-amber/40'
+          'w-full bg-[#1e1f22] border rounded px-3 py-1.5 text-[#dbdee1] text-xs focus:outline-none',
+          error ? 'border-[#f23f43]' : 'border-[#1f2023] focus:border-[#5865F2]'
         )}
       />
-      {error && <p className="text-xs text-error font-medium">{error}</p>}
+      {error && <p className="text-[11px] text-[#f23f43]">{error}</p>}
     </div>
   );
 }
@@ -330,17 +314,17 @@ interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement>
 
 function SelectField({ label, name, options, ...rest }: SelectFieldProps) {
   return (
-    <div className="space-y-1.5">
-      <label htmlFor={name} className="block text-xs text-mid font-medium">
+    <div className="space-y-1">
+      <label htmlFor={name} className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
         {label}
       </label>
       <select
         id={name}
         name={name}
         {...rest}
-        className="w-full bg-surface-high border border-border/80 rounded-xl px-3.5 py-2 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 transition-colors appearance-none cursor-pointer"
+        className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-[#dbdee1] text-xs focus:outline-none focus:border-[#5865F2] cursor-pointer"
       >
-        {options.map(o => <option key={o} value={o} className="bg-surface">{o}</option>)}
+        {options.map(o => <option key={o} value={o} className="bg-[#1e1f22]">{o}</option>)}
       </select>
     </div>
   );

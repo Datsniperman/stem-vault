@@ -24,11 +24,11 @@ export function AdminBar({
   const [verifying, setVerifying] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm('Permanently delete this stem from the database? This cannot be undone.')) return;
+    if (!confirm('Permanently delete this multitrack?')) return;
     setDeleting(true);
     const result = await deleteStem(stemId);
     if (result.success) {
-      addToast('Stem deleted successfully.', 'success');
+      addToast('Stem deleted.', 'success');
       onDelete(stemId);
     } else {
       addToast(`Delete failed: ${result.message}`, 'error');
@@ -41,21 +41,21 @@ export function AdminBar({
     const newVerifiedState = !isVerified;
     const result = await toggleStemVerification(stemId, newVerifiedState);
     if (result.success) {
-      addToast(`Stem ${newVerifiedState ? 'verified' : 'un-verified'}.`, 'success');
+      addToast(`Stem ${newVerifiedState ? 'marked Pro' : 'unmarked'}.`, 'success');
       onVerifyToggle(stemId, newVerifiedState);
     } else {
-      addToast(`Verify failed: ${result.message}`, 'error');
+      addToast(`Failed: ${result.message}`, 'error');
     }
     setVerifying(false);
   };
 
   return (
-    <div className="flex items-center gap-1 bg-surface-raised border border-border rounded px-1.5 py-0.5 ml-2 shrink-0">
+    <div className="flex items-center gap-1 bg-[#1e1f22] border border-[#1f2023] rounded px-1.5 py-0.5 ml-1.5 shrink-0">
       <button
         onClick={handleVerifyToggle}
         disabled={verifying}
-        title={isVerified ? 'Remove verified status' : 'Mark as Verified Pro session'}
-        className="p-1 text-verified hover:text-warm-white hover:bg-verified-dim rounded transition-colors disabled:opacity-50"
+        title={isVerified ? 'Remove Pro' : 'Mark as Pro'}
+        className="p-1 text-[#23a55a] hover:bg-[#23a55a]/15 rounded transition-colors disabled:opacity-50"
       >
         {isVerified ? (
           <ShieldOff className="w-3.5 h-3.5" />
@@ -66,8 +66,8 @@ export function AdminBar({
       <button
         onClick={handleDelete}
         disabled={deleting}
-        title="Delete stem permanently"
-        className="p-1 text-error hover:text-warm-white hover:bg-error/20 rounded transition-colors disabled:opacity-50"
+        title="Delete stem"
+        className="p-1 text-[#f23f43] hover:bg-[#f23f43]/15 rounded transition-colors disabled:opacity-50"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>

@@ -45,7 +45,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       const supabase: any = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Client unavailable');
 
-      // 1. Update public.profiles table directly
       const { error: profileErr } = await supabase
         .from('profiles')
         .update({ display_name: cleanName })
@@ -56,7 +55,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         return;
       }
 
-      // 2. Update Supabase Auth user metadata
       await supabase.auth.updateUser({
         data: { display_name: cleanName },
       });
@@ -106,61 +104,52 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-surface border border-border rounded-sm w-full max-w-md max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
+      <div className="bg-[#313338] border border-[#1f2023] rounded-lg w-full max-w-md max-h-[90vh] shadow-2xl flex flex-col overflow-hidden text-xs">
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
+        <div className="px-5 py-4 border-b border-[#1f2023] flex items-center justify-between shrink-0">
           <div>
-            <h2 className="font-display text-xl text-warm-white">Account Settings</h2>
-            <p className="text-xs text-dim font-body mt-0.5">Manage your profile & security</p>
+            <h2 className="text-sm font-bold text-[#f2f3f5]">User Settings</h2>
+            <p className="text-[#949ba4] text-[11px] mt-0.5">Manage handle and password</p>
           </div>
-          <button onClick={onClose} className="text-dim hover:text-warm-white p-1.5 transition-colors rounded-sm">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="text-[#949ba4] hover:text-[#f2f3f5] p-1 transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <div className="p-5 space-y-5 overflow-y-auto flex-1">
 
           {/* Account Overview Badge */}
-          <div className="bg-surface-raised border border-border rounded p-4 flex items-center justify-between">
+          <div className="bg-[#2b2d31] border border-[#1f2023] rounded p-3 flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-xs text-dim font-body">Signed in email</p>
-              <p className="text-sm font-body text-warm-white font-medium truncate mt-0.5">{user.email}</p>
+              <p className="text-[11px] text-[#949ba4]">Discord Email</p>
+              <p className="text-xs text-[#f2f3f5] font-medium truncate mt-0.5">{user.email}</p>
             </div>
-            <div className="shrink-0">
-              <span className={`text-xs font-body font-semibold px-2.5 py-1 rounded border ${
-                profile?.role === 'admin'
-                  ? 'bg-error/10 text-error border-error/30'
-                  : profile?.role === 'verified'
-                  ? 'bg-verified-dim text-verified border-verified/30'
-                  : 'bg-surface text-dim border-border'
-              }`}>
-                {profile?.role === 'admin' ? 'ADMIN' : profile?.role === 'verified' ? 'PRO TECH' : 'MEMBER'}
-              </span>
-            </div>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#1e1f22] text-[#949ba4]">
+              {profile?.role === 'admin' ? 'ADMIN' : profile?.role === 'verified' ? 'PRO TECH' : 'MEMBER'}
+            </span>
           </div>
 
           {/* Section 1: Change Username */}
-          <form onSubmit={handleUpdateUsername} className="space-y-3 pt-1">
-            <h3 className="text-sm font-body font-semibold text-warm-white flex items-center gap-2">
-              <User className="w-4 h-4 text-amber" />
-              Change Username / Display Handle
+          <form onSubmit={handleUpdateUsername} className="space-y-2.5">
+            <h3 className="text-xs font-bold text-[#f2f3f5] uppercase tracking-wider flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-[#5865F2]" />
+              <span>Display Handle</span>
             </h3>
 
-            <div className="space-y-1.5">
-              <label className="block text-xs text-dim font-body">Username</label>
+            <div className="space-y-1">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dim font-mono text-sm">@</span>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#80848e] font-mono text-xs">@</span>
                 <input
                   type="text"
                   required
                   value={username}
                   onChange={e => setUsername(e.target.value)}
-                  placeholder="mixguy_foh"
-                  className="w-full bg-obsidian border border-border rounded-sm pl-8 pr-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors"
+                  placeholder="mixguy"
+                  className="w-full bg-[#1e1f22] border border-[#1f2023] rounded pl-7 pr-3 py-1.5 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2]"
                 />
               </div>
             </div>
@@ -169,64 +158,60 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <button
                 type="submit"
                 disabled={usernameLoading}
-                className="bg-amber hover:bg-amber-muted disabled:opacity-50 text-obsidian font-body font-semibold text-xs px-4 py-2 rounded-sm transition-colors uppercase tracking-wider"
+                className="bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50 text-white font-medium text-xs px-3.5 py-1.5 rounded transition-colors"
               >
-                {usernameLoading ? 'Saving…' : 'Save Username'}
+                {usernameLoading ? 'Saving…' : 'Save Handle'}
               </button>
             </div>
           </form>
 
-          <hr className="border-border" />
+          <hr className="border-[#1f2023]" />
 
           {/* Section 2: Change Password */}
-          <form onSubmit={handleUpdatePassword} className="space-y-3">
-            <h3 className="text-sm font-body font-semibold text-warm-white flex items-center gap-2">
-              <Lock className="w-4 h-4 text-amber" />
-              Change Password
+          <form onSubmit={handleUpdatePassword} className="space-y-2.5">
+            <h3 className="text-xs font-bold text-[#f2f3f5] uppercase tracking-wider flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-[#5865F2]" />
+              <span>Change Password</span>
             </h3>
 
-            <div className="space-y-1.5">
-              <label className="block text-xs text-dim font-body">New Password</label>
+            <div className="space-y-1">
+              <label className="block text-[11px] text-[#949ba4]">New Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Min. 8 characters"
-                  className="w-full bg-obsidian border border-border rounded-sm pl-9 pr-10 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors"
+                  className="w-full bg-[#1e1f22] border border-[#1f2023] rounded pl-3 pr-8 py-1.5 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2]"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-dim hover:text-warm-white transition-colors"
+                  onClick={() => setShowPassword(p => !p)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#949ba4] hover:text-[#f2f3f5]"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-xs text-dim font-body">Confirm New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Re-type new password"
-                  className="w-full bg-obsidian border border-border rounded-sm pl-9 pr-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber placeholder:text-dim/40 transition-colors"
-                />
-              </div>
+            <div className="space-y-1">
+              <label className="block text-[11px] text-[#949ba4]">Confirm Password</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Repeat password"
+                className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2]"
+              />
             </div>
 
-            <div className="flex justify-end pt-1">
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={passwordLoading}
-                className="bg-amber hover:bg-amber-muted disabled:opacity-50 text-obsidian font-body font-semibold text-xs px-4 py-2 rounded-sm transition-colors uppercase tracking-wider"
+                className="bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50 text-white font-medium text-xs px-3.5 py-1.5 rounded transition-colors"
               >
                 {passwordLoading ? 'Updating…' : 'Update Password'}
               </button>
@@ -234,7 +219,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </form>
 
         </div>
-
       </div>
     </div>
   );

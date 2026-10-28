@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { ShowcaseClient, ShowcaseTrackItem } from '@/components/ShowcaseClient';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { Music2, ArrowLeft, Disc3, Sparkles } from 'lucide-react';
+import { ArrowLeft, Hash } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ShowcasePage() {
@@ -17,7 +17,6 @@ export default function ShowcasePage() {
       try {
         const supabase = getSupabaseBrowserClient();
         if (supabase) {
-          // Fetch published stem tracks
           const { data: stemsData, error: stemsError } = await supabase
             .from('stems')
             .select('*')
@@ -27,14 +26,12 @@ export default function ShowcasePage() {
           if (!stemsError && stemsData && stemsData.length > 0) {
             const stemIds = stemsData.map((s: any) => s.id);
 
-            // Fetch community mixes for these tracks
             const { data: mixesData } = await supabase
               .from('stem_mixes')
               .select('*')
               .in('stem_id', stemIds)
               .order('likes_count', { ascending: false });
 
-            // Fetch comments for these tracks
             const { data: commentsData } = await supabase
               .from('stem_comments')
               .select('*')
@@ -75,44 +72,40 @@ export default function ShowcasePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-surface text-warm-white pb-20">
+    <div className="min-h-screen bg-[#313338] text-[#dbdee1] pb-20">
       <Header onStemAdded={() => {}} />
 
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 space-y-8">
-
-        {/* Header Banner */}
-        <div className="space-y-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-medium text-dim hover:text-amber bg-surface-raised/80 hover:bg-surface-high border border-border/70 px-4 py-2 rounded-full transition-all shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Multitrack Archive</span>
-          </Link>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 bg-amber rounded-full flex items-center justify-center shadow-m3-1 shrink-0">
-              <Disc3 className="w-6 h-6 text-obsidian" />
+      {/* Channel Header Banner */}
+      <div className="bg-[#2b2d31] border-b border-[#1f2023]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-[#1e1f22] flex items-center justify-center text-[#949ba4]">
+                <Hash className="w-4 h-4 stroke-[2.5]" />
+              </div>
+              <h1 className="text-base sm:text-lg font-bold text-[#f2f3f5]">
+                mix-showcase
+              </h1>
+              <span className="text-[11px] font-medium text-[#5865F2] bg-[#5865F2]/10 border border-[#5865F2]/25 px-2 py-0.5 rounded">
+                Tyler Kerpsack All Access
+              </span>
             </div>
-            <div>
-              <h1 className="font-display text-3xl sm:text-4xl font-bold text-warm-white tracking-tight">Community Mix Showcase</h1>
-              <p className="text-dim text-xs sm:text-sm font-body mt-0.5">
-                Stream finished mixes and DAW sessions submitted by Tyler Kerpsack All Access engineers.
-              </p>
-            </div>
+            <p className="text-xs text-[#949ba4]">
+              Finished mixes and DAW practice sessions posted by community engineers. React, stream cloud links, and jump into Discord feedback threads.
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Content Feed */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 space-y-3">
-            <div className="w-10 h-10 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
-            <p className="text-xs text-dim font-medium">Loading community showcase...</p>
+          <div className="flex flex-col items-center justify-center py-24 space-y-2 text-[#949ba4]">
+            <div className="w-6 h-6 border-2 border-[#5865F2] border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs">Loading showcase feed...</p>
           </div>
         ) : (
           <ShowcaseClient tracks={tracks} />
         )}
-
       </div>
     </div>
   );

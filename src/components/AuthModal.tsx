@@ -154,78 +154,71 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-md animate-[fade-in_0.15s_ease-out]"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]"
       onClick={e => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className="bg-surface-raised border border-border/80 rounded-3xl w-full max-w-md shadow-m3-3 overflow-hidden">
+      <div className="bg-[#313338] border border-[#1f2023] rounded-lg w-full max-w-sm shadow-2xl overflow-hidden">
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-border/60 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[#1f2023] flex items-center justify-between">
           <div>
-            <h2 className="font-display text-2xl font-bold text-warm-white">
+            <h2 className="text-sm font-bold text-[#f2f3f5]">
               {mode === 'magic'
                 ? 'Magic link sign-in'
                 : mode === 'signup'
                 ? 'Create account'
                 : mode === 'forgot'
                 ? 'Reset password'
-                : 'Sign in'}
+                : 'Sign in to All Access'}
             </h2>
-            <p className="text-dim text-xs font-body mt-0.5">Tyler Kerpsack All Access</p>
+            <p className="text-[#949ba4] text-[11px] mt-0.5">Tyler Kerpsack Discord Community</p>
           </div>
           <button
             onClick={handleClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-dim hover:text-warm-white hover:bg-white/10 transition-colors"
+            className="text-[#949ba4] hover:text-[#f2f3f5] p-1 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-5">
           {successMessage ? (
-            <div className="text-center py-4 space-y-4">
-              <div className="w-14 h-14 rounded-full bg-amber/15 border border-amber/30 flex items-center justify-center mx-auto text-amber">
-                <Mail className="w-6 h-6" />
+            <div className="text-center py-3 space-y-3">
+              <div className="w-10 h-10 rounded-full bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center mx-auto text-[#5865F2]">
+                <Mail className="w-5 h-5" />
               </div>
 
               <div>
-                <p className="text-warm-white text-lg font-bold">Check your inbox</p>
-                <p className="text-dim text-xs leading-relaxed mt-1">{successMessage}</p>
-              </div>
-
-              <div className="flex items-start gap-2.5 bg-amber/10 border border-amber/30 rounded-2xl p-3.5 text-left">
-                <Info className="w-4 h-4 text-amber shrink-0 mt-0.5" />
-                <p className="text-xs text-amber leading-relaxed">
-                  <strong>Can't find the email?</strong> Check your <strong>Spam / Junk folder</strong>. Automatic verification emails may land there on first delivery.
-                </p>
+                <p className="text-[#f2f3f5] text-sm font-bold">Check your inbox</p>
+                <p className="text-[#949ba4] text-xs mt-1 leading-relaxed">{successMessage}</p>
               </div>
 
               <button
                 onClick={() => setSuccessMessage(null)}
-                className="mt-4 text-xs font-semibold text-amber hover:underline transition-colors block mx-auto"
+                className="text-xs text-[#5865F2] hover:underline font-medium block mx-auto"
               >
                 Back to sign in
               </button>
             </div>
           ) : (
             <div>
-              {/* Primary: Sign in with Discord (M3 Filled Tonal Button) */}
+              {/* Primary: Sign in with Discord */}
               <button
                 type="button"
                 onClick={handleDiscordSignIn}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2.5 bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50 text-white font-semibold py-3 px-5 rounded-full transition-all text-sm shadow-m3-1 hover:shadow-m3-2 active:scale-95 mb-5"
+                className="w-full flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50 text-white font-medium py-2.5 px-4 rounded transition-colors text-xs shadow-sm mb-4"
               >
-                <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
                   <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
                 </svg>
-                Sign in with Discord (All Access)
+                <span>Continue with Discord</span>
               </button>
 
-              <div className="flex items-center my-4">
-                <div className="flex-1 border-t border-border/60" />
-                <span className="px-3 text-[10px] text-dim uppercase tracking-wider font-mono">or email credentials</span>
-                <div className="flex-1 border-t border-border/60" />
+              <div className="flex items-center my-3">
+                <div className="flex-1 border-t border-[#1f2023]" />
+                <span className="px-2 text-[10px] text-[#80848e] uppercase font-bold tracking-wider">or email</span>
+                <div className="flex-1 border-t border-[#1f2023]" />
               </div>
 
               <form
@@ -236,141 +229,116 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     ? handleForgotPass
                     : handlePasswordAuth
                 }
-                className="space-y-4"
+                className="space-y-3 text-xs"
               >
                 {error && (
-                  <div className="flex items-start gap-2 bg-error/10 border border-error/30 rounded-2xl px-3.5 py-2.5">
-                    <AlertCircle className="w-4 h-4 text-error shrink-0 mt-0.5" />
-                    <span className="text-xs text-error font-medium">{error}</span>
+                  <div className="flex items-start gap-2 bg-[#f23f43]/10 border border-[#f23f43]/30 rounded p-2 text-xs text-[#f23f43]">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>{error}</span>
                   </div>
                 )}
 
-                {/* Username (Sign up only) */}
+                {/* Username */}
                 {mode === 'signup' && (
-                  <div className="space-y-1.5">
-                    <label className="block text-xs text-mid font-medium">Username / Handle *</label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
-                      <input
-                        type="text"
-                        required
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                        placeholder="e.g. mixguy_foh"
-                        className="w-full bg-surface-high border border-border/80 rounded-xl pl-9 pr-3.5 py-2.5 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 placeholder:text-dim/50 transition-colors"
-                      />
-                    </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">Username *</label>
+                    <input
+                      type="text"
+                      required
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
+                      placeholder="e.g. mixguy"
+                      className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2]"
+                    />
                   </div>
                 )}
 
                 {/* Email */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs text-mid font-medium">Email *</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="you@domain.com"
-                      className="w-full bg-surface-high border border-border/80 rounded-xl pl-9 pr-3.5 py-2.5 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 placeholder:text-dim/50 transition-colors"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="user@church.org"
+                    className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2]"
+                  />
                 </div>
 
                 {/* Password */}
                 {mode !== 'magic' && mode !== 'forgot' && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="block text-xs text-mid font-medium">Password *</label>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">Password *</label>
                       {mode === 'signin' && (
                         <button
                           type="button"
                           onClick={() => setMode('forgot')}
-                          className="text-xs text-amber hover:underline font-medium"
+                          className="text-[11px] text-[#5865F2] hover:underline"
                         >
                           Forgot password?
                         </button>
                       )}
                     </div>
                     <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-surface-high border border-border/80 rounded-xl pl-9 pr-10 py-2.5 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 placeholder:text-dim/50 transition-colors"
+                        className="w-full bg-[#1e1f22] border border-[#1f2023] rounded pl-3 pr-8 py-1.5 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2]"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(p => !p)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dim hover:text-warm-white"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#949ba4] hover:text-[#f2f3f5]"
                       >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Confirm Password (Sign up only) */}
+                {/* Confirm Password */}
                 {mode === 'signup' && (
-                  <div className="space-y-1.5">
-                    <label className="block text-xs text-mid font-medium">Confirm Password *</label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full bg-surface-high border border-border/80 rounded-xl pl-9 pr-3.5 py-2.5 text-warm-white text-xs focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/40 placeholder:text-dim/50 transition-colors"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Terms of Service Checkbox (Sign up only) */}
-                {mode === 'signup' && (
-                  <div className="flex items-start gap-2.5 pt-1">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">Confirm Password *</label>
                     <input
-                      type="checkbox"
-                      id="accept-terms"
+                      type={showPassword ? 'text' : 'password'}
                       required
-                      className="mt-0.5 accent-amber rounded cursor-pointer"
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2]"
                     />
-                    <label htmlFor="accept-terms" className="text-xs text-dim leading-tight cursor-pointer">
-                      I accept the <span className="text-warm-white underline font-medium">Terms of Service</span> (confirming audio files are authorized for community practice).
-                    </label>
                   </div>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-amber hover:bg-amber-muted disabled:opacity-50 text-obsidian font-bold py-2.5 rounded-full transition-all text-xs uppercase tracking-wider shadow-m3-1 active:scale-95"
+                  className="w-full bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50 text-white font-medium py-2 rounded transition-colors text-xs mt-1"
                 >
                   {loading
                     ? 'Please wait…'
                     : mode === 'magic'
-                    ? 'Send magic link'
+                    ? 'Send Magic Link'
                     : mode === 'forgot'
-                    ? 'Send reset link'
+                    ? 'Reset Password'
                     : mode === 'signup'
-                    ? 'Create account'
-                    : 'Sign in'}
+                    ? 'Create Account'
+                    : 'Sign In'}
                 </button>
 
                 {/* Mode toggles */}
-                <div className="flex justify-between items-center pt-3 border-t border-border/60">
+                <div className="flex justify-between items-center pt-2 border-t border-[#1f2023] text-[11px] text-[#949ba4]">
                   {mode === 'forgot' ? (
                     <button
                       type="button"
                       onClick={() => setMode('signin')}
-                      className="text-xs text-dim hover:text-warm-white transition-colors"
+                      className="hover:underline"
                     >
                       ← Back to sign in
                     </button>
@@ -379,7 +347,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       <button
                         type="button"
                         onClick={() => setMode(m => m === 'magic' ? 'signin' : 'magic')}
-                        className="text-xs text-dim hover:text-amber transition-colors"
+                        className="hover:text-[#5865F2]"
                       >
                         {mode === 'magic' ? 'Use password' : 'Use magic link'}
                       </button>
@@ -387,9 +355,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       <button
                         type="button"
                         onClick={() => setMode(m => m === 'signin' ? 'signup' : 'signin')}
-                        className="text-xs text-dim hover:text-amber transition-colors"
+                        className="hover:text-[#5865F2]"
                       >
-                        {mode === 'signin' ? 'Create account' : 'Sign in instead'}
+                        {mode === 'signin' ? 'Create account' : 'Sign in'}
                       </button>
                     </>
                   )}

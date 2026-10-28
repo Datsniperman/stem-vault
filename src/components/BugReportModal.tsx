@@ -44,71 +44,64 @@ export function BugReportModal({ isOpen, onClose }: BugReportModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-surface border border-border rounded-sm w-full max-w-lg shadow-2xl overflow-hidden">
+      <div className="bg-[#313338] border border-[#1f2023] rounded-lg w-full max-w-md shadow-2xl overflow-hidden text-xs">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-amber/10 border border-amber/30 flex items-center justify-center text-amber">
-              <Bug className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-display text-xl text-warm-white">Report a Bug / Feedback</h2>
-              <p className="text-dim text-xs font-body">Stem Vault Public Alpha</p>
-            </div>
+        <div className="px-5 py-4 border-b border-[#1f2023] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bug className="w-4 h-4 text-[#5865F2]" />
+            <h2 className="text-sm font-bold text-[#f2f3f5]">Bug Report & Bot Feedback</h2>
           </div>
-          <button onClick={onClose} className="text-dim hover:text-warm-white p-1 transition-colors rounded-sm">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="text-[#949ba4] hover:text-[#f2f3f5] p-1 transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-body text-dim">
-              Your Email or Discord Handle *
+        <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
+          <div className="space-y-1">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+              Discord Handle or Email *
             </label>
             <input
               type="text"
               required
               value={contactInfo}
               onChange={e => setContactInfo(e.target.value)}
-              placeholder="e.g. user@gmail.com or handle#1234"
-              className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber transition-colors"
+              placeholder="e.g. handle or user@email.com"
+              className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2]"
             />
-            <p className="text-[10px] text-dim font-body">So we can follow up with you if needed.</p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-body text-dim">
-              Bug Description / Expected Behavior *
+          <div className="space-y-1">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+              Description of Issue *
             </label>
             <textarea
               required
-              rows={4}
+              rows={3}
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Describe what happened, steps to reproduce, or feedback for the alpha..."
-              className="w-full bg-obsidian border border-border rounded-sm px-3 py-2 text-warm-white font-body text-sm focus:outline-none focus:border-amber transition-colors resize-none"
+              placeholder="Steps to reproduce, bot issue, or feedback..."
+              className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-2 text-xs text-[#dbdee1] focus:outline-none focus:border-[#5865F2] resize-none"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-border">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#1f2023]">
             <button
               type="button"
               onClick={onClose}
-              className="font-body text-sm text-dim hover:text-warm-white px-4 py-2 border border-border rounded-sm transition-colors"
+              className="text-xs text-[#dbdee1] hover:underline px-3 py-1.5 font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="bg-amber hover:bg-amber-muted disabled:opacity-50 text-obsidian font-body font-bold text-sm px-6 py-2 rounded-sm transition-colors uppercase tracking-wider flex items-center gap-2"
+              className="bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50 text-white font-medium text-xs px-3.5 py-1.5 rounded transition-colors"
             >
-              <span>{submitting ? 'Sending...' : 'Submit Bug Report'}</span>
-              <Send className="w-3.5 h-3.5" />
+              {submitting ? 'Submitting…' : 'Submit Report'}
             </button>
           </div>
         </form>
