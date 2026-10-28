@@ -829,6 +829,22 @@ export function StemDetailClient({
         </div>
       )}
 
+      {/* Footer */}
+      <footer className="mt-12 pt-6 border-t border-[#1f2023] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#949ba4]">
+        <div className="flex items-center gap-2">
+          <span className="text-[#f2f3f5] font-semibold">The Mixing Vault</span>
+          <span>•</span>
+          <span>Tyler Kerpsack All Access</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link href="/terms" className="hover:text-[#f2f3f5] hover:underline">Terms</Link>
+          <span>•</span>
+          <Link href="/privacy" className="hover:text-[#f2f3f5] hover:underline">Privacy</Link>
+          <span>•</span>
+          <Link href="/dmca" className="hover:text-[#f2f3f5] hover:underline">DMCA</Link>
+        </div>
+      </footer>
+
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
 
     </div>

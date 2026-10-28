@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Stem, FilterType, SortType } from '@/types';
 import { StemCard } from './StemCard';
 import { FilterRail } from './FilterRail';
@@ -148,8 +149,8 @@ export function StemFeed({ initialStems }: StemFeedProps) {
 
       {/* Clean Discord Server Footer */}
       <footer className="mt-auto border-t border-[#1f2023] bg-[#2b2d31]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#949ba4]">
-          <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#949ba4]">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-[#f2f3f5] font-semibold">The Mixing Vault</span>
             <span>•</span>
             <span>Tyler Kerpsack All Access</span>
@@ -160,6 +161,18 @@ export function StemFeed({ initialStems }: StemFeedProps) {
             >
               Guidelines & Rules
             </button>
+            <span>•</span>
+            <Link href="/terms" className="hover:text-[#f2f3f5] hover:underline transition-colors">
+              Terms
+            </Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-[#f2f3f5] hover:underline transition-colors">
+              Privacy
+            </Link>
+            <span>•</span>
+            <Link href="/dmca" className="hover:text-[#f2f3f5] hover:underline transition-colors">
+              DMCA
+            </Link>
           </div>
           <p className="text-[11px]">
             Community Multitrack Audio Exchange • Integrated with KerpBot

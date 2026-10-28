@@ -1,7 +1,8 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
-import { X, AlertCircle, Link, Music2, FileAudio, Layers, CheckCircle2 } from 'lucide-react';
+import NextLink from 'next/link';
+import { X, AlertCircle, Link as LinkIcon, Music2, FileAudio, Layers, CheckCircle2 } from 'lucide-react';
 import { submitStem } from '@/app/actions/stems';
 import { FormState, Stem } from '@/types';
 import { useToast } from '@/context/ToastContext';
@@ -250,7 +251,10 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
               className="mt-0.5 accent-[#5865F2] rounded cursor-pointer"
             />
             <label htmlFor="certify-rights" className="text-[11px] text-[#949ba4] leading-tight cursor-pointer">
-              I certify that these audio files and templates are authorized for non-commercial community mixing practice.
+              I certify that I am at least 13 years of age, have full authorization to share these files for non-commercial mixing practice, and agree to the{' '}
+              <NextLink href="/terms" target="_blank" className="text-[#5865F2] hover:underline">Terms of Service</NextLink>{' '}
+              and{' '}
+              <NextLink href="/dmca" target="_blank" className="text-[#5865F2] hover:underline">DMCA Policy</NextLink>.
             </label>
           </div>
 

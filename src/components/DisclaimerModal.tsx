@@ -1,6 +1,7 @@
 'use client';
 
-import { X, ShieldAlert } from 'lucide-react';
+import Link from 'next/link';
+import { X, ShieldAlert, ExternalLink } from 'lucide-react';
 
 interface DisclaimerModalProps {
   isOpen: boolean;
@@ -43,6 +44,9 @@ export function DisclaimerModal({ isOpen, onClose }: DisclaimerModalProps) {
 
             <ul className="list-disc pl-4 space-y-1.5 text-xs text-[#949ba4]">
               <li>
+                <strong className="text-[#dbdee1]">Age Gate (13+):</strong> You must be at least 13 years of age (or 16 in certain EU member states) to join, browse, or participate in accordance with COPPA and Discord Terms.
+              </li>
+              <li>
                 <strong className="text-[#dbdee1]">Discord Authentication:</strong> You must be an active member of the All Access Discord server to download multitracks and post mix critiques.
               </li>
               <li>
@@ -52,6 +56,24 @@ export function DisclaimerModal({ isOpen, onClose }: DisclaimerModalProps) {
                 <strong className="text-[#dbdee1]">KerpBot Thread Integration:</strong> Every multitrack and mix submission automatically triggers a post in Discord. Keep critiques helpful and constructive.
               </li>
             </ul>
+          </div>
+
+          {/* Legal Policies Links */}
+          <div className="pt-2 border-t border-[#1f2023] space-y-1.5 text-[11px] text-[#949ba4]">
+            <p className="font-semibold text-[#dbdee1]">Legal Policies & Disclosures:</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/terms" onClick={onClose} className="text-[#5865F2] hover:underline flex items-center gap-1">
+                Terms of Service <ExternalLink className="w-3 h-3" />
+              </Link>
+              <span>•</span>
+              <Link href="/privacy" onClick={onClose} className="text-[#5865F2] hover:underline flex items-center gap-1">
+                Privacy Policy <ExternalLink className="w-3 h-3" />
+              </Link>
+              <span>•</span>
+              <Link href="/dmca" onClick={onClose} className="text-[#5865F2] hover:underline flex items-center gap-1">
+                DMCA Guidelines <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
         </div>
 
