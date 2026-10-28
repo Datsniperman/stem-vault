@@ -6,7 +6,7 @@ const rest = new REST({ version: '10' }).setToken(botToken);
 
 export const GUILD_ID = process.env.DISCORD_GUILD_ID || '';
 export const MULTITRACK_CHANNEL_ID = process.env.DISCORD_MULTITRACKS_CHANNEL_ID || '';
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stemvault.app';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stem-vault-tau.vercel.app';
 
 export interface StemAnnouncementPayload {
   stemId: string;
