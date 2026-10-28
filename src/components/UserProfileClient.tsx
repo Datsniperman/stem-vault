@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Check, Download, Layers, HardDrive, FileAudio, ExternalLink, Shield, Hash } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { Header } from '@/components/Header';
 import { StemCard } from '@/components/StemCard';
@@ -39,64 +39,64 @@ export function UserProfileClient({ handle: initialHandle, profile, stems: initi
   const totalTracks = stems.reduce((sum, s) => sum + (s.track_count || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#313338] text-[#dbdee1] pb-20">
+    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 pb-20">
       <Header onStemAdded={() => {}} />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
         {/* Back Link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs text-[#949ba4] hover:text-[#f2f3f5] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to multitracks</span>
         </Link>
 
-        {/* User Card (Discord Member Profile Card style) */}
-        <div className="bg-[#2b2d31] border border-[#1f2023] rounded p-6 shadow-sm">
+        {/* User Card */}
+        <div className="bg-[#121212] border border-neutral-800/80 rounded-lg p-6 shadow-xs">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-[#5865F2] flex items-center justify-center font-bold text-xl text-white shadow-sm shrink-0">
+              <div className="w-14 h-14 rounded-full bg-neutral-900 border border-neutral-700 flex items-center justify-center font-bold text-xl text-white shadow-xs shrink-0">
                 {displayHandle.replace('@', '').slice(0, 2).toUpperCase()}
               </div>
 
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#f2f3f5]">{displayHandle}</h1>
+                  <h1 className="text-xl sm:text-2xl font-semibold text-white">{displayHandle}</h1>
                   {profile?.role === 'admin' && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#f23f43]/15 text-[#f23f43] border border-[#f23f43]/30">
+                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-neutral-800 text-white border border-neutral-700">
                       ADMIN
                     </span>
                   )}
                   {profile?.role === 'verified' && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#23a55a]/15 text-[#23a55a] border border-[#23a55a]/30">
-                      PRO TECH
+                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-neutral-800/60 text-neutral-300 border border-neutral-700">
+                      VERIFIED
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#949ba4] mt-0.5">
+                <p className="text-xs text-neutral-400 mt-0.5">
                   Tyler Kerpsack All Access Member &middot; Joined {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'The Mixing Vault'}
                 </p>
               </div>
             </div>
 
             {/* Quick Stats */}
-            <div className="flex items-center gap-3 bg-[#1e1f22] border border-[#1f2023] px-4 py-2.5 rounded text-xs">
+            <div className="flex items-center gap-3 bg-[#0d0d0e] border border-neutral-800 px-4 py-2.5 rounded text-xs font-mono">
               <div className="text-center">
-                <p className="font-bold text-[#f2f3f5]">{stems.length}</p>
-                <p className="text-[10px] text-[#949ba4]">Sessions</p>
+                <p className="font-semibold text-white">{stems.length}</p>
+                <p className="text-[10px] text-neutral-400">Sessions</p>
               </div>
-              <div className="w-px h-6 bg-[#3f4147]" />
+              <div className="w-px h-6 bg-neutral-800" />
               <div className="text-center">
-                <p className="font-bold text-[#f2f3f5]">{totalTracks}</p>
-                <p className="text-[10px] text-[#949ba4]">Stems</p>
+                <p className="font-semibold text-white">{totalTracks}</p>
+                <p className="text-[10px] text-neutral-400">Stems</p>
               </div>
-              <div className="w-px h-6 bg-[#3f4147]" />
+              <div className="w-px h-6 bg-neutral-800" />
               <div className="text-center">
-                <p className="font-bold text-[#23a55a]">{totalDownloads}</p>
-                <p className="text-[10px] text-[#949ba4]">Downloads</p>
+                <p className="font-semibold text-white">{totalDownloads}</p>
+                <p className="text-[10px] text-neutral-400">Downloads</p>
               </div>
             </div>
 
@@ -104,16 +104,15 @@ export function UserProfileClient({ handle: initialHandle, profile, stems: initi
         </div>
 
         {/* User's Stems */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-[#1f2023]">
-            <h2 className="text-sm font-semibold text-[#f2f3f5] flex items-center gap-1.5">
-              <Hash className="w-4 h-4 text-[#80848e]" />
-              <span>Published Multitracks ({stems.length})</span>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+            <h2 className="text-sm font-semibold text-white">
+              Published Multitracks ({stems.length})
             </h2>
           </div>
 
           {stems.length === 0 ? (
-            <div className="bg-[#2b2d31] border border-[#1f2023] p-8 text-center rounded text-xs text-[#949ba4]">
+            <div className="bg-[#121212] border border-neutral-800/80 p-8 text-center rounded-lg text-xs text-neutral-400">
               This member has not uploaded any multitrack packs yet.
             </div>
           ) : (

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Flag, ExternalLink, Info, Check, Layers, Disc3, Edit3, MessageCircle } from 'lucide-react';
+import { Download, Flag, Info, Check, Layers, Edit3, MessageCircle } from 'lucide-react';
 import { Stem, Profile } from '@/types';
 import { AdminBar } from './AdminBar';
 import { flagStem, incrementDownloadCount } from '@/app/actions/stems';
@@ -76,82 +76,74 @@ export function StemCard({
   return (
     <article
       onClick={() => router.push(`/stems/${stemData.id}`)}
-      className={clsx(
-        'group relative bg-[#2b2d31] hover:bg-[#35373c]/60 border border-[#1f2023] rounded p-4 flex flex-col justify-between space-y-3 cursor-pointer transition-colors shadow-sm',
-        localVerified ? 'border-l-4 border-l-[#23a55a]' : 'border-l-4 border-l-[#5865F2]'
-      )}
+      className="group relative bg-[#121212] hover:bg-[#161618] border border-neutral-800/80 hover:border-neutral-700 rounded-lg p-5 flex flex-col justify-between space-y-4 cursor-pointer transition-all shadow-xs"
     >
       {/* Top Header: Title, Artist, & Badges */}
-      <div className="space-y-1.5">
-        <div className="flex items-start justify-between gap-2">
+      <div className="space-y-2">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-sm sm:text-base font-semibold text-[#f2f3f5] group-hover:text-[#5865F2] transition-colors truncate">
+            <h2 className="text-sm sm:text-base font-semibold text-white group-hover:text-neutral-200 transition-colors truncate">
               {stemData.title}
             </h2>
-            <p className="text-xs text-[#949ba4] truncate font-medium">{stemData.artist}</p>
+            <p className="text-xs text-neutral-400 truncate mt-0.5 font-medium">{stemData.artist}</p>
           </div>
 
           {stemData.description && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowNotes(n => !n); }}
               title="Toggle notes"
-              className="text-[#949ba4] hover:text-[#f2f3f5] p-1 rounded transition-colors shrink-0"
+              className="text-neutral-500 hover:text-white p-1 rounded transition-colors shrink-0"
             >
               <Info className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* Discord Badges Row */}
+        {/* Minimal Badges Row */}
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          <span className="text-[10px] font-medium bg-[#1e1f22] text-[#949ba4] border border-[#1f2023] px-2 py-0.5 rounded">
+          <span className="text-[10px] font-mono text-neutral-400 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded">
             {stemData.host_platform}
           </span>
           {localVerified && (
-            <span className="text-[10px] font-semibold text-[#23a55a] bg-[#23a55a]/10 border border-[#23a55a]/30 px-2 py-0.5 rounded flex items-center gap-1">
-              <Check className="w-3 h-3 stroke-[3]" /> PRO
+            <span className="text-[10px] font-mono font-medium text-white bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded flex items-center gap-1">
+              <Check className="w-3 h-3 stroke-[2.5]" /> Verified
             </span>
           )}
           {stemData.daw_template_url && (
-            <span className="text-[10px] font-medium text-[#5865F2] bg-[#5865F2]/10 border border-[#5865F2]/25 px-2 py-0.5 rounded flex items-center gap-1">
+            <span className="text-[10px] font-mono text-neutral-300 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded flex items-center gap-1">
               <Layers className="w-3 h-3" /> DAW Template
             </span>
           )}
           {stemData.discord_thread_id && (
-            <span className="text-[10px] font-medium text-[#dbdee1] bg-[#1e1f22] border border-[#1f2023] px-2 py-0.5 rounded flex items-center gap-1">
-              <MessageCircle className="w-3 h-3 text-[#5865F2]" /> Thread
+            <span className="text-[10px] font-mono text-neutral-400 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded flex items-center gap-1">
+              <MessageCircle className="w-3 h-3 text-neutral-400" /> Discord Thread
             </span>
           )}
         </div>
       </div>
 
       {/* Main Content & Specs */}
-      <div className="space-y-2 flex-1">
+      <div className="space-y-2.5 flex-1">
         {showNotes && stemData.description ? (
-          <div className="bg-[#1e1f22] border border-[#1f2023] p-2.5 rounded text-xs text-[#dbdee1] whitespace-pre-wrap">
-            <span className="text-[10px] uppercase font-bold text-[#949ba4] block mb-1">Session Notes:</span>
+          <div className="bg-[#0f0f10] border border-neutral-800 p-3 rounded text-xs text-neutral-300 whitespace-pre-wrap">
+            <span className="text-[10px] uppercase font-mono text-neutral-400 block mb-1">Session Notes</span>
             {stemData.description}
           </div>
         ) : (
-          <div className="space-y-2">
-            {/* Meta Specs (Discord Embed Fields style) */}
+          <div className="space-y-2.5">
+            {/* Meta Specs */}
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
               {stemData.bpm && <MetaField label="BPM" value={String(stemData.bpm)} />}
               {stemData.key && <MetaField label="Key" value={stemData.key} />}
               {stemData.track_count && <MetaField label="Tracks" value={String(stemData.track_count)} />}
               {stemData.format && (
-                <span className="text-[10px] text-[#949ba4] bg-[#1e1f22] border border-[#1f2023] px-2 py-0.5 rounded font-mono">
+                <span className="text-[10px] text-neutral-400 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded font-mono">
                   {formatShort(stemData.format)}
                 </span>
               )}
-              {stemData.avg_rating !== undefined && stemData.avg_rating > 0 && (
-                <span className="text-[10px] text-[#f0b232] bg-[#f0b232]/10 border border-[#f0b232]/25 px-2 py-0.5 rounded font-medium">
-                  ★ {stemData.avg_rating}
-                </span>
-              )}
               {stemData.comment_count !== undefined && stemData.comment_count > 0 && (
-                <span className="text-[10px] text-[#949ba4] bg-[#1e1f22] border border-[#1f2023] px-2 py-0.5 rounded">
-                  💬 {stemData.comment_count}
+                <span className="text-[10px] text-neutral-400 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded font-mono">
+                  {stemData.comment_count} notes
                 </span>
               )}
             </div>
@@ -160,8 +152,8 @@ export function StemCard({
             {visibleTags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {visibleTags.map(tag => (
-                  <span key={tag} className="text-[10px] text-[#80848e] bg-[#1e1f22]/70 px-1.5 py-0.2 rounded font-mono">
-                    #{tag}
+                  <span key={tag} className="text-[10px] text-neutral-400 bg-neutral-900/60 px-1.5 py-0.2 rounded font-mono border border-neutral-800/60">
+                    {tag}
                   </span>
                 ))}
               </div>
@@ -171,17 +163,17 @@ export function StemCard({
       </div>
 
       {/* Footer / Submitter & Actions */}
-      <div className="pt-2 border-t border-[#1f2023] flex items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-1.5 min-w-0 text-[#949ba4]">
+      <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2 min-w-0 text-neutral-400">
           <Link
             href={`/user/${encodeURIComponent(stemData.uploader_handle.replace(/^@/, ''))}`}
             onClick={e => e.stopPropagation()}
-            className="hover:text-[#5865F2] hover:underline transition-colors font-medium text-[#f2f3f5] truncate"
+            className="hover:text-white hover:underline transition-colors font-medium text-neutral-300 truncate"
           >
             {stemData.uploader_handle}
           </Link>
-          <span>•</span>
-          <span className="text-[11px] shrink-0">{timeAgo}</span>
+          <span className="text-neutral-500">•</span>
+          <span className="text-[11px] text-neutral-400 shrink-0 font-mono">{timeAgo}</span>
           {isAdmin && (
             <div onClick={e => e.stopPropagation()}>
               <AdminBar
@@ -199,8 +191,8 @@ export function StemCard({
           <button
             onClick={handleReport}
             disabled={reporting}
-            title="Report dead link"
-            className="p-1 text-[#949ba4] hover:text-[#f23f43] transition-colors disabled:opacity-40"
+            title="Report link"
+            className="p-1 text-neutral-400 hover:text-white transition-colors disabled:opacity-40"
           >
             <Flag className="w-3.5 h-3.5" />
           </button>
@@ -208,7 +200,7 @@ export function StemCard({
             <button
               onClick={(e) => { e.stopPropagation(); setIsEditOpen(true); }}
               title="Edit session"
-              className="p-1 text-[#949ba4] hover:text-[#5865F2] transition-colors"
+              className="p-1 text-neutral-400 hover:text-white transition-colors"
             >
               <Edit3 className="w-3.5 h-3.5" />
             </button>
@@ -218,7 +210,7 @@ export function StemCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleDownload}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-sm"
+            className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download</span>
@@ -238,9 +230,9 @@ export function StemCard({
 
 function MetaField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="inline-flex items-center gap-1 bg-[#1e1f22] border border-[#1f2023] rounded px-2 py-0.5 text-xs">
-      <span className="text-[10px] text-[#949ba4]">{label}:</span>
-      <span className="text-[11px] font-medium text-[#f2f3f5]">{value}</span>
+    <div className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 rounded px-2 py-0.5 text-xs font-mono">
+      <span className="text-[10px] text-neutral-400">{label}</span>
+      <span className="text-[11px] font-medium text-neutral-200">{value}</span>
     </div>
   );
 }

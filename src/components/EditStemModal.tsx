@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, AlertCircle, Edit3 } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { updateStem } from '@/app/actions/stems';
 import { Stem } from '@/types';
 import { useToast } from '@/context/ToastContext';
@@ -72,46 +72,57 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
     setIsPending(true);
     setErrors({});
 
-    const data = new FormData();
-    Object.entries(formData).forEach(([key, val]) => {
-      data.append(key, val);
-    });
+    try {
+      const body = new FormData();
+      body.append('title', formData.title);
+      body.append('artist', formData.artist);
+      body.append('download_url', formData.download_url);
+      if (formData.daw_template_url) body.append('daw_template_url', formData.daw_template_url);
+      body.append('host_platform', formData.host_platform);
+      body.append('format', formData.format);
+      if (formData.bpm) body.append('bpm', formData.bpm);
+      if (formData.key) body.append('key', formData.key);
+      if (formData.track_count) body.append('track_count', formData.track_count);
+      if (formData.description) body.append('description', formData.description);
+      if (formData.tags) body.append('tags', formData.tags);
 
-    const res = await updateStem(stem.id, data);
-    setIsPending(false);
+      const res = await updateStem(stem.id, body);
 
-    if (res.success) {
-      addToast(res.message, 'success');
-      if (res.stem) {
+      if (res.success && res.stem) {
+        addToast('Multitrack session updated.', 'success');
         onStemUpdated(res.stem);
+        onClose();
+      } else {
+        if (res.errors) {
+          setErrors(res.errors);
+        }
+        addToast(res.message || 'Failed to update session.', 'error');
       }
-      onClose();
-    } else {
-      if (res.errors) {
-        setErrors(res.errors);
-      }
-      addToast(res.message, 'error');
+    } catch (err: any) {
+      addToast(err?.message || 'Failed to update session.', 'error');
+    } finally {
+      setIsPending(false);
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-[#313338] border border-[#1f2023] rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div className="bg-[#121212] border border-neutral-800 rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
 
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[#1f2023] flex items-center justify-between shrink-0">
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-neutral-800 flex items-center justify-between shrink-0">
           <div>
-            <h2 className="text-base font-bold text-[#f2f3f5]">Edit Stem Session</h2>
-            <p className="text-[#949ba4] text-xs mt-0.5">
-              Editing: <span className="text-[#f2f3f5] font-semibold">{stem.title}</span>
-            </p>
+            <h2 className="text-base font-semibold text-white">
+              Edit Multitrack Session
+            </h2>
+            <p className="text-neutral-400 text-xs mt-0.5">Update metadata or cloud storage link</p>
           </div>
           <button
             onClick={onClose}
-            className="text-[#949ba4] hover:text-[#f2f3f5] p-1 transition-colors"
+            className="text-neutral-400 hover:text-white p-1 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -119,12 +130,12 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
 
         {/* Errors list */}
         {errors && Object.keys(errors).length > 0 && (
-          <div className="mx-6 mt-3 border border-[#f23f43]/40 bg-[#f23f43]/10 rounded p-3 shrink-0">
-            <p className="text-xs text-[#f23f43] mb-1 font-semibold">Please fix:</p>
-            <ul className="space-y-0.5 text-xs text-[#f23f43]">
+          <div className="mx-6 mt-3 border border-neutral-700 bg-neutral-900 rounded p-3 shrink-0">
+            <p className="text-xs text-white mb-1 font-semibold">Please fix:</p>
+            <ul className="space-y-0.5 text-xs text-neutral-300">
               {Object.entries(errors).map(([field, msg]) => (
                 <li key={field} className="flex items-center gap-1.5">
-                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <AlertCircle className="w-3 h-3 shrink-0 text-neutral-400" />
                   <span>{msg}</span>
                 </li>
               ))}
@@ -171,7 +182,7 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="edit-description" className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+            <label htmlFor="edit-description" className="block text-[11px] font-mono uppercase text-neutral-400">
               Session Details (Optional)
             </label>
             <textarea
@@ -181,12 +192,12 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
               value={formData.description}
               onChange={handleChange}
               placeholder="Session notes, routing, cues..."
-              className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-2 text-[#dbdee1] text-xs focus:outline-none focus:border-[#5865F2] placeholder-[#80848e] resize-none"
+              className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-3 py-2 text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 placeholder-neutral-500 resize-none"
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="edit-tags" className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+            <label htmlFor="edit-tags" className="block text-[11px] font-mono uppercase text-neutral-400">
               Tags (Optional)
             </label>
             <input
@@ -196,16 +207,16 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
               value={formData.tags}
               onChange={handleChange}
               placeholder="e.g. worship, live, click track, drums split"
-              className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-[#dbdee1] text-xs focus:outline-none focus:border-[#5865F2] placeholder-[#80848e]"
+              className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-3 py-1.5 text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 placeholder-neutral-500"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#1f2023]">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-neutral-800">
             <button
               type="button"
               onClick={onClose}
-              className="text-xs text-[#dbdee1] hover:underline px-3 py-1.5 font-medium transition-colors"
+              className="text-xs text-neutral-400 hover:text-white px-3 py-1.5 font-medium transition-colors"
             >
               Cancel
             </button>
@@ -213,7 +224,7 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
               type="submit"
               disabled={isPending}
               className={clsx(
-                'bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold text-xs px-4 py-1.5 rounded transition-colors shadow-sm',
+                'bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-1.5 rounded transition-colors shadow-xs',
                 isPending && 'opacity-60 cursor-not-allowed'
               )}
             >
@@ -235,7 +246,7 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 function Field({ label, name, error, ...rest }: FieldProps) {
   return (
     <div className="space-y-1">
-      <label htmlFor={name} className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+      <label htmlFor={name} className="block text-[11px] font-mono uppercase text-neutral-400">
         {label}
       </label>
       <input
@@ -243,11 +254,11 @@ function Field({ label, name, error, ...rest }: FieldProps) {
         name={name}
         {...rest}
         className={clsx(
-          'w-full bg-[#1e1f22] border rounded px-3 py-1.5 text-[#dbdee1] text-xs focus:outline-none',
-          error ? 'border-[#f23f43]' : 'border-[#1f2023] focus:border-[#5865F2]'
+          'w-full bg-[#0d0d0e] border rounded px-3 py-1.5 text-neutral-200 text-xs focus:outline-none',
+          error ? 'border-neutral-500' : 'border-neutral-800 focus:border-neutral-500'
         )}
       />
-      {error && <p className="text-[11px] text-[#f23f43]">{error}</p>}
+      {error && <p className="text-[11px] text-neutral-400">{error}</p>}
     </div>
   );
 }
@@ -261,16 +272,16 @@ interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement>
 function SelectField({ label, name, options, ...rest }: SelectFieldProps) {
   return (
     <div className="space-y-1">
-      <label htmlFor={name} className="block text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+      <label htmlFor={name} className="block text-[11px] font-mono uppercase text-neutral-400">
         {label}
       </label>
       <select
         id={name}
         name={name}
         {...rest}
-        className="w-full bg-[#1e1f22] border border-[#1f2023] rounded px-3 py-1.5 text-[#dbdee1] text-xs focus:outline-none focus:border-[#5865F2] cursor-pointer"
+        className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-3 py-1.5 text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 cursor-pointer"
       >
-        {options.map(o => <option key={o} value={o} className="bg-[#1e1f22]">{o}</option>)}
+        {options.map(o => <option key={o} value={o} className="bg-[#121212]">{o}</option>)}
       </select>
     </div>
   );

@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { ShowcaseClient, ShowcaseTrackItem } from '@/components/ShowcaseClient';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { ArrowLeft, Hash } from 'lucide-react';
-import Link from 'next/link';
 
 export default function ShowcasePage() {
   const [tracks, setTracks] = useState<ShowcaseTrackItem[]>([]);
@@ -72,36 +70,31 @@ export default function ShowcasePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#313338] text-[#dbdee1] pb-20">
+    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 pb-20">
       <Header onStemAdded={() => {}} />
 
-      {/* Channel Header Banner */}
-      <div className="bg-[#2b2d31] border-b border-[#1f2023]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-[#1e1f22] flex items-center justify-center text-[#949ba4]">
-                <Hash className="w-4 h-4 stroke-[2.5]" />
-              </div>
-              <h1 className="text-base sm:text-lg font-bold text-[#f2f3f5]">
-                mix-showcase
-              </h1>
-              <span className="text-[11px] font-medium text-[#5865F2] bg-[#5865F2]/10 border border-[#5865F2]/25 px-2 py-0.5 rounded">
-                Tyler Kerpsack All Access
-              </span>
-            </div>
-            <p className="text-xs text-[#949ba4]">
-              Finished mixes and DAW practice sessions posted by community engineers. React, stream cloud links, and jump into Discord feedback threads.
+      {/* Header Banner */}
+      <section className="border-b border-neutral-800/80 bg-[#0a0a0a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+          <div className="space-y-1.5 max-w-2xl">
+            <p className="text-[11px] font-mono uppercase tracking-widest text-neutral-400">
+              Tyler Kerpsack All Access
+            </p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+              Community Mix Showcase
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed pt-1">
+              Finished mixes and DAW practice sessions posted by community engineers. Stream mixes, check signal chains, and exchange feedback in Discord.
             </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 space-y-2 text-[#949ba4]">
-            <div className="w-6 h-6 border-2 border-[#5865F2] border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs">Loading showcase feed...</p>
+          <div className="flex flex-col items-center justify-center py-24 space-y-3 text-neutral-400">
+            <div className="w-6 h-6 border-2 border-neutral-700 border-t-white rounded-full animate-spin" />
+            <p className="text-xs font-mono">Loading showcase...</p>
           </div>
         ) : (
           <ShowcaseClient tracks={tracks} />

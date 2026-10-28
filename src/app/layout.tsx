@@ -39,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.className}>
-      <body className="antialiased bg-[#313338] text-[#dbdee1]">
+      <body className="antialiased bg-[#0a0a0a] text-neutral-200">
         <AuthProvider>
           <ToastProvider>
             {children}

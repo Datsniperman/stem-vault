@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ExternalLink, Heart, Music2, MessageSquare, Layers, Download, Search, MessageCircle, Hash } from 'lucide-react';
+import { ExternalLink, Heart, Layers, Search, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { toggleMixLike } from '@/app/actions/stems';
 import { useToast } from '@/context/ToastContext';
@@ -28,24 +28,19 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
     const q = search.toLowerCase();
     const matchesTrack = t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q);
     const matchesMixes = t.mixes.some(m =>
-      m.title.toLowerCase().includes(q) ||
+      (m.song_name && m.song_name.toLowerCase().includes(q)) ||
       m.user_handle.toLowerCase().includes(q) ||
-      (m.song_name && m.song_name.toLowerCase().includes(q))
+      (m.description && m.description.toLowerCase().includes(q))
     );
     return matchesTrack || matchesMixes;
   });
 
-  const sortedTracks = [...filteredTracks].sort((a, b) => {
-    const aMixes = (localMixes[a.id] || a.mixes).length;
-    const bMixes = (localMixes[b.id] || b.mixes).length;
-    return bMixes - aMixes;
-  });
-
-  const totalMixes = tracks.reduce((acc, t) => acc + (localMixes[t.id] || t.mixes).length, 0);
+  const sortedTracks = [...filteredTracks].sort((a, b) => b.mixes.length - a.mixes.length);
+  const totalMixes = tracks.reduce((sum, t) => sum + t.mixes.length, 0);
 
   const handleLike = async (mixId: string, stemId: string) => {
     if (!user) {
-      addToast('Please sign in with Discord to react to mixes.', 'error');
+      addToast('Please connect to like mixes.', 'info');
       return;
     }
 
@@ -74,37 +69,37 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
   return (
     <div className="space-y-6">
 
-      {/* Search & Channel Header */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#2b2d31] border border-[#1f2023] p-3 sm:p-4 rounded shadow-sm">
+      {/* Search & Header Stats */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-[#121212] border border-neutral-800/80 p-4 rounded-lg shadow-xs">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#949ba4] pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by song, artist, mixer..."
-            className="w-full bg-[#1e1f22] border border-[#1f2023] rounded pl-8 pr-3 py-1.5 text-xs text-[#dbdee1] placeholder-[#949ba4] focus:outline-none focus:border-[#5865F2]"
+            className="w-full bg-[#0d0d0e] border border-neutral-800 rounded pl-8 pr-3 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-[#949ba4]">
-          <span className="bg-[#1e1f22] border border-[#1f2023] px-2.5 py-1 rounded">
-            <strong className="text-[#f2f3f5]">{totalMixes}</strong> Community Mixes
+        <div className="flex items-center gap-3 text-xs text-neutral-400 font-mono">
+          <span className="bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded">
+            <strong className="text-white">{totalMixes}</strong> Mixes
           </span>
-          <span className="bg-[#1e1f22] border border-[#1f2023] px-2.5 py-1 rounded">
-            <strong className="text-[#f2f3f5]">{tracks.length}</strong> Multitrack Sessions
+          <span className="bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded">
+            <strong className="text-white">{tracks.length}</strong> Sessions
           </span>
         </div>
       </div>
 
       {/* Track Feed Grid */}
       {sortedTracks.length === 0 ? (
-        <div className="bg-[#2b2d31] border border-[#1f2023] p-10 text-center rounded text-xs text-[#949ba4] space-y-1">
-          <p className="text-sm font-semibold text-[#f2f3f5]">No mixes found.</p>
-          <p>Try searching for a different song or church name.</p>
+        <div className="bg-[#121212] border border-neutral-800/80 p-12 text-center rounded-lg text-xs text-neutral-400 space-y-1">
+          <p className="text-sm font-semibold text-white">No mixes found</p>
+          <p>Try searching for a different song or artist name.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {sortedTracks.map(track => {
             const mixesList = localMixes[track.id] || track.mixes;
             const guildId = process.env.NEXT_PUBLIC_DISCORD_GUILD_ID || '';
@@ -115,19 +110,19 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
             return (
               <div
                 key={track.id}
-                className="bg-[#2b2d31] border border-[#1f2023] border-l-4 border-l-[#5865F2] p-5 rounded space-y-4 shadow-sm"
+                className="bg-[#121212] border border-neutral-800/80 p-5 rounded-lg space-y-4 shadow-xs"
               >
                 {/* Track Info Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1f2023] pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800/80 pb-3">
                   <div>
-                    <h3 className="text-base font-bold text-[#f2f3f5]">{track.title}</h3>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#949ba4] mt-0.5">
-                      <span className="text-[#dbdee1] font-medium">{track.artist}</span>
+                    <h3 className="text-base font-semibold text-white">{track.title}</h3>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400 mt-0.5">
+                      <span className="text-neutral-300 font-medium">{track.artist}</span>
                       {track.bpm && <span>• {track.bpm} BPM</span>}
-                      {track.key && <span>• Key: {track.key}</span>}
+                      {track.key && <span>• Key {track.key}</span>}
                       {track.track_count && <span>• {track.track_count} Stems</span>}
                       {track.daw_template_url && (
-                        <span className="text-[10px] text-[#23a55a] bg-[#23a55a]/10 border border-[#23a55a]/30 px-1.5 py-0.2 rounded font-medium flex items-center gap-1">
+                        <span className="text-[10px] font-mono text-neutral-300 bg-neutral-900 border border-neutral-800 px-1.5 py-0.2 rounded flex items-center gap-1">
                           <Layers className="w-3 h-3" /> DAW Template
                         </span>
                       )}
@@ -140,7 +135,7 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                         href={discordThreadUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-[#1e1f22] hover:bg-[#35373c] text-[#5865F2] border border-[#1f2023] text-xs font-medium px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                        className="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 text-xs font-medium px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                         <span>Discord Thread</span>
@@ -148,90 +143,94 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
                     )}
                     <Link
                       href={`/stems/${track.id}`}
-                      className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-sm"
+                      className="bg-white hover:bg-neutral-200 text-black text-xs font-semibold px-3 py-1.5 rounded transition-colors"
                     >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Get Stems & Mix</span>
+                      View Session
                     </Link>
                   </div>
                 </div>
 
-                {/* Community Mixes for this Session */}
-                <div className="space-y-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#949ba4] block">
-                    Community Mixes ({mixesList.length})
-                  </span>
+                {/* Mixes List */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                      Community Mixes ({mixesList.length})
+                    </span>
+                  </div>
 
                   {mixesList.length === 0 ? (
-                    <div className="bg-[#1e1f22] border border-[#1f2023] p-4 rounded text-center text-xs text-[#949ba4] space-y-1">
-                      <p>No community mixes submitted yet for this pack.</p>
-                      <Link href={`/stems/${track.id}?action=submit`} className="text-xs text-[#5865F2] hover:underline font-medium inline-block">
-                        Submit the first mix →
+                    <div className="bg-[#0d0d0e] border border-neutral-800/60 p-4 rounded text-center text-xs text-neutral-400">
+                      No mixes posted yet for this session.{' '}
+                      <Link href={`/stems/${track.id}?action=submit`} className="text-neutral-300 hover:underline">
+                        Be the first to submit a mix.
                       </Link>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {mixesList.map(mix => (
                         <article
                           key={mix.id}
-                          className="bg-[#1e1f22] border border-[#1f2023] p-3 rounded flex flex-col justify-between space-y-2 text-xs"
+                          className="bg-[#0d0d0e] border border-neutral-800/80 p-3.5 rounded-md flex flex-col justify-between space-y-2.5"
                         >
-                          <div className="space-y-1">
-                            <div className="flex items-start justify-between gap-1">
-                              <h5 className="font-semibold text-[#f2f3f5] truncate">
-                                {mix.song_name || mix.title}
-                              </h5>
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h4 className="text-xs font-semibold text-white">
+                                  {mix.song_name || mix.title}
+                                </h4>
+                                <p className="text-[11px] text-neutral-400">
+                                  Mixed by <strong className="text-neutral-300">{mix.user_handle}</strong>
+                                </p>
+                              </div>
+
                               <button
                                 onClick={() => handleLike(mix.id, track.id)}
                                 disabled={likingMap[mix.id]}
-                                className="flex items-center gap-1 text-[11px] bg-[#2b2d31] hover:bg-[#35373c] border border-[#3f4147] text-[#dbdee1] px-1.5 py-0.5 rounded shrink-0 transition-colors"
+                                className="flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 text-[11px] transition-colors"
                               >
-                                <Heart className="w-3 h-3 fill-[#5865F2] text-[#5865F2]" />
+                                <Heart className="w-3 h-3 text-neutral-400" />
                                 <span>{mix.likes_count}</span>
                               </button>
                             </div>
 
-                            <p className="text-[11px] text-[#949ba4]">
-                              by{' '}
-                              <Link
-                                href={`/user/${encodeURIComponent(mix.user_handle.replace(/^@/, ''))}`}
-                                className="text-[#dbdee1] hover:text-[#5865F2] hover:underline font-medium"
-                              >
-                                {mix.user_handle}
-                              </Link>
-                            </p>
-
-                            {(mix.musical_key || mix.bpm) && (
-                              <p className="text-[10px] text-[#80848e] font-mono">
-                                {mix.musical_key && <span>Key: {mix.musical_key}</span>}
-                                {mix.bpm && <span> • {mix.bpm} BPM</span>}
-                              </p>
-                            )}
+                            <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 font-mono mt-1.5">
+                              {mix.musical_key && (
+                                <span className="bg-neutral-900 border border-neutral-800 px-1.5 py-0.2 rounded">
+                                  Key: {mix.musical_key}
+                                </span>
+                              )}
+                              {mix.bpm && (
+                                <span className="bg-neutral-900 border border-neutral-800 px-1.5 py-0.2 rounded">
+                                  {mix.bpm} BPM
+                                </span>
+                              )}
+                            </div>
 
                             {mix.description && (
-                              <p className="text-[11px] text-[#949ba4] line-clamp-2 bg-[#2b2d31] p-1.5 rounded">
+                              <p className="text-[11px] text-neutral-400 mt-2 line-clamp-2 leading-relaxed bg-[#121212] p-2 rounded border border-neutral-800/60 font-mono text-[10px]">
                                 {mix.description}
                               </p>
                             )}
                           </div>
 
-                          <div className="pt-1.5 border-t border-[#232428] flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/60">
                             <a
                               href={mix.mix_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-[#5865F2] hover:underline font-medium flex items-center gap-1"
+                              className="text-xs font-semibold text-white hover:text-neutral-300 transition-colors flex items-center gap-1.5"
                             >
-                              <span>Listen</span>
                               <ExternalLink className="w-3 h-3" />
+                              <span>Listen to Mix</span>
                             </a>
+
                             {discordThreadUrl && (
                               <a
                                 href={discordThreadUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title="Critique in Discord thread"
-                                className="text-[#949ba4] hover:text-[#5865F2] p-1"
+                                className="text-neutral-500 hover:text-white p-1"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" />
                               </a>
@@ -245,11 +244,11 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
 
                 {/* Discussion Snippet */}
                 {track.comments.length > 0 && (
-                  <div className="pt-2 border-t border-[#1f2023] text-xs text-[#949ba4] space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-[#80848e]">Recent Notes:</span>
+                  <div className="pt-2 border-t border-neutral-800/80 text-xs text-neutral-400 space-y-1">
+                    <span className="text-[10px] uppercase font-mono text-neutral-400">Recent Session Notes</span>
                     {track.comments.slice(0, 1).map((c: StemComment) => (
                       <p key={c.id} className="truncate">
-                        <strong className="text-[#f2f3f5]">{c.user_handle}:</strong> {c.content}
+                        <strong className="text-neutral-300">{c.user_handle}:</strong> {c.content}
                       </p>
                     ))}
                   </div>
@@ -262,18 +261,18 @@ export function ShowcaseClient({ tracks }: ShowcaseClientProps) {
       )}
 
       {/* Footer */}
-      <footer className="mt-12 pt-6 border-t border-[#1f2023] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#949ba4]">
+      <footer className="mt-12 pt-6 border-t border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400">
         <div className="flex items-center gap-2">
-          <span className="text-[#f2f3f5] font-semibold">The Mixing Vault</span>
+          <span className="text-white font-medium">The Mixing Vault</span>
           <span>•</span>
           <span>Tyler Kerpsack All Access</span>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/terms" className="hover:text-[#f2f3f5] hover:underline">Terms</Link>
+        <div className="flex items-center gap-4">
+          <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           <span>•</span>
-          <Link href="/privacy" className="hover:text-[#f2f3f5] hover:underline">Privacy</Link>
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
           <span>•</span>
-          <Link href="/dmca" className="hover:text-[#f2f3f5] hover:underline">DMCA</Link>
+          <Link href="/dmca" className="hover:text-white transition-colors">DMCA</Link>
         </div>
       </footer>
 

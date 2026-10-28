@@ -9,7 +9,7 @@ import { Header } from './Header';
 import { Hero } from './Hero';
 import { DisclaimerModal } from './DisclaimerModal';
 import { useAuth } from '@/context/AuthContext';
-import { Hash, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface StemFeedProps {
   initialStems: Stem[];
@@ -72,7 +72,7 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   const activeEngineers = new Set(stems.map(s => s.uploader_handle)).size;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#313338] text-[#dbdee1]">
+    <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-neutral-200">
       <Header onStemAdded={handleStemAdded} />
 
       <Hero
@@ -81,11 +81,11 @@ export function StemFeed({ initialStems }: StemFeedProps) {
         activeEngineers={activeEngineers}
       />
 
-      {/* Main Content Layout with Discord-style Channels & Stem Cards */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6">
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
+      {/* Main Content Layout */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 flex-1">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-          {/* Left Channel & Filter Rail */}
+          {/* Left Filter Rail */}
           <FilterRail
             activeFilter={activeFilter}
             sort={sort}
@@ -98,27 +98,26 @@ export function StemFeed({ initialStems }: StemFeedProps) {
             resultCount={filtered.length}
           />
 
-          {/* Main Channel Forum Posts */}
+          {/* Main Feed */}
           <main className="flex-1 w-full min-w-0">
-            {/* Feed Status Bar */}
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#1f2023]">
-              <div className="flex items-center gap-2">
-                <Hash className="w-4 h-4 text-[#80848e]" />
-                <h2 className="text-sm font-semibold text-[#f2f3f5]">
-                  sessions
+            {/* Status Bar */}
+            <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-sm font-semibold text-white">
+                  Sessions
                 </h2>
                 {activeFilter !== 'All' && (
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-[#35373c] text-[#dbdee1] border border-[#3f4147]">
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
                     {activeFilter}
                   </span>
                 )}
                 {activeTag && (
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-[#35373c] text-[#dbdee1] border border-[#3f4147]">
-                    #{activeTag}
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
+                    {activeTag}
                   </span>
                 )}
               </div>
-              <span className="text-xs text-[#949ba4] font-mono">
+              <span className="text-xs text-neutral-400 font-mono">
                 {filtered.length} {filtered.length === 1 ? 'pack' : 'packs'}
               </span>
             </div>
@@ -147,35 +146,35 @@ export function StemFeed({ initialStems }: StemFeedProps) {
         </div>
       </div>
 
-      {/* Clean Discord Server Footer */}
-      <footer className="mt-auto border-t border-[#1f2023] bg-[#2b2d31]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#949ba4]">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[#f2f3f5] font-semibold">The Mixing Vault</span>
-            <span>•</span>
-            <span>Tyler Kerpsack All Access</span>
-            <span>•</span>
+      {/* Minimal Footer */}
+      <footer className="mt-auto border-t border-neutral-800/80 bg-[#0a0a0a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-neutral-400">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-white font-medium">The Mixing Vault</span>
+            <span className="text-neutral-500">•</span>
+            <span className="text-neutral-400">Tyler Kerpsack All Access</span>
+            <span className="text-neutral-500">•</span>
             <button
               onClick={() => setDisclaimerOpen(true)}
-              className="text-[#5865F2] hover:underline transition-colors"
+              className="text-neutral-400 hover:text-white transition-colors"
             >
-              Guidelines & Rules
+              Guidelines
             </button>
-            <span>•</span>
-            <Link href="/terms" className="hover:text-[#f2f3f5] hover:underline transition-colors">
+            <span className="text-neutral-500">•</span>
+            <Link href="/terms" className="text-neutral-400 hover:text-white transition-colors">
               Terms
             </Link>
-            <span>•</span>
-            <Link href="/privacy" className="hover:text-[#f2f3f5] hover:underline transition-colors">
+            <span className="text-neutral-500">•</span>
+            <Link href="/privacy" className="text-neutral-400 hover:text-white transition-colors">
               Privacy
             </Link>
-            <span>•</span>
-            <Link href="/dmca" className="hover:text-[#f2f3f5] hover:underline transition-colors">
+            <span className="text-neutral-500">•</span>
+            <Link href="/dmca" className="text-neutral-400 hover:text-white transition-colors">
               DMCA
             </Link>
           </div>
-          <p className="text-[11px]">
-            Community Multitrack Audio Exchange • Integrated with KerpBot
+          <p className="text-[11px] text-neutral-400">
+            Multitrack Audio Archive • Tyler Kerpsack Discord Integration
           </p>
         </div>
       </footer>
@@ -195,22 +194,22 @@ function EmptyState({
   onReset: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-[#2b2d31] border border-[#1f2023] rounded p-6">
-      <div className="w-10 h-10 rounded bg-[#1e1f22] flex items-center justify-center text-[#949ba4] mb-3">
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-[#121212] border border-neutral-800/80 rounded-lg p-6">
+      <div className="w-10 h-10 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 mb-3">
         <Search className="w-5 h-5" />
       </div>
-      <h3 className="text-sm font-semibold text-[#f2f3f5] mb-1">
+      <h3 className="text-sm font-semibold text-white mb-1">
         {hasStems ? 'No matching multitracks' : 'No multitracks available yet'}
       </h3>
-      <p className="text-xs text-[#949ba4] max-w-sm mb-4">
+      <p className="text-xs text-neutral-400 max-w-sm mb-4 leading-relaxed">
         {hasStems
           ? `Could not find any multitracks matching "${query}". Try another search or reset filters.`
-          : 'Be the first member to publish multitrack stems to the vault!'}
+          : 'Be the first member to publish multitrack stems to the vault.'}
       </p>
       {hasStems && (
         <button
           onClick={onReset}
-          className="bg-[#35373c] hover:bg-[#383a40] text-[#f2f3f5] px-3.5 py-1.5 rounded text-xs transition-colors"
+          className="bg-white hover:bg-neutral-200 text-black text-xs font-semibold px-3 py-1.5 rounded transition-colors"
         >
           Reset Filters
         </button>

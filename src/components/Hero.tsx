@@ -1,7 +1,5 @@
 'use client';
 
-import { Hash, Layers, Users, Disc3, HardDrive } from 'lucide-react';
-
 interface HeroProps {
   totalSessions: number;
   totalTracks: number;
@@ -10,47 +8,43 @@ interface HeroProps {
 
 export function Hero({ totalSessions, totalTracks, activeEngineers }: HeroProps) {
   return (
-    <div className="bg-[#2b2d31] border-b border-[#1f2023]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <section className="border-b border-neutral-800/80 bg-[#0a0a0a]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
 
-          {/* Left: Channel Topic & Description */}
-          <div className="space-y-1.5 max-w-2xl">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-[#1e1f22] flex items-center justify-center text-[#949ba4]">
-                <Hash className="w-4 h-4 stroke-[2.5]" />
-              </div>
-              <h1 className="text-base sm:text-lg font-bold text-[#f2f3f5]">
-                multitrack-archive
-              </h1>
-              <span className="text-[11px] font-medium text-[#5865F2] bg-[#5865F2]/10 border border-[#5865F2]/25 px-2 py-0.5 rounded">
-                Tyler Kerpsack All Access
-              </span>
-            </div>
-            <p className="text-xs text-[#949ba4] leading-relaxed">
-              In-house worship multitrack library & DAW session archive for the All Access server.
-              Download session stems, share DAW templates, and submit finished mixes to receive time-stamped feedback via KerpBot in Discord.
+          {/* Left: Minimal Typographic Header */}
+          <div className="space-y-2 max-w-2xl">
+            <p className="text-[11px] font-mono uppercase tracking-widest text-neutral-400">
+              Tyler Kerpsack All Access
+            </p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+              Multitrack Archive & Mix Lab
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed pt-1">
+              Download studio multitracks, share session templates, and submit finished mixes for feedback in the Discord community.
             </p>
           </div>
 
-          {/* Right: Clean Channel Stat Pills */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <div className="flex items-center gap-1.5 bg-[#1e1f22] border border-[#1f2023] px-3 py-1.5 rounded text-[#dbdee1]">
-              <HardDrive className="w-3.5 h-3.5 text-[#5865F2]" />
-              <span><strong className="text-[#f2f3f5]">{totalSessions}</strong> multitrack packs</span>
+          {/* Right: Clean Stats */}
+          <div className="flex items-center gap-6 text-xs text-neutral-400 border-t md:border-t-0 border-neutral-800/80 pt-4 md:pt-0">
+            <div>
+              <p className="text-base sm:text-lg font-mono font-semibold text-white">{totalSessions}</p>
+              <p className="text-[11px] text-neutral-400">Sessions</p>
             </div>
-            <div className="flex items-center gap-1.5 bg-[#1e1f22] border border-[#1f2023] px-3 py-1.5 rounded text-[#dbdee1]">
-              <Layers className="w-3.5 h-3.5 text-[#23a55a]" />
-              <span><strong className="text-[#f2f3f5]">{totalTracks}</strong> channels</span>
+            <div className="w-px h-7 bg-neutral-800" />
+            <div>
+              <p className="text-base sm:text-lg font-mono font-semibold text-white">{totalTracks}</p>
+              <p className="text-[11px] text-neutral-400">Channels</p>
             </div>
-            <div className="flex items-center gap-1.5 bg-[#1e1f22] border border-[#1f2023] px-3 py-1.5 rounded text-[#dbdee1]">
-              <Users className="w-3.5 h-3.5 text-[#f0b232]" />
-              <span><strong className="text-[#f2f3f5]">{activeEngineers}</strong> mixers</span>
+            <div className="w-px h-7 bg-neutral-800" />
+            <div>
+              <p className="text-base sm:text-lg font-mono font-semibold text-white">{activeEngineers}</p>
+              <p className="text-[11px] text-neutral-400">Mixers</p>
             </div>
           </div>
 
         </div>
       </div>
-    </div>
+    </section>
   );
 }

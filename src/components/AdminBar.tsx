@@ -41,7 +41,7 @@ export function AdminBar({
     const newVerifiedState = !isVerified;
     const result = await toggleStemVerification(stemId, newVerifiedState);
     if (result.success) {
-      addToast(`Stem ${newVerifiedState ? 'marked Pro' : 'unmarked'}.`, 'success');
+      addToast(`Stem ${newVerifiedState ? 'marked Verified' : 'unmarked'}.`, 'success');
       onVerifyToggle(stemId, newVerifiedState);
     } else {
       addToast(`Failed: ${result.message}`, 'error');
@@ -50,12 +50,12 @@ export function AdminBar({
   };
 
   return (
-    <div className="flex items-center gap-1 bg-[#1e1f22] border border-[#1f2023] rounded px-1.5 py-0.5 ml-1.5 shrink-0">
+    <div className="flex items-center gap-1 bg-neutral-900 border border-neutral-800 rounded px-1.5 py-0.5 ml-1.5 shrink-0">
       <button
         onClick={handleVerifyToggle}
         disabled={verifying}
-        title={isVerified ? 'Remove Pro' : 'Mark as Pro'}
-        className="p-1 text-[#23a55a] hover:bg-[#23a55a]/15 rounded transition-colors disabled:opacity-50"
+        title={isVerified ? 'Remove Verified' : 'Mark as Verified'}
+        className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded transition-colors disabled:opacity-50"
       >
         {isVerified ? (
           <ShieldOff className="w-3.5 h-3.5" />
@@ -67,7 +67,7 @@ export function AdminBar({
         onClick={handleDelete}
         disabled={deleting}
         title="Delete stem"
-        className="p-1 text-[#f23f43] hover:bg-[#f23f43]/15 rounded transition-colors disabled:opacity-50"
+        className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded transition-colors disabled:opacity-50"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
