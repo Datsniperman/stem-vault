@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-  const proto = request.headers.get('x-forwarded-proto') || (host?.startsWith('localhost') || host?.startsWith('127.0.0.1') || host?.startsWith('192.168.') ? 'http' : 'https');
-  const origin = host ? `${proto}://${host}` : request.nextUrl.origin;
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1') || host.startsWith('192.168.');
+  const proto = request.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https');
+
+  let origin = host ? `${proto}://${host}` : request.nextUrl.origin;
+  if (!isLocal && host.includes('mixingvault.com')) {
+    origin = 'https://www.mixingvault.com';
+  }
 
   const { searchParams } = new URL(request.url);
   const redirectTo = searchParams.get('redirectTo') || '/';
 
-  const clientId = process.env.DISCORD_CLIENT_ID;
+  const clientId = (process.env.DISCORD_CLIENT_ID || '').trim().replace(/^["']|["']$/g, '');
   if (!clientId) {
     console.error('[Discord Auth] DISCORD_CLIENT_ID environment variable is missing.');
     return NextResponse.json(
@@ -17,7 +22,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Build OAuth2 redirect URI matching the request origin
+  // Build OAuth2 redirect URI matching the canonical request origin
   const redirectUri = `${origin}/auth/callback`;
 
   // Encode state with return path and origin

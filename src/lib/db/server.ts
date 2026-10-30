@@ -98,16 +98,19 @@ export class LocalServerClient {
         customRedirectUri?: string
       ): Promise<{ data: { session: Session | null }; error: any }> => {
         try {
-          const clientId = process.env.DISCORD_CLIENT_ID;
-          const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+          const clientId = (process.env.DISCORD_CLIENT_ID || '').trim().replace(/^["']|["']$/g, '');
+          const clientSecret = (process.env.DISCORD_CLIENT_SECRET || '').trim().replace(/^["']|["']$/g, '');
+          const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com').trim().replace(/\/+$/, '').replace(/^["']|["']$/g, '');
           const redirectUri = customRedirectUri || `${siteUrl}/auth/callback`;
 
           if (!clientId || !clientSecret) {
-            return { data: { session: null }, error: { message: 'Discord OAuth credentials missing' } };
+            const missing = [!clientId && 'DISCORD_CLIENT_ID', !clientSecret && 'DISCORD_CLIENT_SECRET'].filter(Boolean).join(', ');
+            console.error('[exchangeCodeForSession] Missing credentials on server:', missing);
+            return { data: { session: null }, error: { message: `Server configuration error: missing ${missing} in environment variables.` } };
           }
 
-          const tokenRes = await fetch('https://discord.com/api/v10/oauth2/token', {
+          // Initial token exchange attempt
+          let tokenRes = await fetch('https://discord.com/api/v10/oauth2/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
@@ -119,8 +122,44 @@ export class LocalServerClient {
             }),
           });
 
+          // If failed, automatically retry with alternative subdomain (www vs apex) in case Discord portal was whitelisted under the other
           if (!tokenRes.ok) {
-            return { data: { session: null }, error: { message: 'Failed to exchange Discord code' } };
+            const altRedirectUri = redirectUri.includes('://www.')
+              ? redirectUri.replace('://www.', '://')
+              : redirectUri.replace('://', '://www.');
+
+            if (altRedirectUri !== redirectUri) {
+              const retryRes = await fetch('https://discord.com/api/v10/oauth2/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                  client_id: clientId,
+                  client_secret: clientSecret,
+                  grant_type: 'authorization_code',
+                  code,
+                  redirect_uri: altRedirectUri,
+                }),
+              });
+
+              if (retryRes.ok) {
+                tokenRes = retryRes;
+              }
+            }
+          }
+
+          if (!tokenRes.ok) {
+            let errDetail = '';
+            try {
+              const errJson = await tokenRes.json();
+              errDetail = errJson.error_description || errJson.error || JSON.stringify(errJson);
+            } catch {
+              errDetail = await tokenRes.text();
+            }
+            console.error('[exchangeCodeForSession] Discord token exchange failed:', tokenRes.status, errDetail, 'redirectUri:', redirectUri);
+            return {
+              data: { session: null },
+              error: { message: `Discord authorization rejected (${errDetail}). Verified redirectUri: ${redirectUri}` },
+            };
           }
 
           const tokenData = await tokenRes.json();
@@ -129,7 +168,15 @@ export class LocalServerClient {
           });
 
           if (!userRes.ok) {
-            return { data: { session: null }, error: { message: 'Failed to fetch Discord user' } };
+            let errDetail = '';
+            try {
+              const errJson = await userRes.json();
+              errDetail = errJson.message || JSON.stringify(errJson);
+            } catch {
+              errDetail = await userRes.text();
+            }
+            console.error('[exchangeCodeForSession] Discord user fetch failed:', userRes.status, errDetail);
+            return { data: { session: null }, error: { message: `Discord profile fetch failed (${errDetail})` } };
           }
 
           const discordUser = await userRes.json();

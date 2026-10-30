@@ -193,39 +193,10 @@ export async function getGlobalStorageUsed(): Promise<number> {
  * - Global limit: 9 GB warning & hard refusal
  */
 export async function validateBetaUploadQuotas(
-  userId: string,
-  newUploadBytes: number,
-  isAdmin: boolean = false
+  _userId?: string,
+  _newUploadBytes?: number,
+  _isAdmin?: boolean
 ): Promise<{ allowed: boolean; error?: string }> {
-  // Admins have unlimited storage and no upload size caps
-  if (isAdmin) {
-    return { allowed: true };
-  }
-  if (newUploadBytes > PER_FILE_CAP_BYTES) {
-    return {
-      allowed: false,
-      error: `Upload exceeds beta limit of 500 MB per file (attempted: ${(newUploadBytes / (1024 * 1024)).toFixed(1)} MB).`,
-    };
-  }
-
-  const [userUsed, globalUsed] = await Promise.all([
-    getUserStorageUsed(userId),
-    getGlobalStorageUsed(),
-  ]);
-
-  if (globalUsed + newUploadBytes > GLOBAL_BETA_LIMIT_BYTES) {
-    return {
-      allowed: false,
-      error: `Global storage limit approaching 9 GB free tier limit (${(globalUsed / (1024 * 1024 * 1024)).toFixed(2)} GB currently used). New uploads are paused to protect free tier limits.`,
-    };
-  }
-
-  if (userUsed + newUploadBytes > USER_BETA_CAP_BYTES) {
-    return {
-      allowed: false,
-      error: `You have reached your 2 GB beta storage quota (${(userUsed / (1024 * 1024)).toFixed(1)} MB used). Please delete older uploads before uploading more.`,
-    };
-  }
-
+  // All limits removed completely
   return { allowed: true };
 }

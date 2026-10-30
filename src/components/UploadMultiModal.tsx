@@ -255,7 +255,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                   <p className="text-[11px] text-neutral-500 mt-1">
                     {file
                       ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-                      : 'WAV, FLAC, MP3, AIFF, OGG files inside — Max 500 MB per ZIP'}
+                      : 'WAV, FLAC, MP3, AIFF, OGG files inside — Unlimited upload'}
                   </p>
                   <input
                     type="file"

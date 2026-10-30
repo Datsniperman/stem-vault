@@ -37,8 +37,12 @@ export function Header({ onStemAdded }: HeaderProps) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('auth_error')) {
-        addToast('Discord sign-in was not completed. Please try again.', 'error');
+      const authErr = params.get('auth_error');
+      if (authErr) {
+        const readableMsg = authErr === 'true'
+          ? 'Discord sign-in was not completed. Please try again.'
+          : `Discord sign-in: ${decodeURIComponent(authErr)}`;
+        addToast(readableMsg, 'error');
         window.history.replaceState({}, '', window.location.pathname);
       }
     }

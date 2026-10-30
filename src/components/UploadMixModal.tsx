@@ -117,7 +117,7 @@ export function UploadMixModal({
               <span>Upload Finished Mix</span>
             </h3>
             <p className="text-xs text-neutral-400 mt-0.5">
-              Share your master or mix (WAV / FLAC / MP3, max 500 MB).
+              Share your master or mix (WAV / FLAC / MP3, unlimited size).
             </p>
           </div>
           <button
