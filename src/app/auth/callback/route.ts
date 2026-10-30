@@ -2,6 +2,7 @@ import { isUserAdmin } from '@/lib/auth/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
+import { getDbPool } from '@/lib/db/pool';
 import { createUserToken } from '@/lib/db/jwt';
 
 export async function GET(request: NextRequest) {
