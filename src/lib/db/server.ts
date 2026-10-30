@@ -132,35 +132,44 @@ export class LocalServerClient {
           }
 
           const discordUser = await userRes.json();
-          const pool = getDbPool();
-
-          // Check if identity/profile exists for discordUser.id
-          const profileRes = await pool.query(
-            `SELECT id, email, display_name FROM public.profiles WHERE discord_id = $1 LIMIT 1`,
-            [discordUser.id]
-          );
-
-          let userId: string;
           const email: string = discordUser.email || `${discordUser.username}@discord.kerpbot`;
 
-          if (profileRes.rows.length > 0) {
-            userId = profileRes.rows[0].id;
-          } else {
-            // Find or insert in auth.users
-            const userCheck = await pool.query(
-              `SELECT id FROM auth.users WHERE lower(email) = lower($1) LIMIT 1`,
-              [email]
+          // Generate deterministic UUID for fallback if local DB is unreachable
+          const crypto = await import('crypto');
+          const hash = crypto.createHash('md5').update(`discord_${discordUser.id}`).digest('hex');
+          const fallbackUuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+          let userId: string = fallbackUuid;
+
+          try {
+            const pool = getDbPool();
+
+            // Check if identity/profile exists for discordUser.id
+            const profileRes = await pool.query(
+              `SELECT id, email, display_name FROM public.profiles WHERE discord_id = $1 LIMIT 1`,
+              [discordUser.id]
             );
-            if (userCheck.rows.length > 0) {
-              userId = userCheck.rows[0].id;
+
+            if (profileRes.rows.length > 0) {
+              userId = profileRes.rows[0].id;
             } else {
-              userId = (await import('crypto')).randomUUID();
-              await pool.query(
-                `INSERT INTO auth.users (id, instance_id, email, raw_user_meta_data, role, aud, created_at, updated_at)
-                 VALUES ($1, '00000000-0000-0000-0000-000000000000', $2, $3, 'authenticated', 'authenticated', now(), now())`,
-                [userId, email, JSON.stringify({ display_name: discordUser.global_name || discordUser.username })]
+              // Find or insert in auth.users
+              const userCheck = await pool.query(
+                `SELECT id FROM auth.users WHERE lower(email) = lower($1) LIMIT 1`,
+                [email]
               );
+              if (userCheck.rows.length > 0) {
+                userId = userCheck.rows[0].id;
+              } else {
+                userId = crypto.randomUUID();
+                await pool.query(
+                  `INSERT INTO auth.users (id, instance_id, email, raw_user_meta_data, role, aud, created_at, updated_at)
+                   VALUES ($1, '00000000-0000-0000-0000-000000000000', $2, $3, 'authenticated', 'authenticated', now(), now())`,
+                  [userId, email, JSON.stringify({ display_name: discordUser.global_name || discordUser.username })]
+                );
+              }
             }
+          } catch (dbErr: any) {
+            console.warn('[exchangeCodeForSession] DB pool query failed, using deterministic UUID for user session:', dbErr?.message);
           }
 
           const resolvedUser: User = {
@@ -169,6 +178,7 @@ export class LocalServerClient {
             role: 'authenticated',
             user_metadata: {
               provider_id: discordUser.id,
+              display_name: discordUser.global_name || discordUser.username,
               custom_claims: { global_name: discordUser.global_name || discordUser.username },
               avatar_url: discordUser.avatar
                 ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`

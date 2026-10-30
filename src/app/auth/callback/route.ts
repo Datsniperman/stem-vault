@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
 
 export async function GET(request: NextRequest) {
@@ -19,11 +20,15 @@ export async function GET(request: NextRequest) {
 
   // Parse state to retrieve original redirectTo target and origin
   let targetNext = searchParams.get('next') || '/';
+  let exchangeOrigin = origin;
   if (state) {
     try {
       const parsedState = JSON.parse(Buffer.from(state, 'base64url').toString('utf-8'));
       if (parsedState.redirectTo) {
         targetNext = parsedState.redirectTo;
+      }
+      if (parsedState.origin) {
+        exchangeOrigin = parsedState.origin;
       }
     } catch (e: any) {
       console.warn('[Auth Callback] Could not parse state parameter:', e.message);
@@ -35,8 +40,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/?auth_error=true`);
   }
 
-  // Use current origin to construct redirectUri for Discord token exchange
-  const redirectUri = `${origin}/auth/callback`;
+  // Use exchangeOrigin matching what was sent to Discord
+  const redirectUri = `${exchangeOrigin}/auth/callback`;
   const { data, error } = await dbServer.auth.exchangeCodeForSession(code, redirectUri);
   if (error || !data.session?.user) {
     console.error('[Auth Callback] Direct Discord code exchange failed:', error?.message);
@@ -96,11 +101,12 @@ export async function GET(request: NextRequest) {
           avatarUrl = `https://cdn.discordapp.com/avatars/${discordUserId}/${member.user.avatar}.png`;
         }
 
-        const adminDb = await createDbAdminClient();
-        const db = adminDb || dbServer;
+        try {
+          const adminDb = await createDbAdminClient();
+          const db = adminDb || dbServer;
 
-        // Update or insert into public.profiles
-        const { error: upsertErr } = await db.from('profiles').upsert(
+          // Update or insert into public.profiles
+          const { error: upsertErr } = await db.from('profiles').upsert(
           {
             id: user.id,
             email: user.email,
@@ -125,6 +131,9 @@ export async function GET(request: NextRequest) {
             },
             { onConflict: 'id' }
           );
+          }
+        } catch (dbErr: any) {
+          console.warn('[Auth Callback] Profile upsert skipped:', dbErr?.message);
         }
       }
     } catch (e: any) {
@@ -139,20 +148,24 @@ export async function GET(request: NextRequest) {
       user.email?.split('@')[0] ||
       'Member';
 
-    const adminDb = await createDbAdminClient();
-    const db = adminDb || dbServer;
+    try {
+      const adminDb = await createDbAdminClient();
+      const db = adminDb || dbServer;
 
-    await db.from('profiles').upsert(
-      {
-        id: user.id,
-        email: user.email,
-        display_name: fallbackName,
-        server_display_name: fallbackName,
-        discord_id: discordUserId,
-        avatar_url: user.user_metadata?.avatar_url || null,
-      },
-      { onConflict: 'id' }
-    );
+      await db.from('profiles').upsert(
+        {
+          id: user.id,
+          email: user.email,
+          display_name: fallbackName,
+          server_display_name: fallbackName,
+          discord_id: discordUserId,
+          avatar_url: user.user_metadata?.avatar_url || null,
+        },
+        { onConflict: 'id' }
+      );
+    } catch (dbErr: any) {
+      console.warn('[Auth Callback] Fallback profile upsert skipped:', dbErr?.message);
+    }
   }
 
   // Create redirect response with local session cookies
@@ -164,15 +177,29 @@ export async function GET(request: NextRequest) {
     origin.includes('127.0.0.1') ||
     origin.includes('192.168.');
 
-  const cookieOptions = {
+  const cookieDomain = (host && host.includes('mixingvault.com')) ? '.mixingvault.com' : undefined;
+
+  const cookieOptions: any = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production' && !isLocal,
+    secure: !isLocal,
     sameSite: 'lax' as const,
     path: '/',
     maxAge: 7 * 24 * 60 * 60,
   };
+  if (cookieDomain) {
+    cookieOptions.domain = cookieDomain;
+  }
 
   const sessionToken = data.session.access_token;
+
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set('mv_session_token', sessionToken, cookieOptions);
+    cookieStore.set('sb-access-token', sessionToken, cookieOptions);
+  } catch (err: any) {
+    console.warn('[Auth Callback] Could not set cookies via cookieStore:', err?.message);
+  }
+
   response.cookies.set('mv_session_token', sessionToken, cookieOptions);
   response.cookies.set('sb-access-token', sessionToken, cookieOptions);
 

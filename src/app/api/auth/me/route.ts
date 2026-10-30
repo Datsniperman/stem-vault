@@ -26,28 +26,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ session: null, user: null });
     }
 
-    const pool = getDbPool();
-    const result = await pool.query(
-      `SELECT id, email, raw_user_meta_data, role, created_at, confirmed_at
-       FROM auth.users
-       WHERE id = $1
-       LIMIT 1`,
-      [payload.sub]
-    );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json({ session: null, user: null });
-    }
-
-    const row = result.rows[0];
-    const user: User = {
-      id: row.id,
-      email: row.email,
-      role: row.role || 'authenticated',
-      user_metadata: row.raw_user_meta_data || {},
-      created_at: row.created_at,
-      confirmed_at: row.confirmed_at,
+    // Verified user directly from the signed JWT payload
+    let user: User = {
+      id: payload.sub,
+      email: payload.email || '',
+      role: payload.role || 'authenticated',
+      user_metadata: payload.user_metadata || {},
     };
+
+    // Optionally enrich with database row if Postgres is reachable
+    try {
+      const pool = getDbPool();
+      const result = await pool.query(
+        `SELECT id, email, raw_user_meta_data, role, created_at, confirmed_at
+         FROM auth.users
+         WHERE id = $1
+         LIMIT 1`,
+        [payload.sub]
+      );
+
+      if (result.rows.length > 0) {
+        const row = result.rows[0];
+        user = {
+          id: row.id,
+          email: row.email,
+          role: row.role || user.role,
+          user_metadata: row.raw_user_meta_data || user.user_metadata,
+          created_at: row.created_at,
+          confirmed_at: row.confirmed_at,
+        };
+      }
+    } catch {
+      // Local database query skipped or unreachable - JWT is cryptographically verified
+    }
 
     const session: Session = {
       access_token: token,

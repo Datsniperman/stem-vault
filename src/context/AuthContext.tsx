@@ -30,30 +30,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string, userObj?: User | null) => {
-    const db = getDbBrowserClient();
-    const { data, error } = await db
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (data) {
-      setProfile(data as Profile);
-    } else if (!error && userObj) {
-      // Auto-heal missing profile row
-      const fallbackName = userObj.user_metadata?.display_name || userObj.email?.split('@')[0] || 'User';
-      const { data: newProfile } = await db
+    try {
+      const db = getDbBrowserClient();
+      const { data, error } = await db
         .from('profiles')
-        .upsert(
-          { id: userId, email: userObj.email || null, display_name: fallbackName, role: 'user' },
-          { onConflict: 'id' }
-        )
-        .select()
-        .single();
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-      if (newProfile) {
-        setProfile(newProfile as Profile);
+      if (data) {
+        setProfile(data as Profile);
+        return;
       }
+    } catch {}
+
+    // Fallback: build profile in memory from userObj so UI is fully populated
+    if (userObj) {
+      const fallbackName =
+        userObj.user_metadata?.server_display_name ||
+        userObj.user_metadata?.custom_claims?.global_name ||
+        userObj.user_metadata?.display_name ||
+        userObj.email?.split('@')[0] ||
+        'Member';
+
+      const fallbackProfile: Profile = {
+        id: userId,
+        email: userObj.email || null,
+        display_name: fallbackName,
+        server_display_name: fallbackName,
+        role: (userObj.role === 'admin' ? 'admin' : 'user') as any,
+        created_at: new Date().toISOString(),
+        avatar_url: userObj.user_metadata?.avatar_url || null,
+      };
+      setProfile(fallbackProfile);
     }
   }, []);
 

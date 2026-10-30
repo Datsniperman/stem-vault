@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, LogOut, User, Shield, Settings, Disc3, Plus, Music2, Layers, Sliders, FileArchive } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
 import { SubmitStemModal } from './SubmitStemModal';
 import { UploadMultiModal } from './UploadMultiModal';
@@ -29,6 +30,17 @@ const ROLE_LABELS = {
 
 export function Header({ onStemAdded }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('auth_error')) {
+        addToast('Discord sign-in was not completed. Please try again.', 'error');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [addToast]);
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
@@ -43,7 +55,13 @@ export function Header({ onStemAdded }: HeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const roleInfo = profile ? ROLE_LABELS[profile.role] : null;
-  const displayName = profile?.server_display_name || profile?.display_name || user?.email?.split('@')[0] || 'Member';
+  const displayName =
+    profile?.server_display_name ||
+    profile?.display_name ||
+    user?.user_metadata?.custom_claims?.global_name ||
+    user?.user_metadata?.display_name ||
+    user?.email?.split('@')[0] ||
+    'Member';
   const initials = displayName.slice(0, 2).toUpperCase();
 
   const handleAdminClick = () => {
