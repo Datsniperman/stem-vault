@@ -229,7 +229,9 @@ export class BrowserAuth {
     options?: { scopes?: string; redirectTo?: string };
   }): Promise<{ error: any }> {
     if (typeof window !== 'undefined') {
-      window.location.href = `/api/auth/discord?redirectTo=${encodeURIComponent(options.options?.redirectTo || '/')}`;
+      let target = options.options?.redirectTo || '/';
+    if (target.includes('/auth/callback')) target = '/';
+    window.location.href = `/api/auth/discord?redirectTo=${encodeURIComponent(target)}`;
     }
     return { error: null };
   }

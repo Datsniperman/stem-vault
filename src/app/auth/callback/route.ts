@@ -13,20 +13,13 @@ export async function GET(request: NextRequest) {
     origin = 'https://www.mixingvault.com';
   }
 
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get('code');
-  const state = searchParams.get('state');
-  const authError = searchParams.get('error');
-
-  // Handle user cancellation or OAuth error
-  if (authError || !code) {
-    const msg = authError ? `Discord returned: ${authError}` : 'No authorization code received from Discord';
-    console.warn('[Auth Callback] Discord OAuth error:', msg);
-    return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(msg)}`);
-  }
+  const searchParams = new URL(request.url).searchParams;
+  const code = searchParams.get('code') || request.nextUrl.searchParams.get('code');
+  const state = searchParams.get('state') || request.nextUrl.searchParams.get('state');
+  const authError = searchParams.get('error') || request.nextUrl.searchParams.get('error');
 
   // Parse state to retrieve original redirectTo target and origin
-  let targetNext = searchParams.get('next') || '/';
+  let targetNext = searchParams.get('next') || request.nextUrl.searchParams.get('next') || '/';
   let exchangeOrigin = origin;
   if (state) {
     try {
@@ -40,6 +33,29 @@ export async function GET(request: NextRequest) {
     } catch (e: any) {
       console.warn('[Auth Callback] Could not parse state parameter:', e.message);
     }
+  }
+
+  // Prevent recursive redirect loop back to /auth/callback
+  if (!targetNext || targetNext.includes('/auth/callback')) {
+    targetNext = '/';
+  }
+
+  // Handle user cancellation or missing code
+  if (authError || !code) {
+    // If the user already has a valid session token, redirect smoothly to targetNext
+    const existingToken =
+      request.cookies.get('mv_session_token')?.value ||
+      request.cookies.get('sb-access-token')?.value;
+
+    if (!authError && existingToken) {
+      console.log('[Auth Callback] Session cookie already present, redirecting to destination:', targetNext);
+      const targetUrl = targetNext.startsWith('http') ? targetNext : new URL(targetNext, origin).toString();
+      return NextResponse.redirect(targetUrl);
+    }
+
+    const msg = authError ? `Discord returned: ${authError}` : 'No authorization code received from Discord';
+    console.warn('[Auth Callback] Discord OAuth error:', msg);
+    return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(msg)}`);
   }
 
   const dbServer = await createDbServerClient();
@@ -235,6 +251,6 @@ export async function GET(request: NextRequest) {
   response.cookies.set('mv_session_token', sessionToken, cookieOptions);
   response.cookies.set('sb-access-token', sessionToken, cookieOptions);
 
-  console.log(`[Auth Callback] Discord sign-in succeeded for user ${user.id} (role: ${user.role}). Redirecting to ${targetUrl}`);
+  console.log(`[Auth Callback] Discord sign-in succeeded for user ${user.id} (role: ${user.role}). Redirecting to destination: ${targetUrl}`);
   return response;
 }

@@ -51,7 +51,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         provider: 'discord',
         options: {
           scopes: 'identify guilds guilds.members.read',
-          redirectTo: `${getOrigin()}/auth/callback`,
+          redirectTo: typeof window !== 'undefined' ? (window.location.pathname || '/') : '/',
         },
       });
 
