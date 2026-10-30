@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
+import { createDbServerClient } from '@/lib/db/server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,5 +49,36 @@ export async function GET(request: NextRequest) {
   } catch (err: any) {
     console.error('[multis/list] Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const db = await createDbServerClient();
+    const { data: { user } } = await db.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'You must be logged in to create a multi.' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { title, description } = body;
+
+    if (!title || !title.trim()) {
+      return NextResponse.json({ error: 'Multi title is required.' }, { status: 400 });
+    }
+
+    const pool = getDbPool();
+    const result = await pool.query(
+      `INSERT INTO public.multis (owner_id, title, description, created_at, updated_at)
+       VALUES ($1, $2, $3, now(), now())
+       RETURNING *`,
+      [user.id, title.trim(), description ? description.trim() : null]
+    );
+
+    return NextResponse.json({ multi: result.rows[0] }, { status: 201 });
+  } catch (err: any) {
+    console.error('[multis/create] Error:', err);
+    return NextResponse.json({ error: err.message || 'Failed to create multi.' }, { status: 500 });
   }
 }

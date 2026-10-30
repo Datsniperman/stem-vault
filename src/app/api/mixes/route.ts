@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
+import { createDbServerClient } from '@/lib/db/server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,5 +62,48 @@ export async function GET(request: NextRequest) {
   } catch (err: any) {
     console.error('[mixes/list] Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const db = await createDbServerClient();
+    const { data: { user } } = await db.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'You must be logged in to create a mix.' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { title, multi_id, r2_key, public_url, format, size_bytes, duration_seconds } = body;
+
+    if (!title || !title.trim()) {
+      return NextResponse.json({ error: 'Mix title is required.' }, { status: 400 });
+    }
+    if (!r2_key || !public_url) {
+      return NextResponse.json({ error: 'Storage references (r2_key, public_url) are required.' }, { status: 400 });
+    }
+
+    const pool = getDbPool();
+    const result = await pool.query(
+      `INSERT INTO public.mixes (owner_id, multi_id, title, format, size_bytes, r2_key, public_url, duration_seconds, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+       RETURNING *`,
+      [
+        user.id,
+        multi_id || null,
+        title.trim(),
+        (format || 'WAV').toUpperCase(),
+        size_bytes || 0,
+        r2_key,
+        public_url,
+        duration_seconds || null,
+      ]
+    );
+
+    return NextResponse.json({ mix: result.rows[0] }, { status: 201 });
+  } catch (err: any) {
+    console.error('[mixes/create] Error:', err);
+    return NextResponse.json({ error: err.message || 'Failed to save mix record.' }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getDbPool } from '@/lib/db/pool';
 
 export const USER_BETA_CAP_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
@@ -67,6 +68,40 @@ function ensureLocalFallbackDir(subPath?: string) {
 /**
  * Upload a file blob to Cloudflare R2 or the beta-only local fallback.
  */
+
+/**
+ * Generate a presigned PUT URL for direct client-to-R2 upload (bypassing Vercel 4.5MB limit).
+ */
+export async function getPresignedUploadUrl(
+  key: string,
+  contentType: string = 'application/octet-stream'
+): Promise<{ uploadUrl: string; key: string; publicUrl: string; isR2: boolean }> {
+  const status = getR2ConfigStatus();
+
+  if (status.isConfigured) {
+    const s3 = getS3Client()!;
+    const command = new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME!,
+      Key: key,
+      ContentType: contentType,
+    });
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const publicBase = (process.env.R2_PUBLIC_URL || '').replace(/\/+$/, '');
+    const publicUrl = `${publicBase}/${key}`;
+
+    return { uploadUrl, key, publicUrl, isR2: true };
+  }
+
+  // Fallback for local dev when R2 credentials are not set
+  const publicUrl = `/api/storage/raw/${encodeURI(key)}`;
+  return {
+    uploadUrl: `/api/storage/upload?key=${encodeURIComponent(key)}`,
+    key,
+    publicUrl,
+    isR2: false,
+  };
+}
+
 export async function uploadBlob(
   key: string,
   buffer: Buffer,

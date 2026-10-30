@@ -1,5 +1,3 @@
-import path from 'path';
-
 /**
  * Sanitizes and renames audio filenames for storage while preserving readability:
  * 1. Keeps leading track-number prefix if present (e.g. 01, 02)
@@ -14,9 +12,10 @@ export function sanitizeTrackFilename(
   originalFilename: string,
   existingNames: Set<string>
 ): string {
-  // Extract extension and raw base name
-  const ext = path.extname(originalFilename).toLowerCase();
-  const rawBase = path.basename(originalFilename, path.extname(originalFilename));
+  const cleanPath = originalFilename.replace(/^.*[\\\/]/, '');
+  const lastDot = cleanPath.lastIndexOf('.');
+  const ext = lastDot !== -1 ? cleanPath.slice(lastDot).toLowerCase() : '';
+  const rawBase = lastDot !== -1 ? cleanPath.slice(0, lastDot) : cleanPath;
 
   // Check for leading track number (e.g., '01', '02', '1', '003') followed by space, dot, underscore, or hyphen
   const prefixMatch = rawBase.match(/^(\d+)[\s._\-]*(.*)$/);
@@ -30,11 +29,10 @@ export function sanitizeTrackFilename(
   }
 
   // Sanitize the rest part: replace illegal/special chars with underscores
-  // Keep alphanumeric and hyphens
   const sanitizedRest = rest
-    .replace(/[^\w\-]+/g, '_')   // replace any non-alphanumeric/non-dash with underscore
-    .replace(/_+/g, '_')         // collapse repeated underscores
-    .replace(/^[_\.]+|[_\.]+$/g, ''); // trim leading/trailing underscores and dots
+    .replace(/[^\w\-]+/g, '_')         // replace any non-alphanumeric/non-dash with underscore
+    .replace(/_+/g, '_')               // collapse repeated underscores
+    .replace(/^[_\.]+|[_\.]+$/g, '');  // trim leading/trailing underscores and dots
 
   let baseName = '';
   if (prefix && sanitizedRest) {
@@ -61,6 +59,5 @@ export function sanitizeTrackFilename(
     candidate = `${baseName}-${index}${ext}`;
   }
 
-  existingNames.add(candidate.toLowerCase());
   return candidate;
 }

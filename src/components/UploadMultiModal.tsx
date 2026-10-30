@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Upload, FileArchive, CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
-import { StorageQuotaInfo } from '@/types';
+import JSZip from 'jszip';
+import { sanitizeTrackFilename } from '@/lib/audio/renamer';
 
 interface UploadMultiModalProps {
   isOpen: boolean;
@@ -18,27 +19,27 @@ interface RenameMapping {
   duration_seconds: number | null;
 }
 
+const ALLOWED_AUDIO_EXTENSIONS = new Set(['.wav', '.flac', '.mp3', '.aiff', '.aif', '.ogg']);
+
 export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModalProps) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [quota, setQuota] = useState<StorageQuotaInfo | null>(null);
   const [resultMappings, setResultMappings] = useState<RenameMapping[] | null>(null);
   const [createdMultiId, setCreatedMultiId] = useState<string | null>(null);
 
-  // Fetch quota on open
   useEffect(() => {
     if (isOpen) {
       setError(null);
+      setStatusMessage('');
+      setUploadProgress(null);
       setResultMappings(null);
       setCreatedMultiId(null);
-      fetch('/api/storage/quota')
-        .then(res => res.json())
-        .then(data => setQuota(data))
-        .catch(err => console.warn('Could not fetch quota:', err));
     }
   }, [isOpen]);
 
@@ -54,10 +55,34 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       return;
     }
 
-    // Unlimited file size allowed
-
     setError(null);
     setFile(selected);
+  };
+
+  const uploadDirectToR2 = (uploadUrl: string, fileData: Blob, contentType: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl, true);
+      xhr.setRequestHeader('Content-Type', contentType);
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Storage server returned HTTP ${xhr.status}: ${xhr.statusText}`));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(
+          new Error(
+            'Direct Cloudflare R2 upload was blocked by browser CORS policy. Please configure CORS on your "mixing-vault-files" bucket in Cloudflare Dashboard.'
+          )
+        );
+      };
+
+      xhr.send(fileData);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,30 +97,140 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
     }
 
     setUploading(true);
+    setStatusMessage('Reading ZIP archive...');
+    setUploadProgress(null);
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('title', title.trim());
-      if (description.trim()) formData.append('description', description.trim());
-      formData.append('file', file);
-
-      const res = await fetch('/api/multis/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Upload failed');
+      // 1. Unpack ZIP in browser to bypass Vercel 4.5MB serverless body limit
+      let zip: JSZip;
+      try {
+        zip = await JSZip.loadAsync(file);
+      } catch (err: any) {
+        throw new Error('Could not parse ZIP archive. Please ensure it is a valid ZIP file.');
       }
 
-      setResultMappings(data.rename_mappings || []);
-      setCreatedMultiId(data.multi?.id);
+      const audioEntries: { entry: JSZip.JSZipObject; filename: string; ext: string }[] = [];
+      zip.forEach((relativePath, entry) => {
+        if (entry.dir) return;
+        const name = entry.name.replace(/^.*[\\\/]/, '');
+        if (name.startsWith('._') || name === '.DS_Store' || relativePath.includes('__MACOSX')) return;
+
+        const lastDot = name.lastIndexOf('.');
+        const ext = lastDot !== -1 ? name.slice(lastDot).toLowerCase() : '';
+        if (ALLOWED_AUDIO_EXTENSIONS.has(ext)) {
+          audioEntries.push({ entry, filename: name, ext });
+        }
+      });
+
+      if (audioEntries.length === 0) {
+        throw new Error('No valid audio files (WAV, FLAC, MP3, AIFF, OGG) found in this ZIP archive.');
+      }
+
+      setStatusMessage(`Found ${audioEntries.length} audio tracks. Creating multi...`);
+
+      // 2. Create the Multi record in database
+      const multiRes = await fetch('/api/multis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || null,
+        }),
+      });
+
+      const multiText = await multiRes.text();
+      let multiData: any = null;
+      try {
+        multiData = multiText ? JSON.parse(multiText) : null;
+      } catch {}
+
+      if (!multiRes.ok || !multiData?.multi?.id) {
+        throw new Error(multiData?.error || multiText || 'Failed to create multi.');
+      }
+
+      const multiId = multiData.multi.id;
+      setCreatedMultiId(multiId);
+
+      // 3. Upload each track directly to Cloudflare R2 via presigned URLs
+      const mappings: RenameMapping[] = [];
+      const usedNames = new Set<string>();
+
+      for (let i = 0; i < audioEntries.length; i++) {
+        const item = audioEntries[i];
+        const storedName = sanitizeTrackFilename(item.filename, usedNames);
+        usedNames.add(storedName.toLowerCase());
+
+        const progressPercent = Math.round(((i + 1) / audioEntries.length) * 100);
+        setUploadProgress(progressPercent);
+        setStatusMessage(`Extracting & uploading track ${i + 1} of ${audioEntries.length}: ${storedName}...`);
+
+        const blob = await item.entry.async('blob');
+
+        // Request presigned URL
+        const presignRes = await fetch('/api/storage/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: storedName,
+            contentType: blob.type || 'audio/wav',
+            folder: `multis/${multiId}`,
+          }),
+        });
+
+        const presignText = await presignRes.text();
+        let presignData: any = null;
+        try {
+          presignData = presignText ? JSON.parse(presignText) : null;
+        } catch {}
+
+        if (!presignRes.ok || !presignData?.uploadUrl) {
+          throw new Error(presignData?.error || 'Failed to get presigned upload URL.');
+        }
+
+        // Direct upload to R2
+        await uploadDirectToR2(presignData.uploadUrl, blob, blob.type || 'audio/wav');
+
+        // Register track in database
+        const trackRes = await fetch(`/api/multis/${multiId}/tracks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stored_filename: storedName,
+            original_filename: item.filename,
+            format: item.ext.replace('.', '').toUpperCase(),
+            size_bytes: blob.size,
+            r2_key: presignData.key,
+            public_url: presignData.publicUrl,
+            duration_seconds: null,
+          }),
+        });
+
+        const trackText = await trackRes.text();
+        let trackData: any = null;
+        try {
+          trackData = trackText ? JSON.parse(trackText) : null;
+        } catch {}
+
+        if (!trackRes.ok) {
+          throw new Error(trackData?.error || 'Failed to save track record.');
+        }
+
+        mappings.push({
+          original: item.filename,
+          stored: storedName,
+          size_bytes: blob.size,
+          duration_seconds: null,
+        });
+      }
+
+      setResultMappings(mappings);
     } catch (err: any) {
       setError(err.message || 'Failed to upload multitrack ZIP.');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
+      setStatusMessage('');
     }
   };
 
@@ -156,21 +291,21 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                   {resultMappings.map((m, idx) => (
                     <div
                       key={idx}
-                      className="text-xs bg-neutral-900 border border-neutral-800/80 rounded p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                      className="p-2.5 bg-neutral-900/70 border border-neutral-800 rounded text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"
                     >
-                      <div className="min-w-0 flex-1">
-                        <span className="text-neutral-400 line-through text-[11px] block truncate">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-neutral-500 font-mono shrink-0">#{idx + 1}</span>
+                        <span className="text-neutral-400 truncate max-w-[180px] sm:max-w-[220px]" title={m.original}>
                           {m.original}
                         </span>
-                        <div className="flex items-center gap-1.5 text-neutral-200 font-mono text-[11px] mt-0.5">
-                          <ArrowRight className="w-3 h-3 text-neutral-400 shrink-0" />
-                          <span className="truncate text-white font-medium">{m.stored}</span>
-                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+                        <span className="text-white font-medium truncate max-w-[180px] sm:max-w-[220px]" title={m.stored}>
+                          {m.stored}
+                        </span>
                       </div>
-                      <div className="text-[10px] text-neutral-400 font-mono shrink-0 flex items-center gap-2">
-                        {m.duration_seconds && <span>{Math.round(m.duration_seconds)}s</span>}
-                        <span>{(m.size_bytes / (1024 * 1024)).toFixed(1)} MB</span>
-                      </div>
+                      <span className="text-neutral-500 text-[11px] font-mono shrink-0">
+                        {(m.size_bytes / (1024 * 1024)).toFixed(1)} MB
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -242,6 +377,23 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 </div>
               </div>
 
+              {uploading && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs text-neutral-400">
+                    <span>{statusMessage || 'Processing upload...'}</span>
+                    {uploadProgress !== null && <span>{uploadProgress}%</span>}
+                  </div>
+                  {uploadProgress !== null && (
+                    <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-white h-full rounded-full transition-all duration-150"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
@@ -259,7 +411,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                   {uploading ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Extracting & Uploading...</span>
+                      <span>Uploading...</span>
                     </>
                   ) : (
                     <>

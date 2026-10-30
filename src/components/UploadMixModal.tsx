@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Music2, AlertCircle, Loader2 } from 'lucide-react';
-import { Multi, StorageQuotaInfo } from '@/types';
+import { X, Upload, Music2, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Multi } from '@/types';
 
 interface UploadMixModalProps {
   isOpen: boolean;
@@ -22,24 +22,20 @@ export function UploadMixModal({
   const [file, setFile] = useState<File | null>(null);
   const [multis, setMultis] = useState<Multi[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [quota, setQuota] = useState<StorageQuotaInfo | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setError(null);
+      setUploadProgress(null);
+      setStatusMessage('');
       setSelectedMultiId(defaultMultiId || '');
-      // Fetch available multis for dropdown
       fetch('/api/multis')
         .then(res => res.json())
         .then(data => setMultis(data.multis || []))
         .catch(err => console.warn('Could not load multis:', err));
-
-      // Fetch quota
-      fetch('/api/storage/quota')
-        .then(res => res.json())
-        .then(data => setQuota(data))
-        .catch(err => console.warn('Could not load quota:', err));
     }
   }, [isOpen, defaultMultiId]);
 
@@ -57,10 +53,42 @@ export function UploadMixModal({
       return;
     }
 
-    // Unlimited file size allowed
-
     setError(null);
     setFile(selected);
+  };
+
+  const uploadDirectToR2 = (uploadUrl: string, fileData: Blob, contentType: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl, true);
+      xhr.setRequestHeader('Content-Type', contentType);
+
+      xhr.upload.onprogress = (evt) => {
+        if (evt.lengthComputable) {
+          const percent = Math.round((evt.loaded / evt.total) * 100);
+          setUploadProgress(percent);
+          setStatusMessage(`Uploading to Cloudflare R2: ${percent}%`);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Storage server returned HTTP ${xhr.status}: ${xhr.statusText}`));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(
+          new Error(
+            'Direct Cloudflare R2 upload was blocked by browser CORS policy. Please configure CORS on your "mixing-vault-files" bucket in Cloudflare Dashboard.'
+          )
+        );
+      };
+
+      xhr.send(fileData);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,9 +103,72 @@ export function UploadMixModal({
     }
 
     setUploading(true);
+    setUploadProgress(null);
+    setStatusMessage('Initiating upload...');
     setError(null);
 
+    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+
     try {
+      // 1. Request presigned upload URL for direct-to-R2 upload (bypasses Vercel 4.5MB limit)
+      let presignRes: Response | null = null;
+      try {
+        presignRes = await fetch('/api/storage/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type || 'audio/wav',
+            folder: 'mixes',
+          }),
+        });
+      } catch (e) {
+        console.warn('Presign request error, falling back:', e);
+      }
+
+      let presignData: any = null;
+      if (presignRes && presignRes.ok) {
+        try {
+          presignData = await presignRes.json();
+        } catch {}
+      }
+
+      // If presigning succeeded and R2 is active, do direct browser PUT to R2
+      if (presignData?.uploadUrl && presignData?.isR2) {
+        setStatusMessage('Streaming directly to Cloudflare R2...');
+        await uploadDirectToR2(presignData.uploadUrl, file, file.type || 'audio/wav');
+
+        setStatusMessage('Saving mix metadata...');
+        const createRes = await fetch('/api/mixes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: title.trim(),
+            multi_id: selectedMultiId || null,
+            r2_key: presignData.key,
+            public_url: presignData.publicUrl,
+            format: ext.replace('.', '').toUpperCase(),
+            size_bytes: file.size,
+          }),
+        });
+
+        const text = await createRes.text();
+        let createData: any = null;
+        try {
+          createData = text ? JSON.parse(text) : null;
+        } catch {}
+
+        if (!createRes.ok) {
+          throw new Error(createData?.error || text || 'Failed to save mix details.');
+        }
+
+        if (onSuccess) onSuccess();
+        onClose();
+        return;
+      }
+
+      // 2. Fallback to standard server upload (for local server environments)
+      setStatusMessage('Uploading to server...');
       const formData = new FormData();
       formData.append('title', title.trim());
       if (selectedMultiId) formData.append('multi_id', selectedMultiId);
@@ -88,9 +179,19 @@ export function UploadMixModal({
         body: formData,
       });
 
-      const data = await res.json();
+      const resText = await res.text();
+      let data: any = null;
+      try {
+        data = resText ? JSON.parse(resText) : null;
+      } catch {
+        if (res.status === 413 || resText.includes('Request Entity')) {
+          throw new Error('Vercel 4.5 MB serverless limit reached. Cloudflare R2 direct upload is required for large files.');
+        }
+        throw new Error(resText || `Upload failed with HTTP ${res.status}`);
+      }
+
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to upload mix');
+        throw new Error(data?.error || `Upload failed with status ${res.status}`);
       }
 
       if (onSuccess) onSuccess();
@@ -99,6 +200,8 @@ export function UploadMixModal({
       setError(err.message || 'Error uploading mix.');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
+      setStatusMessage('');
     }
   };
 
@@ -158,7 +261,7 @@ export function UploadMixModal({
                 disabled={uploading}
                 className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500"
               >
-                <option value="">— Standalone Mix (No Multi) —</option>
+                <option value="">None (Standalone Mix)</option>
                 {multis.map(m => (
                   <option key={m.id} value={m.id}>
                     {m.title}
@@ -169,9 +272,9 @@ export function UploadMixModal({
 
             <div>
               <label className="block text-xs font-medium text-neutral-300 mb-1">
-                Audio File (WAV, FLAC, MP3) <span className="text-red-400">*</span>
+                Audio File <span className="text-red-400">*</span>
               </label>
-              <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
+              <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
                 <Music2 className="w-7 h-7 text-neutral-500 mb-1.5" />
                 <p className="text-xs text-neutral-300 font-medium">
                   {file ? file.name : 'Choose audio file'}
@@ -188,6 +291,23 @@ export function UploadMixModal({
                 />
               </div>
             </div>
+
+            {uploading && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-neutral-400">
+                  <span>{statusMessage || 'Uploading...'}</span>
+                  {uploadProgress !== null && <span>{uploadProgress}%</span>}
+                </div>
+                {uploadProgress !== null && (
+                  <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-white h-full rounded-full transition-all duration-150"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="pt-2 flex items-center justify-end gap-2.5">
               <button
