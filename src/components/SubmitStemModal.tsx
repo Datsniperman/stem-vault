@@ -226,21 +226,6 @@ export function SubmitStemModal({ isOpen, onClose, onStemAdded }: SubmitStemModa
             />
           </div>
 
-          {/* Row 7: Tags */}
-          <div className="space-y-1">
-            <label htmlFor="tags" className="block text-[11px] font-mono uppercase text-neutral-400">
-              Tags (Optional)
-            </label>
-            <input
-              id="tags"
-              name="tags"
-              type="text"
-              value={formData.tags}
-              onChange={handleChange}
-              placeholder="e.g. live, worship, click track, drums split"
-              className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-3 py-1.5 text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 placeholder-neutral-500"
-            />
-          </div>
 
           {/* Row 8: Rights Checkbox */}
           <div className="flex items-start gap-2 pt-2 border-t border-neutral-800">

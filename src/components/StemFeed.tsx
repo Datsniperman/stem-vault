@@ -2,14 +2,13 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Stem, FilterType, SortType } from '@/types';
+import { Stem, SortType } from '@/types';
 import { StemCard } from './StemCard';
-import { FilterRail } from './FilterRail';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { DisclaimerModal } from './DisclaimerModal';
 import { useAuth } from '@/context/AuthContext';
-import { Search } from 'lucide-react';
+import { Search, X, ArrowUpDown } from 'lucide-react';
 
 interface StemFeedProps {
   initialStems: Stem[];
@@ -18,10 +17,8 @@ interface StemFeedProps {
 export function StemFeed({ initialStems }: StemFeedProps) {
   const { profile } = useAuth();
   const [stems, setStems] = useState<Stem[]>(initialStems);
-  const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   const [sort, setSort] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
-  const [activeTag, setActiveTag] = useState('');
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
 
   const handleStemAdded = (stem: Stem) => {
@@ -39,23 +36,8 @@ export function StemFeed({ initialStems }: StemFeedProps) {
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     let result = stems.filter(stem => {
-      const matchesSearch = !q ||
-        stem.title.toLowerCase().includes(q) ||
-        stem.artist.toLowerCase().includes(q) ||
-        stem.uploader_handle.toLowerCase().includes(q) ||
-        (stem.description || '').toLowerCase().includes(q);
-
-      let matchesFilter = true;
-      if (activeFilter === 'Verified Only') {
-        matchesFilter = stem.is_verified;
-      } else if (activeFilter !== 'All') {
-        matchesFilter = stem.format === activeFilter;
-      }
-
-      const matchesTag = !activeTag ||
-        (stem.tags || []).some(t => t.toLowerCase() === activeTag.toLowerCase());
-
-      return matchesSearch && matchesFilter && matchesTag;
+      // ONLY searchable thing is the name of the song
+      return !q || stem.title.toLowerCase().includes(q);
     });
 
     // Sort
@@ -63,10 +45,12 @@ export function StemFeed({ initialStems }: StemFeedProps) {
       result = [...result].sort((a, b) => (b.track_count ?? 0) - (a.track_count ?? 0));
     } else if (sort === 'most_downloaded') {
       result = [...result].sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0));
+    } else {
+      result = [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
     return result;
-  }, [stems, search, activeFilter, activeTag, sort]);
+  }, [stems, search, sort]);
 
   const totalTracks = stems.reduce((sum, s) => sum + (s.track_count ?? 0), 0);
   const activeEngineers = new Set(stems.map(s => s.uploader_handle)).size;
@@ -83,67 +67,71 @@ export function StemFeed({ initialStems }: StemFeedProps) {
 
       {/* Main Content Layout */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 flex-1">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-
-          {/* Left Filter Rail */}
-          <FilterRail
-            activeFilter={activeFilter}
-            sort={sort}
-            search={search}
-            activeTag={activeTag}
-            onFilterChange={setActiveFilter}
-            onSortChange={setSort}
-            onSearchChange={setSearch}
-            onTagChange={setActiveTag}
-            resultCount={filtered.length}
-          />
-
-          {/* Main Feed */}
-          <main className="flex-1 w-full min-w-0">
-            {/* Status Bar */}
-            <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-sm font-semibold text-white">
-                  Sessions
-                </h2>
-                {activeFilter !== 'All' && (
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
-                    {activeFilter}
-                  </span>
-                )}
-                {activeTag && (
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
-                    {activeTag}
-                  </span>
-                )}
-              </div>
-              <span className="text-xs text-neutral-400 font-mono">
-                {filtered.length} {filtered.length === 1 ? 'pack' : 'packs'}
-              </span>
-            </div>
-
-            {filtered.length === 0 ? (
-              <EmptyState
-                query={search}
-                hasStems={stems.length > 0}
-                onReset={() => { setSearch(''); setActiveFilter('All'); setActiveTag(''); }}
-              />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filtered.map(stem => (
-                  <StemCard
-                    key={stem.id}
-                    stem={stem}
-                    profile={profile}
-                    onDelete={handleDelete}
-                    onVerifyToggle={handleVerifyToggle}
-                  />
-                ))}
-              </div>
+        {/* Full-width Search Bar across the top */}
+        <div className="mb-6 space-y-3">
+          <div className="relative w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by song name..."
+              className="w-full bg-[#121212] border border-neutral-800 hover:border-neutral-700 rounded-lg pl-10 pr-10 py-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors shadow-xs"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
             )}
-          </main>
+          </div>
 
+          <div className="flex items-center justify-between text-xs text-neutral-400">
+            <span className="font-mono">
+              {filtered.length} {filtered.length === 1 ? 'song found' : 'songs found'}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono uppercase text-neutral-500 flex items-center gap-1">
+                <ArrowUpDown className="w-3 h-3" /> Sort:
+              </span>
+              <select
+                value={sort}
+                onChange={e => setSort(e.target.value as SortType)}
+                className="bg-[#121212] border border-neutral-800 text-neutral-300 text-xs rounded px-2.5 py-1.5 focus:outline-none focus:border-neutral-500 cursor-pointer"
+              >
+                <option value="newest">Newest First</option>
+                <option value="most_tracks">Most Stems</option>
+                <option value="most_downloaded">Most Downloaded</option>
+              </select>
+            </div>
+          </div>
         </div>
+
+        {/* Main Multis Grid (Full Width, No Sidebar) */}
+        <main className="w-full min-w-0">
+          {filtered.length === 0 ? (
+            <EmptyState
+              query={search}
+              hasStems={stems.length > 0}
+              onReset={() => setSearch('')}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filtered.map(stem => (
+                <StemCard
+                  key={stem.id}
+                  stem={stem}
+                  profile={profile}
+                  onDelete={handleDelete}
+                  onVerifyToggle={handleVerifyToggle}
+                />
+              ))}
+            </div>
+          )}
+        </main>
       </div>
 
       {/* Minimal Footer */}
@@ -203,7 +191,7 @@ function EmptyState({
       </h3>
       <p className="text-xs text-neutral-400 max-w-sm mb-4 leading-relaxed">
         {hasStems
-          ? `Could not find any multitracks matching "${query}". Try another search or reset filters.`
+          ? `Could not find any multitracks with the song name "${query}".`
           : 'Be the first member to publish multitrack stems to the vault.'}
       </p>
       {hasStems && (
@@ -211,7 +199,7 @@ function EmptyState({
           onClick={onReset}
           className="bg-white hover:bg-neutral-200 text-black text-xs font-semibold px-3 py-1.5 rounded transition-colors"
         >
-          Reset Filters
+          Reset Search
         </button>
       )}
     </div>

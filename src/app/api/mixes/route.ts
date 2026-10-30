@@ -85,6 +85,32 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = getDbPool();
+
+    // Auto-upsert profile for this user if missing so left joins always show the uploader's name
+    const displayName =
+      user.user_metadata?.display_name ||
+      user.user_metadata?.name ||
+      user.email?.split('@')[0] ||
+      'Member';
+    const avatarUrl = user.user_metadata?.avatar_url || null;
+    const discordId = user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id) || null;
+
+    await pool.query(
+      `INSERT INTO public.profiles (id, email, display_name, server_display_name, avatar_url, discord_id, role)
+       VALUES ($1, $2, $3, $3, $4, $5, $6)
+       ON CONFLICT (id) DO UPDATE SET
+         display_name = COALESCE(public.profiles.display_name, EXCLUDED.display_name),
+         avatar_url = COALESCE(public.profiles.avatar_url, EXCLUDED.avatar_url)`,
+      [
+        user.id,
+        user.email || null,
+        displayName,
+        avatarUrl,
+        discordId,
+        user.role === 'admin' ? 'admin' : 'user',
+      ]
+    ).catch(e => console.warn('Could not auto-upsert profile in mixes POST:', e.message));
+
     const result = await pool.query(
       `INSERT INTO public.mixes (owner_id, multi_id, title, format, size_bytes, r2_key, public_url, duration_seconds, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())

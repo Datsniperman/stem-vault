@@ -40,7 +40,6 @@ export function StemCard({
   const isOwner = profile?.id && profile.id === stemData.user_id;
   const canEdit = isOwner || isAdmin;
 
-  const visibleTags = (stemData.tags || []).slice(0, 3);
 
   const handleStemUpdated = (updatedStem: Stem) => {
     setStemData(updatedStem);
@@ -148,16 +147,6 @@ export function StemCard({
               )}
             </div>
 
-            {/* Tags */}
-            {visibleTags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {visibleTags.map(tag => (
-                  <span key={tag} className="text-[10px] text-neutral-400 bg-neutral-900/60 px-1.5 py-0.2 rounded font-mono border border-neutral-800/60">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>

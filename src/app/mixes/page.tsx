@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Music2, Search, Plus, Calendar, HardDrive, User, Trash2, Loader2, Layers } from 'lucide-react';
+import { Music2, Search, X, Plus, Calendar, HardDrive, User, Trash2, Loader2, Layers } from 'lucide-react';
 import { Mix } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { AudioPlayer } from '@/components/AudioPlayer';
@@ -106,21 +106,32 @@ export default function MixesPage() {
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-        {/* Search */}
-        <div className="mb-6 flex items-center gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+        {/* Full-width Search Bar across top */}
+        <div className="mb-6 space-y-2">
+          <div className="relative w-full">
+            <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search mixes by title or song name..."
-              className="w-full bg-neutral-900 border border-neutral-800 rounded pl-9 pr-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+              placeholder="Search by song name..."
+              className="w-full bg-[#121212] border border-neutral-800 hover:border-neutral-700 rounded-lg pl-10 pr-10 py-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors shadow-xs"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
-          <span className="text-xs text-neutral-500 font-mono">
-            {mixes.length} {mixes.length === 1 ? 'mix' : 'mixes'}
-          </span>
+          <div className="flex items-center justify-between text-xs text-neutral-400 font-mono">
+            <span>
+              {mixes.length} {mixes.length === 1 ? 'mix found' : 'mixes found'}
+            </span>
+          </div>
         </div>
 
         {/* Mixes List */}

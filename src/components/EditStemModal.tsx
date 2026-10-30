@@ -196,21 +196,6 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
             />
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="edit-tags" className="block text-[11px] font-mono uppercase text-neutral-400">
-              Tags (Optional)
-            </label>
-            <input
-              id="edit-tags"
-              name="tags"
-              type="text"
-              value={formData.tags}
-              onChange={handleChange}
-              placeholder="e.g. worship, live, click track, drums split"
-              className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-3 py-1.5 text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 placeholder-neutral-500"
-            />
-          </div>
-
           {/* Actions */}
           <div className="flex justify-end gap-2.5 pt-3 border-t border-neutral-800">
             <button

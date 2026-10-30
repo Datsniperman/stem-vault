@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
     if (search.trim()) {
       params.push(`%${search.trim()}%`);
-      query += ` WHERE m.title ILIKE $1 OR m.description ILIKE $1 `;
+      query += ` WHERE m.title ILIKE $1 `;
     }
 
     query += `
@@ -69,6 +69,32 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = getDbPool();
+
+    // Auto-upsert profile for this user if missing so left joins always show the uploader's name
+    const displayName =
+      user.user_metadata?.display_name ||
+      user.user_metadata?.name ||
+      user.email?.split('@')[0] ||
+      'Member';
+    const avatarUrl = user.user_metadata?.avatar_url || null;
+    const discordId = user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id) || null;
+
+    await pool.query(
+      `INSERT INTO public.profiles (id, email, display_name, server_display_name, avatar_url, discord_id, role)
+       VALUES ($1, $2, $3, $3, $4, $5, $6)
+       ON CONFLICT (id) DO UPDATE SET
+         display_name = COALESCE(public.profiles.display_name, EXCLUDED.display_name),
+         avatar_url = COALESCE(public.profiles.avatar_url, EXCLUDED.avatar_url)`,
+      [
+        user.id,
+        user.email || null,
+        displayName,
+        avatarUrl,
+        discordId,
+        user.role === 'admin' ? 'admin' : 'user',
+      ]
+    ).catch(e => console.warn('Could not auto-upsert profile in multis POST:', e.message));
+
     const result = await pool.query(
       `INSERT INTO public.multis (owner_id, title, description, created_at, updated_at)
        VALUES ($1, $2, $3, now(), now())

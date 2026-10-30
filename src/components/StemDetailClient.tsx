@@ -460,17 +460,6 @@ export function StemDetailClient({
             <SpecField label="FORMAT" value={stem.format} />
           </div>
 
-          {/* Tags */}
-          {(stem.tags || []).length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
-              <span className="text-neutral-400">Tags:</span>
-              {(stem.tags || []).map(tag => (
-                <span key={tag} className="text-neutral-300 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded font-mono text-[11px]">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Description */}
           {stem.description && (
