@@ -54,11 +54,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       return;
     }
 
-    if (selected.size > 500 * 1024 * 1024) {
-      setError(`File size is ${(selected.size / (1024 * 1024)).toFixed(1)} MB. Beta limit is 500 MB per ZIP.`);
-      setFile(null);
-      return;
-    }
+    // Unlimited file size allowed
 
     setError(null);
     setFile(selected);
@@ -124,7 +120,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
             <p className="text-xs text-neutral-400 mt-0.5">
               {resultMappings
                 ? 'Review file rename mappings and proceed to your multi page.'
-                : 'Upload a ZIP multitrack archive (max 500 MB). Audio files will be automatically validated and cleaned.'}
+                : 'Upload a ZIP multitrack archive. Audio files will be automatically validated and cleaned.'}
             </p>
           </div>
           <button
@@ -134,27 +130,6 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Storage Quota Bar */}
-        {quota && !resultMappings && (
-          <div className="px-4 py-2.5 bg-neutral-900/60 border-b border-neutral-800/60 flex items-center justify-between text-xs">
-            <span className="text-neutral-400">
-              {quota.is_unlimited ? (
-                <>Admin Storage: <strong className="text-neutral-200">{(quota.user_bytes_used / (1024 * 1024)).toFixed(1)} MB</strong> used <span className="text-emerald-400 font-semibold ml-1">(Unlimited)</span></>
-              ) : (
-                <>Beta Storage: <strong className="text-neutral-200">{(quota.user_bytes_used / (1024 * 1024)).toFixed(1)} MB</strong> / 2 GB used</>
-              )}
-            </span>
-            {!quota.is_unlimited && (
-              <div className="w-28 bg-neutral-800 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${quota.user_percent > 85 ? 'bg-amber-500' : 'bg-neutral-200'}`}
-                  style={{ width: `${Math.min(quota.user_percent, 100)}%` }}
-                />
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Content */}
         <div className="p-4 sm:p-6 space-y-4">

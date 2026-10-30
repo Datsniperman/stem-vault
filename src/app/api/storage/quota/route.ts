@@ -20,12 +20,13 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json({
       user_bytes_used: userUsed,
-      user_bytes_limit: USER_BETA_CAP_BYTES,
-      user_percent: Math.min(100, Math.round((userUsed / USER_BETA_CAP_BYTES) * 100)),
+      user_bytes_limit: -1,
+      user_percent: 0,
       global_bytes_used: globalUsed,
-      global_bytes_limit: GLOBAL_BETA_LIMIT_BYTES,
-      global_percent: Math.min(100, Math.round((globalUsed / GLOBAL_BETA_LIMIT_BYTES) * 100)),
-      global_warning: globalUsed > 8 * 1024 * 1024 * 1024,
+      global_bytes_limit: -1,
+      global_percent: 0,
+      global_warning: false,
+      is_unlimited: true,
       is_r2_active: r2Status.isConfigured,
       missing_r2_keys: r2Status.missingKeys,
     });

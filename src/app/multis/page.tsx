@@ -55,7 +55,7 @@ export default function MultisPage() {
               <span>Multitrack Song Archive</span>
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl">
-              Download clean stem packs or preview individual isolated tracks directly in your browser. Upload full multitrack ZIP archives up to 500 MB.
+              Download clean stem packs or preview individual isolated tracks directly in your browser. Upload full multitrack ZIP archives without size restrictions.
             </p>
           </div>
 

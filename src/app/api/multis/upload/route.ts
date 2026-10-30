@@ -50,17 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. File size and quota verification
-    if (file.size > PER_FILE_CAP_BYTES) {
-      return NextResponse.json(
-        { error: `File size exceeds beta limit of 500 MB (provided: ${(file.size / (1024 * 1024)).toFixed(1)} MB).` },
-        { status: 400 }
-      );
-    }
-
-    const quotaCheck = await validateBetaUploadQuotas(user.id, file.size);
-    if (!quotaCheck.allowed) {
-      return NextResponse.json({ error: quotaCheck.error }, { status: 403 });
-    }
+    // Unlimited upload - no file size limits
 
     // 4. Save ZIP to temporary location for validation and inspection
     const tempDir = os.tmpdir();

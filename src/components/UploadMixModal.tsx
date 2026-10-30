@@ -57,11 +57,7 @@ export function UploadMixModal({
       return;
     }
 
-    if (selected.size > 500 * 1024 * 1024) {
-      setError(`File size is ${(selected.size / (1024 * 1024)).toFixed(1)} MB. Beta limit is 500 MB.`);
-      setFile(null);
-      return;
-    }
+    // Unlimited file size allowed
 
     setError(null);
     setFile(selected);
@@ -128,27 +124,6 @@ export function UploadMixModal({
           </button>
         </div>
 
-        {/* Quota */}
-        {quota && (
-          <div className="px-4 py-2.5 bg-neutral-900/60 border-b border-neutral-800/60 flex items-center justify-between text-xs">
-            <span className="text-neutral-400">
-              {quota.is_unlimited ? (
-                <>Admin Storage: <strong className="text-neutral-200">{(quota.user_bytes_used / (1024 * 1024)).toFixed(1)} MB</strong> used <span className="text-emerald-400 font-semibold ml-1">(Unlimited)</span></>
-              ) : (
-                <>Storage: <strong className="text-neutral-200">{(quota.user_bytes_used / (1024 * 1024)).toFixed(1)} MB</strong> / 2 GB used</>
-              )}
-            </span>
-            {!quota.is_unlimited && (
-              <div className="w-24 bg-neutral-800 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-neutral-200"
-                  style={{ width: `${Math.min(quota.user_percent, 100)}%` }}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Content */}
         <div className="p-4 sm:p-6 space-y-4">
           {error && (
@@ -202,7 +177,7 @@ export function UploadMixModal({
                   {file ? file.name : 'Choose audio file'}
                 </p>
                 <p className="text-[11px] text-neutral-500 mt-0.5">
-                  {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : 'Max 500 MB per mix'}
+                  {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : 'WAV, FLAC, MP3, AIFF, OGG (unlimited)'}
                 </p>
                 <input
                   type="file"
