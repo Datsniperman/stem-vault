@@ -1,6 +1,6 @@
 -- ============================================================
--- STEM VAULT — Supabase Schema
--- Run this in your Supabase SQL editor
+-- STEM VAULT — Database Schema
+-- Consolidated PostgreSQL Schema
 -- ============================================================
 
 -- Profiles table linked to auth.users

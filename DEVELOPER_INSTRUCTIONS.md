@@ -32,11 +32,11 @@
 
 ## Environment & Build Safeguards
 - **Resend & Third-Party APIs**: Provide safe string fallbacks for environment variables (e.g. `process.env.RESEND_API_KEY || 'dummy_key_for_build'`) so Next.js static page evaluation does not crash during Vercel builds when keys are missing.
-- **Client vs Server Components**: Ensure interactive browser hooks (`useAuth`, `useToast`, `getSupabaseBrowserClient`) stay inside Client Components (`'use client'`) to prevent server Digest errors (e.g. error `2047099050`).
+- **Client vs Server Components**: Ensure interactive browser hooks (`useAuth`, `useToast`, `getDbBrowserClient`) stay inside Client Components (`'use client'`) to prevent server Digest errors (e.g. error `2047099050`).
 
 ---
 
 ## Key UI & Feature Standards
-- **Track of the Week**: Single active stem tagged with `'track of the week'` in Supabase. Admin server actions in `src/app/actions/stems.ts` revalidate `/`, `/stems/[id]`, and `/showcase`.
+- **Track of the Week**: Single active stem tagged with `'track of the week'` in database. Admin server actions in `src/app/actions/stems.ts` revalidate `/`, `/stems/[id]`, and `/showcase`.
 - **Track of the Week Showcase (`/showcase`)**: Dedicated strictly to the active Track of the Week banner, iTunes-fetched album artwork, and community-submitted mixes styled identically to main page `StemCard` grid items.
 - **Update Logs Modal (`✨ Update Logs`)**: Displays bullet point release notes from `src/data/changelog.json` next to the `🐛 Report Bug` button in the site header.

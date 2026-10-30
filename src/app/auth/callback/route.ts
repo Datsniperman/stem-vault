@@ -1,23 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+  const proto = request.headers.get('x-forwarded-proto') || (host?.startsWith('localhost') || host?.startsWith('127.0.0.1') || host?.startsWith('192.168.') ? 'http' : 'https');
+  const origin = host ? `${proto}://${host}` : request.nextUrl.origin;
+
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  const state = searchParams.get('state');
+  const authError = searchParams.get('error');
 
-  if (!code) {
+  // Handle user cancellation or OAuth error
+  if (authError || !code) {
+    console.warn('[Auth Callback] Discord OAuth returned error or missing code:', authError || 'missing code');
     return NextResponse.redirect(`${origin}/?auth_error=true`);
   }
 
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) {
+  // Parse state to retrieve original redirectTo target and origin
+  let targetNext = searchParams.get('next') || '/';
+  if (state) {
+    try {
+      const parsedState = JSON.parse(Buffer.from(state, 'base64url').toString('utf-8'));
+      if (parsedState.redirectTo) {
+        targetNext = parsedState.redirectTo;
+      }
+    } catch (e: any) {
+      console.warn('[Auth Callback] Could not parse state parameter:', e.message);
+    }
+  }
+
+  const dbServer = await createDbServerClient();
+  if (!dbServer) {
     return NextResponse.redirect(`${origin}/?auth_error=true`);
   }
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  // Use current origin to construct redirectUri for Discord token exchange
+  const redirectUri = `${origin}/auth/callback`;
+  const { data, error } = await dbServer.auth.exchangeCodeForSession(code, redirectUri);
   if (error || !data.session?.user) {
-    console.error('[Auth Callback] Code exchange failed:', error?.message);
+    console.error('[Auth Callback] Direct Discord code exchange failed:', error?.message);
     return NextResponse.redirect(`${origin}/?auth_error=true`);
   }
 
@@ -49,7 +71,7 @@ export async function GET(request: NextRequest) {
       // If user is not in the guild (404 Unknown Member)
       if (memberRes.status === 404) {
         console.warn(`[Auth Callback] User ${discordUserId} is not in guild ${guildId}. Denying access.`);
-        await supabase.auth.signOut();
+        await dbServer.auth.signOut();
         return NextResponse.redirect(`${origin}/unauthorized?reason=not_in_guild`);
       }
 
@@ -74,8 +96,8 @@ export async function GET(request: NextRequest) {
           avatarUrl = `https://cdn.discordapp.com/avatars/${discordUserId}/${member.user.avatar}.png`;
         }
 
-        const adminSupabase = await createSupabaseAdminClient();
-        const db = adminSupabase || supabase;
+        const adminDb = await createDbAdminClient();
+        const db = adminDb || dbServer;
 
         // Update or insert into public.profiles
         const { error: upsertErr } = await db.from('profiles').upsert(
@@ -117,8 +139,8 @@ export async function GET(request: NextRequest) {
       user.email?.split('@')[0] ||
       'Member';
 
-    const adminSupabase = await createSupabaseAdminClient();
-    const db = adminSupabase || supabase;
+    const adminDb = await createDbAdminClient();
+    const db = adminDb || dbServer;
 
     await db.from('profiles').upsert(
       {
@@ -133,5 +155,27 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  // Create redirect response with local session cookies
+  const targetUrl = targetNext.startsWith('http') ? targetNext : new URL(targetNext, origin).toString();
+  const response = NextResponse.redirect(targetUrl);
+
+  const isLocal =
+    origin.includes('localhost') ||
+    origin.includes('127.0.0.1') ||
+    origin.includes('192.168.');
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production' && !isLocal,
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60,
+  };
+
+  const sessionToken = data.session.access_token;
+  response.cookies.set('mv_session_token', sessionToken, cookieOptions);
+  response.cookies.set('sb-access-token', sessionToken, cookieOptions);
+
+  console.log(`[Auth Callback] Discord sign-in succeeded for user ${user.id}. Session cookies issued. Redirecting to ${targetUrl}`);
+  return response;
 }

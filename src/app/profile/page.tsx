@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createDbServerClient } from '@/lib/db/server';
 import { getUserStems } from '@/app/actions/stems';
 import { ProfileClient } from '@/components/ProfileClient';
 import type { Metadata } from 'next';
@@ -11,13 +11,13 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) redirect('/');
+  const db = await createDbServerClient();
+  if (!db) redirect('/');
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await db.auth.getUser();
   if (!user) redirect('/');
 
-  const { data: profileData } = await supabase
+  const { data: profileData } = await db
     .from('profiles')
     .select('*')
     .eq('id', user.id)

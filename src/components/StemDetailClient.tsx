@@ -35,7 +35,7 @@ import { Header } from '@/components/Header';
 import { clsx } from 'clsx';
 import { EditStemModal } from './EditStemModal';
 import { AuthModal } from './AuthModal';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getDbBrowserClient } from '@/lib/db/client';
 
 interface StemDetailClientProps {
   stem: Stem;
@@ -562,9 +562,9 @@ export function StemDetailClient({
                   <button
                     type="button"
                     onClick={() => {
-                      const supabase = getSupabaseBrowserClient();
-                      if (supabase) {
-                        supabase.auth.signInWithOAuth({
+                      const db = getDbBrowserClient();
+                      if (db) {
+                        db.auth.signInWithOAuth({
                           provider: 'discord',
                           options: {
                             scopes: 'identify guilds guilds.members.read',

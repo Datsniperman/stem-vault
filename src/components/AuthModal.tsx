@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { X, Mail, Lock, Eye, EyeOff, AlertCircle, User, KeyRound, Info, ShieldCheck } from 'lucide-react';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getDbBrowserClient } from '@/lib/db/client';
 import { useToast } from '@/context/ToastContext';
 
 interface AuthModalProps {
@@ -44,10 +44,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setLoading(true);
     setError('');
     try {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error('Supabase client unavailable.');
+      const db = getDbBrowserClient();
+      if (!db) throw new Error('Database client unavailable.');
 
-      const { error: supaErr } = await supabase.auth.signInWithOAuth({
+      const { error: dbErr } = await db.auth.signInWithOAuth({
         provider: 'discord',
         options: {
           scopes: 'identify guilds guilds.members.read',
@@ -55,8 +55,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         },
       });
 
-      if (supaErr) {
-        setError(supaErr.message);
+      if (dbErr) {
+        setError(dbErr.message);
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to connect to Discord.');
@@ -72,14 +72,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     setLoading(true);
     try {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error('Supabase client unavailable.');
+      const db = getDbBrowserClient();
+      if (!db) throw new Error('Database client unavailable.');
 
-      const { error: supaErr } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error: dbErr } = await db.auth.resetPasswordForEmail(email, {
         redirectTo: `${getOrigin()}/auth/reset-password`,
       });
 
-      if (supaErr) { setError(supaErr.message); return; }
+      if (dbErr) { setError(dbErr.message); return; }
       setSuccessMessage(`Password reset link sent to ${email}.`);
     } finally {
       setLoading(false);
@@ -93,10 +93,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     setLoading(true);
     try {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error('Supabase client unavailable.');
+      const db = getDbBrowserClient();
+      if (!db) throw new Error('Database client unavailable.');
 
-      const { error: supaErr } = await supabase.auth.signInWithOtp({
+      const { error: dbErr } = await db.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: `${getOrigin()}/auth/callback`,
@@ -104,7 +104,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         },
       });
 
-      if (supaErr) { setError(supaErr.message); return; }
+      if (dbErr) { setError(dbErr.message); return; }
       setSuccessMessage(`Magic link sent to ${email}. Check your inbox!`);
     } finally {
       setLoading(false);
@@ -126,12 +126,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     setLoading(true);
     try {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error('Supabase client unavailable.');
+      const db = getDbBrowserClient();
+      if (!db) throw new Error('Database client unavailable.');
 
       if (mode === 'signup') {
         const handleClean = username.trim().replace(/^@/, '');
-        const { error: supaErr } = await supabase.auth.signUp({
+        const { error: dbErr } = await db.auth.signUp({
           email,
           password,
           options: {
@@ -142,11 +142,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           },
         });
 
-        if (supaErr) { setError(supaErr.message); return; }
+        if (dbErr) { setError(dbErr.message); return; }
         setSuccessMessage(`Account created! A confirmation email was sent to ${email}.`);
       } else {
-        const { error: supaErr } = await supabase.auth.signInWithPassword({ email, password });
-        if (supaErr) { setError(supaErr.message); return; }
+        const { error: dbErr } = await db.auth.signInWithPassword({ email, password });
+        if (dbErr) { setError(dbErr.message); return; }
         addToast('Signed in successfully.', 'success');
         handleClose();
       }

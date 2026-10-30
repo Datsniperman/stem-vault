@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { ShowcaseClient, ShowcaseTrackItem } from '@/components/ShowcaseClient';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getDbBrowserClient } from '@/lib/db/client';
 
 export default function ShowcasePage() {
   const [tracks, setTracks] = useState<ShowcaseTrackItem[]>([]);
@@ -13,9 +13,9 @@ export default function ShowcasePage() {
     let isMounted = true;
     const fetchTracks = async () => {
       try {
-        const supabase = getSupabaseBrowserClient();
-        if (supabase) {
-          const { data: stemsData, error: stemsError } = await supabase
+        const db = getDbBrowserClient();
+        if (db) {
+          const { data: stemsData, error: stemsError } = await db
             .from('stems')
             .select('*')
             .eq('status', 'published')
@@ -24,13 +24,13 @@ export default function ShowcasePage() {
           if (!stemsError && stemsData && stemsData.length > 0) {
             const stemIds = stemsData.map((s: any) => s.id);
 
-            const { data: mixesData } = await supabase
+            const { data: mixesData } = await db
               .from('stem_mixes')
               .select('*')
               .in('stem_id', stemIds)
               .order('likes_count', { ascending: false });
 
-            const { data: commentsData } = await supabase
+            const { data: commentsData } = await db
               .from('stem_comments')
               .select('*')
               .in('stem_id', stemIds);

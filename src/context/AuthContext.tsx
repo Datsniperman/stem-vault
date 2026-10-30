@@ -8,9 +8,9 @@ import {
   useCallback,
   ReactNode,
 } from 'react';
-import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
+import type { User, Session, AuthChangeEvent } from '@/lib/db/types';
 import { Profile } from '@/types';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getDbBrowserClient } from '@/lib/db/client';
 
 interface AuthContextValue {
   user: User | null;
@@ -30,8 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string, userObj?: User | null) => {
-    const supabase = getSupabaseBrowserClient();
-    const { data, error } = await supabase
+    const db = getDbBrowserClient();
+    const { data, error } = await db
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else if (!error && userObj) {
       // Auto-heal missing profile row
       const fallbackName = userObj.user_metadata?.display_name || userObj.email?.split('@')[0] || 'User';
-      const { data: newProfile } = await supabase
+      const { data: newProfile } = await db
         .from('profiles')
         .upsert(
           { id: userId, email: userObj.email || null, display_name: fallbackName, role: 'user' },
@@ -62,16 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
+    const db = getDbBrowserClient();
 
-    supabase.auth.getSession().then((res: { data: { session: Session | null } }) => {
+    db.auth.getSession().then((res: { data: { session: Session | null } }) => {
       const session: Session | null = res.data?.session ?? null;
       setUser(session?.user ?? null);
       setAccessToken(session?.access_token ?? null);
       if (session?.user) {
-        // Ensure browser cookies are set/synced for Supabase SSR
         if (session.access_token && session.refresh_token) {
-          supabase.auth.setSession({
+          db.auth.setSession({
             access_token: session.access_token,
             refresh_token: session.refresh_token,
           }).catch(() => {});
@@ -82,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = db.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
         setUser(session?.user ?? null);
         setAccessToken(session?.access_token ?? null);
@@ -98,8 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   const signOut = useCallback(async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    const db = getDbBrowserClient();
+    await db.auth.signOut();
     setUser(null);
     setProfile(null);
     setAccessToken(null);

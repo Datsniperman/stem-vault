@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
 import { StemDetailClient } from '@/components/StemDetailClient';
 import { Stem, StemComment, StemMix } from '@/types';
 
@@ -12,13 +12,13 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const supabaseAdmin = await createSupabaseAdminClient();
-  const supabaseServer = await createSupabaseServerClient();
-  const supabase = supabaseAdmin || supabaseServer;
+  const dbAdmin = await createDbAdminClient();
+  const dbServer = await createDbServerClient();
+  const db = dbAdmin || dbServer;
 
-  if (!supabase) return { title: 'The Mixing Vault' };
+  if (!db) return { title: 'The Mixing Vault' };
 
-  const { data: stem } = await supabase
+  const { data: stem } = await db
     .from('stems')
     .select('title, artist, description')
     .eq('id', id)
@@ -50,16 +50,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function StemDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const supabaseServer = await createSupabaseServerClient();
-  const supabaseAdmin = await createSupabaseAdminClient();
-  const supabase = supabaseAdmin || supabaseServer;
+  const dbServer = await createDbServerClient();
+  const dbAdmin = await createDbAdminClient();
+  const db = dbAdmin || dbServer;
 
-  if (!supabase) {
+  if (!db) {
     return notFound();
   }
 
   // 1. Fetch Stem details
-  const { data: stemData, error: stemErr } = await supabase
+  const { data: stemData, error: stemErr } = await db
     .from('stems')
     .select('*')
     .eq('id', id)
@@ -73,10 +73,10 @@ export default async function StemDetailPage({ params }: PageProps) {
 
   // 2. Fetch User Profile if logged in
   let currentUser = null;
-  if (supabaseServer) {
-    const { data: { user } } = await supabaseServer.auth.getUser();
+  if (dbServer) {
+    const { data: { user } } = await dbServer.auth.getUser();
     if (user) {
-      const { data: profileData } = await supabase
+      const { data: profileData } = await db
         .from('profiles')
         .select('*')
         .eq('id', user.id)
@@ -87,7 +87,7 @@ export default async function StemDetailPage({ params }: PageProps) {
 
   // 4. Fetch Comments
   let comments: StemComment[] = [];
-  const { data: commentData } = await supabase
+  const { data: commentData } = await db
     .from('stem_comments')
     .select('*')
     .eq('stem_id', id)
@@ -97,7 +97,7 @@ export default async function StemDetailPage({ params }: PageProps) {
 
   // 5. Fetch Community Mixes
   let mixes: StemMix[] = [];
-  const { data: mixData } = await supabase
+  const { data: mixData } = await db
     .from('stem_mixes')
     .select('*')
     .eq('stem_id', id)
@@ -107,13 +107,13 @@ export default async function StemDetailPage({ params }: PageProps) {
     mixes = mixData as StemMix[];
     // Check if user has liked each mix
     if (currentUser) {
-      const { data: userLikes } = await supabase
+      const { data: userLikes } = await db
         .from('mix_likes')
         .select('mix_id')
         .eq('user_id', currentUser.id);
 
       if (userLikes) {
-        const likedMixIds = new Set(userLikes.map(l => l.mix_id));
+        const likedMixIds = new Set((userLikes as any[]).map((l: any) => l.mix_id));
         mixes = mixes.map(m => ({
           ...m,
           user_has_liked: likedMixIds.has(m.id)
@@ -127,18 +127,19 @@ export default async function StemDetailPage({ params }: PageProps) {
   let userRating = 0;
   let ratingCount = 0;
 
-  const { data: ratingsData } = await supabase
+  const { data: ratingsData } = await db
     .from('stem_ratings')
     .select('rating, user_id')
     .eq('stem_id', id);
 
-  if (ratingsData && ratingsData.length > 0) {
-    ratingCount = ratingsData.length;
-    const sum = ratingsData.reduce((acc, curr) => acc + curr.rating, 0);
+  if (ratingsData && (ratingsData as any[]).length > 0) {
+    const list = ratingsData as any[];
+    ratingCount = list.length;
+    const sum = list.reduce((acc: number, curr: any) => acc + (curr.rating || 0), 0);
     avgRating = parseFloat((sum / ratingCount).toFixed(1));
 
     if (currentUser) {
-      const userRatingEntry = ratingsData.find(r => r.user_id === currentUser?.id);
+      const userRatingEntry = list.find((r: any) => r.user_id === currentUser?.id);
       if (userRatingEntry) userRating = userRatingEntry.rating;
     }
   }

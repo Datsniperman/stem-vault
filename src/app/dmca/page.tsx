@@ -102,7 +102,7 @@ export default function DmcaPage() {
               The Mixing Vault does not directly host multi-gigabyte audio binary files; rather, it functions as an indexed exchange linking to user-provided external storage (e.g., Google Drive, Dropbox, Box, OneDrive).
             </p>
             <p className="text-neutral-400">
-              Upon receipt of a legally compliant notification satisfying § 512(c)(3), The Mixing Vault will expeditiously remove or disable access to the contested listing, delete associated links from our database, and notify the user who submitted the session.
+              Upon receipt of a legally compliant notification satisfying § 512(c)(3), The Mixing Vault will expeditiously remove or disable access to the contested listing, delete associated links from our db, and notify the user who submitted the session.
             </p>
           </section>
 

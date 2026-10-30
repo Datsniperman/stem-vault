@@ -47,7 +47,7 @@ export async function sendReportEmail({
             <p style="margin: 4px 0;"><strong>Cloud Link:</strong> <a href="${downloadUrl}" style="color: #ffffff; text-decoration: underline;" target="_blank">${downloadUrl}</a></p>
           </div>
 
-          <p style="font-size: 12px; color: #a1a1aa;">Review this session in the Discord channel or manage links in the admin database.</p>
+          <p style="font-size: 12px; color: #a1a1aa;">Review this session in the Discord channel or manage links in the admin db.</p>
           ${getEmailFooterHtml()}
         </div>
       `,

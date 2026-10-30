@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, User, Lock, Eye, EyeOff } from 'lucide-react';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getDbBrowserClient } from '@/lib/db/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -42,10 +42,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     setUsernameLoading(true);
     try {
-      const supabase: any = getSupabaseBrowserClient();
-      if (!supabase) throw new Error('Client unavailable');
+      const db: any = getDbBrowserClient();
+      if (!db) throw new Error('Client unavailable');
 
-      const { error: profileErr } = await supabase
+      const { error: profileErr } = await db
         .from('profiles')
         .update({ display_name: cleanName })
         .eq('id', user.id);
@@ -55,7 +55,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         return;
       }
 
-      await supabase.auth.updateUser({
+      await db.auth.updateUser({
         data: { display_name: cleanName },
       });
 
@@ -81,10 +81,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     setPasswordLoading(true);
     try {
-      const supabase: any = getSupabaseBrowserClient();
-      if (!supabase) throw new Error('Client unavailable');
+      const db: any = getDbBrowserClient();
+      if (!db) throw new Error('Client unavailable');
 
-      const { error } = await supabase.auth.updateUser({
+      const { error } = await db.auth.updateUser({
         password,
       });
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle2, Music2 } from 'lucide-react';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getDbBrowserClient } from '@/lib/db/client';
 import { useToast } from '@/context/ToastContext';
 
 export default function ResetPasswordPage() {
@@ -32,15 +32,15 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error('Supabase client unavailable.');
+      const db = getDbBrowserClient();
+      if (!db) throw new Error('Database client unavailable.');
 
-      const { error: supaErr } = await supabase.auth.updateUser({
+      const { error: dbErr } = await db.auth.updateUser({
         password,
       });
 
-      if (supaErr) {
-        setError(supaErr.message);
+      if (dbErr) {
+        setError(dbErr.message);
         return;
       }
 

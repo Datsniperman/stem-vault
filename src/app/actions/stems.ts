@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { FormState, Stem, Profile } from '@/types';
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
 import { sendReportEmail, sendBugReportEmail } from '@/lib/email';
 import { announceMultitrack, postMixToThread } from '@/lib/discord';
 
@@ -85,17 +85,17 @@ export async function submitStem(
   }
 
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) {
+    const db = await createDbServerClient();
+    if (!db) {
       return { success: false, message: 'Database connection failed.' };
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await db.auth.getUser();
 
     // ── Rate limiting: max 5 submissions per 24 hours ────────────────────────
     if (user) {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { count } = await supabase
+      const { count } = await db
         .from('stems')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
@@ -111,7 +111,7 @@ export async function submitStem(
 
     let resolvedHandle = uploaderHandle || 'Anonymous';
     if (user) {
-      const { data: profile } = await supabase
+      const { data: profile } = await db
         .from('profiles')
         .select('display_name, server_display_name')
         .eq('id', user.id)
@@ -123,7 +123,7 @@ export async function submitStem(
     }
 
     // Insert directly as published — no approval barrier!
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('stems')
       .insert([{
         user_id: user?.id ?? null,
@@ -145,7 +145,7 @@ export async function submitStem(
       .single();
 
     if (error) {
-      console.error('[submitStem] Supabase error:', error);
+      console.error('[submitStem] Database error:', error);
       return { success: false, message: `Submission failed: ${error.message}` };
     }
 
@@ -166,7 +166,7 @@ export async function submitStem(
       });
 
       if (messageId || threadId) {
-        await supabase
+        await db
           .from('stems')
           .update({ discord_message_id: messageId, discord_thread_id: threadId })
           .eq('id', stem.id);
@@ -229,14 +229,14 @@ export async function updateStem(
   }
 
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
     // Fetch existing stem to check ownership & current profile role
-    const { data: existingStem, error: fetchErr } = await supabase
+    const { data: existingStem, error: fetchErr } = await db
       .from('stems')
       .select('*')
       .eq('id', stemId)
@@ -249,13 +249,13 @@ export async function updateStem(
     let isAllowed = false;
     let isAdmin = false;
 
-    if (supabaseServer) {
-      const { data: { user } } = await supabaseServer.auth.getUser();
+    if (dbServer) {
+      const { data: { user } } = await dbServer.auth.getUser();
       if (user) {
         if (user.id === existingStem.user_id) {
           isAllowed = true;
         }
-        const { data: profile } = await supabaseServer
+        const { data: profile } = await dbServer
           .from('profiles')
           .select('role')
           .eq('id', user.id)
@@ -267,8 +267,8 @@ export async function updateStem(
       }
     }
 
-    // Fallback: if supabaseAdmin was created, allow admin update
-    if (!isAllowed && supabaseAdmin) {
+    // Fallback: if dbAdmin was created, allow admin update
+    if (!isAllowed && dbAdmin) {
       isAllowed = true;
       isAdmin = true;
     }
@@ -278,7 +278,7 @@ export async function updateStem(
     }
 
     // Perform update
-    const { data: updatedStem, error: updateErr } = await supabase
+    const { data: updatedStem, error: updateErr } = await db
       .from('stems')
       .update({
         title,
@@ -320,20 +320,20 @@ export async function updateStem(
 
 export async function deleteStem(id: string): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('stems')
       .delete()
       .eq('id', id)
       .select();
 
     if (error) {
-      console.error('[deleteStem] Supabase delete error:', error);
+      console.error('[deleteStem] Database delete error:', error);
       return { success: false, message: error.message };
     }
 
@@ -358,13 +358,13 @@ export async function toggleStemVerification(
   isVerified: boolean
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('stems')
       .update({ is_verified: isVerified })
       .eq('id', id)
@@ -386,15 +386,15 @@ export async function toggleStemVerification(
 
 export async function flagStem(id: string): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    const { data: stemData } = await supabase.from('stems').select('title, artist, download_url').eq('id', id).single();
+    const { data: stemData } = await db.from('stems').select('title, artist, download_url').eq('id', id).single();
 
-    const { error } = await supabase.from('stems').update({ status: 'flagged' }).eq('id', id);
+    const { error } = await db.from('stems').update({ status: 'flagged' }).eq('id', id);
     if (error) return { success: false, message: error.message };
 
     // Send real email notification via Resend
@@ -421,13 +421,13 @@ export async function flagStem(id: string): Promise<{ success: boolean; message:
 
 export async function approveStem(id: string): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    const { data: stem, error: stemErr } = await supabase
+    const { data: stem, error: stemErr } = await db
       .from('stems')
       .select('*')
       .eq('id', id)
@@ -437,7 +437,7 @@ export async function approveStem(id: string): Promise<{ success: boolean; messa
       return { success: false, message: 'Stem not found.' };
     }
 
-    const { error } = await supabase
+    const { error } = await db
       .from('stems')
       .update({ status: 'published' })
       .eq('id', id);
@@ -458,7 +458,7 @@ export async function approveStem(id: string): Promise<{ success: boolean; messa
       });
 
       if (messageId || threadId) {
-        await supabase
+        await db
           .from('stems')
           .update({ discord_message_id: messageId, discord_thread_id: threadId })
           .eq('id', stem.id);
@@ -482,13 +482,13 @@ export async function rejectStem(id: string): Promise<{ success: boolean; messag
 
 export async function restoreStem(id: string): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    const { error } = await supabase
+    const { error } = await db
       .from('stems')
       .update({ status: 'published' })
       .eq('id', id);
@@ -504,13 +504,13 @@ export async function restoreStem(id: string): Promise<{ success: boolean; messa
 
 export async function getPendingStems(): Promise<Stem[]> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return [];
+    if (!db) return [];
 
-    const { data } = await supabase
+    const { data } = await db
       .from('stems')
       .select('*')
       .eq('status', 'pending')
@@ -524,13 +524,13 @@ export async function getPendingStems(): Promise<Stem[]> {
 
 export async function getFlaggedStems(): Promise<Stem[]> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return [];
+    if (!db) return [];
 
-    const { data } = await supabase
+    const { data } = await db
       .from('stems')
       .select('*')
       .eq('status', 'flagged')
@@ -544,13 +544,13 @@ export async function getFlaggedStems(): Promise<Stem[]> {
 
 export async function getAllStems(): Promise<Stem[]> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return [];
+    if (!db) return [];
 
-    const { data } = await supabase
+    const { data } = await db
       .from('stems')
       .select('*')
       .order('created_at', { ascending: false });
@@ -563,10 +563,10 @@ export async function getAllStems(): Promise<Stem[]> {
 
 export async function getUserStems(userId: string): Promise<Stem[]> {
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return [];
+    const db = await createDbServerClient();
+    if (!db) return [];
 
-    const { data } = await supabase
+    const { data } = await db
       .from('stems')
       .select('*')
       .eq('user_id', userId)
@@ -580,15 +580,15 @@ export async function getUserStems(userId: string): Promise<Stem[]> {
 
 export async function getProfileByHandle(handle: string): Promise<Profile | null> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
-    if (!supabase) return null;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
+    if (!db) return null;
 
     const cleanHandle = decodeURIComponent(handle).trim().replace(/^@/, '');
 
     // 1. Try display_name match (case-insensitive)
-    const { data: profile } = await supabase
+    const { data: profile } = await db
       .from('profiles')
       .select('*')
       .ilike('display_name', cleanHandle)
@@ -597,7 +597,7 @@ export async function getProfileByHandle(handle: string): Promise<Profile | null
     if (profile) return profile as Profile;
 
     // 2. Try email prefix match if no display_name matches
-    const { data: profileByEmail } = await supabase
+    const { data: profileByEmail } = await db
       .from('profiles')
       .select('*')
       .ilike('email', `${cleanHandle}@%`)
@@ -611,10 +611,10 @@ export async function getProfileByHandle(handle: string): Promise<Profile | null
 
 export async function getPublicUserStemsByHandle(handle: string): Promise<Stem[]> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
-    if (!supabase) return [];
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
+    if (!db) return [];
 
     const cleanHandle = decodeURIComponent(handle).trim().replace(/^@/, '');
 
@@ -622,7 +622,7 @@ export async function getPublicUserStemsByHandle(handle: string): Promise<Stem[]
     const profile = await getProfileByHandle(cleanHandle);
 
     if (profile) {
-      const { data } = await supabase
+      const { data } = await db
         .from('stems')
         .select('*')
         .eq('user_id', profile.id)
@@ -633,7 +633,7 @@ export async function getPublicUserStemsByHandle(handle: string): Promise<Stem[]
     }
 
     // Fallback search by uploader_handle directly (case-insensitive)
-    const { data: stemsByHandle } = await supabase
+    const { data: stemsByHandle } = await db
       .from('stems')
       .select('*')
       .ilike('uploader_handle', cleanHandle)
@@ -644,7 +644,7 @@ export async function getPublicUserStemsByHandle(handle: string): Promise<Stem[]
 
     // Additional fallback: handles with or without '@' prefix
     const altHandle = cleanHandle.startsWith('@') ? cleanHandle.slice(1) : `@${cleanHandle}`;
-    const { data: stemsAlt } = await supabase
+    const { data: stemsAlt } = await db
       .from('stems')
       .select('*')
       .ilike('uploader_handle', altHandle)
@@ -662,21 +662,21 @@ export async function getPublicUserStemsByHandle(handle: string): Promise<Stem[]
 
 export async function incrementDownloadCount(id: string): Promise<void> {
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return;
+    const db = await createDbServerClient();
+    if (!db) return;
 
-    // Try RPC first (if you've created one in Supabase)
-    const { error: rpcError } = await supabase.rpc('increment_download_count', { stem_id: id });
+    // Try RPC first (if you've created one in Database)
+    const { error: rpcError } = await db.rpc('increment_download_count', { stem_id: id });
 
     if (rpcError) {
       // Fallback: manual read-increment-write
-      const { data: stem } = await supabase
+      const { data: stem } = await db
         .from('stems')
         .select('download_count')
         .eq('id', id)
         .single();
       if (stem) {
-        await supabase
+        await db
           .from('stems')
           .update({ download_count: (stem.download_count || 0) + 1 })
           .eq('id', id);
@@ -691,13 +691,13 @@ export async function incrementDownloadCount(id: string): Promise<void> {
 
 export async function updateUsername(userId: string, displayName: string): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const db = await createDbServerClient();
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
     const cleanName = displayName.trim().replace(/^@/, '');
     if (!cleanName) return { success: false, message: 'Username cannot be empty.' };
 
-    const { error } = await supabase
+    const { error } = await db
       .from('profiles')
       .update({ display_name: cleanName })
       .eq('id', userId);
@@ -722,13 +722,13 @@ export async function updateUserRole(
   role: 'user' | 'verified' | 'admin'
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('profiles')
       .update({ role })
       .eq('id', userId)
@@ -751,16 +751,16 @@ export async function setUserRoleByEmail(
   role: 'user' | 'verified' | 'admin'
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
     const cleanEmail = email.trim().toLowerCase();
 
     // 1. Update existing profile using case-insensitive email match
-    const { error, data } = await supabase
+    const { error, data } = await db
       .from('profiles')
       .update({ role })
       .ilike('email', cleanEmail)
@@ -776,14 +776,14 @@ export async function setUserRoleByEmail(
     }
 
     // 2. Fallback check for partial email match
-    const { data: existingProfile } = await supabase
+    const { data: existingProfile } = await db
       .from('profiles')
       .select('id, email')
       .filter('email', 'ilike', `%${cleanEmail}%`)
       .maybeSingle();
 
     if (existingProfile) {
-      const { data: updatedData, error: updateErr } = await supabase
+      const { data: updatedData, error: updateErr } = await db
         .from('profiles')
         .update({ role })
         .eq('id', existingProfile.id)
@@ -807,13 +807,13 @@ export async function setUserRoleByEmail(
 
 export async function getAllProfiles(): Promise<Profile[]> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (!supabase) return [];
+    if (!db) return [];
 
-    const { data } = await supabase
+    const { data } = await db
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
@@ -827,10 +827,10 @@ export async function getAllProfiles(): Promise<Profile[]> {
 // ── Rating, Comments & Community Mixes Actions ──────────────────────────────────
 
 // Helper to reliably authenticate user via server cookies OR fallback access token
-async function getAuthenticatedUser(supabaseServer: any, accessToken?: string) {
+async function getAuthenticatedUser(dbServer: any, accessToken?: string) {
   try {
-    if (supabaseServer) {
-      const { data: { user } } = await supabaseServer.auth.getUser();
+    if (dbServer) {
+      const { data: { user } } = await dbServer.auth.getUser();
       if (user) return user;
     }
   } catch {
@@ -839,10 +839,10 @@ async function getAuthenticatedUser(supabaseServer: any, accessToken?: string) {
 
   if (accessToken) {
     try {
-      const supabaseAdmin = await createSupabaseAdminClient();
-      const supabase = supabaseAdmin || supabaseServer;
-      if (supabase) {
-        const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+      const dbAdmin = await createDbAdminClient();
+      const db = dbAdmin || dbServer;
+      if (db) {
+        const { data: { user }, error } = await db.auth.getUser(accessToken);
         if (!error && user) return user;
       }
     } catch (err) {
@@ -853,10 +853,10 @@ async function getAuthenticatedUser(supabaseServer: any, accessToken?: string) {
   return null;
 }
 
-// Helper to ensure user profile exists in database prior to foreign key operations
-async function ensureUserProfile(supabase: any, user: { id: string; email?: string; user_metadata?: Record<string, any> }): Promise<string> {
+// Helper to ensure user profile exists in db prior to foreign key operations
+async function ensureUserProfile(db: any, user: { id: string; email?: string; user_metadata?: Record<string, any> }): Promise<string> {
   try {
-    const { data: profile } = await supabase
+    const { data: profile } = await db
       .from('profiles')
       .select('display_name, email')
       .eq('id', user.id)
@@ -868,7 +868,7 @@ async function ensureUserProfile(supabase: any, user: { id: string; email?: stri
     }
 
     const fallbackHandle = user.user_metadata?.display_name || (user.email ? user.email.split('@')[0] : 'Anonymous');
-    await supabase
+    await db
       .from('profiles')
       .upsert({ id: user.id, email: user.email || null, display_name: fallbackHandle, role: 'user' }, { onConflict: 'id' });
 
@@ -885,19 +885,19 @@ export async function rateStem(
   accessToken?: string
 ): Promise<{ success: boolean; message: string; avgRating?: number; userRating?: number }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const user = await getAuthenticatedUser(supabaseServer, accessToken);
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const user = await getAuthenticatedUser(dbServer, accessToken);
 
     if (!user) return { success: false, message: 'You must be logged in to rate.' };
     if (rating < 1 || rating > 5) return { success: false, message: 'Rating must be between 1 and 5.' };
 
-    const supabase = supabaseAdmin || supabaseServer;
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const db = dbAdmin || dbServer;
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    await ensureUserProfile(supabase, user);
+    await ensureUserProfile(db, user);
 
-    const { error } = await supabase
+    const { error } = await db
       .from('stem_ratings')
       .upsert({ stem_id: stemId, user_id: user.id, rating }, { onConflict: 'stem_id,user_id' });
 
@@ -921,21 +921,21 @@ export async function addComment(
   accessToken?: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const user = await getAuthenticatedUser(supabaseServer, accessToken);
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const user = await getAuthenticatedUser(dbServer, accessToken);
 
     if (!user) return { success: false, message: 'You must be signed in to post comments.' };
 
     const cleanContent = content.trim().slice(0, 2000);
     if (!cleanContent) return { success: false, message: 'Comment cannot be empty.' };
 
-    const supabase = supabaseAdmin || supabaseServer;
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const db = dbAdmin || dbServer;
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    const handle = await ensureUserProfile(supabase, user);
+    const handle = await ensureUserProfile(db, user);
 
-    const { error } = await supabase
+    const { error } = await db
       .from('stem_comments')
       .insert([{ stem_id: stemId, user_id: user.id, user_handle: handle, content: cleanContent }]);
 
@@ -954,13 +954,13 @@ export async function deleteComment(
   stemId: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const db = await createDbServerClient();
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await db.auth.getUser();
     if (!user) return { success: false, message: 'You must be signed in.' };
 
-    const { error } = await supabase
+    const { error } = await db
       .from('stem_comments')
       .delete()
       .eq('id', commentId);
@@ -994,9 +994,9 @@ export async function submitMix(payload: SubmitMixPayload): Promise<{
   discordThreadId?: string | null;
 }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const user = await getAuthenticatedUser(supabaseServer, payload.accessToken);
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const user = await getAuthenticatedUser(dbServer, payload.accessToken);
 
     if (!user) {
       return { success: false, message: 'You must be logged in with your Discord account to submit a mix.' };
@@ -1015,11 +1015,11 @@ export async function submitMix(payload: SubmitMixPayload): Promise<{
       return { success: false, message: 'Please provide a valid cloud audio URL (Google Drive, Dropbox, Box, etc.).' };
     }
 
-    const supabase = supabaseAdmin || supabaseServer;
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const db = dbAdmin || dbServer;
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
     // Query user profile for server_display_name and discord_id
-    const { data: profile } = await supabase
+    const { data: profile } = await db
       .from('profiles')
       .select('display_name, server_display_name, discord_id')
       .eq('id', user.id)
@@ -1028,7 +1028,7 @@ export async function submitMix(payload: SubmitMixPayload): Promise<{
     const submitterHandle = profile?.server_display_name || profile?.display_name || 'Member';
 
     // Insert into public.stem_mixes
-    const { data: newMix, error: insertErr } = await supabase
+    const { data: newMix, error: insertErr } = await db
       .from('stem_mixes')
       .insert({
         stem_id: payload.stemId,
@@ -1046,11 +1046,11 @@ export async function submitMix(payload: SubmitMixPayload): Promise<{
       .single();
 
     if (insertErr || !newMix) {
-      return { success: false, message: insertErr?.message || 'Failed to record mix in database.' };
+      return { success: false, message: insertErr?.message || 'Failed to record mix in db.' };
     }
 
     // Lookup parent stem for Discord thread ID
-    const { data: stem } = await supabase
+    const { data: stem } = await db
       .from('stems')
       .select('title, artist, discord_thread_id')
       .eq('id', payload.stemId)
@@ -1073,7 +1073,7 @@ export async function submitMix(payload: SubmitMixPayload): Promise<{
         });
 
         if (discordPostId) {
-          await supabase
+          await db
             .from('stem_mixes')
             .update({ discord_post_id: discordPostId })
             .eq('id', newMix.id);
@@ -1129,19 +1129,19 @@ export async function toggleMixLike(
   accessToken?: string
 ): Promise<{ success: boolean; message: string; liked?: boolean }> {
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const user = await getAuthenticatedUser(supabaseServer, accessToken);
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const user = await getAuthenticatedUser(dbServer, accessToken);
 
     if (!user) return { success: false, message: 'You must be signed in to like a mix.' };
 
-    const supabase = supabaseAdmin || supabaseServer;
-    if (!supabase) return { success: false, message: 'Database connection failed.' };
+    const db = dbAdmin || dbServer;
+    if (!db) return { success: false, message: 'Database connection failed.' };
 
-    await ensureUserProfile(supabase, user);
+    await ensureUserProfile(db, user);
 
     // Check if already liked
-    const { data: existingLike } = await supabase
+    const { data: existingLike } = await db
       .from('mix_likes')
       .select('id')
       .eq('mix_id', mixId)
@@ -1150,20 +1150,20 @@ export async function toggleMixLike(
 
     if (existingLike) {
       // Remove like
-      await supabase.from('mix_likes').delete().eq('id', existingLike.id);
-      const { data: currentMix } = await supabase.from('stem_mixes').select('likes_count').eq('id', mixId).single();
+      await db.from('mix_likes').delete().eq('id', existingLike.id);
+      const { data: currentMix } = await db.from('stem_mixes').select('likes_count').eq('id', mixId).single();
       if (currentMix) {
-        await supabase.from('stem_mixes').update({ likes_count: Math.max(0, (currentMix.likes_count || 1) - 1) }).eq('id', mixId);
+        await db.from('stem_mixes').update({ likes_count: Math.max(0, (currentMix.likes_count || 1) - 1) }).eq('id', mixId);
       }
       revalidatePath(`/stems/${stemId}`);
       revalidatePath('/showcase');
       return { success: true, message: 'Unliked mix.', liked: false };
     } else {
       // Add like
-      await supabase.from('mix_likes').insert([{ mix_id: mixId, user_id: user.id }]);
-      const { data: currentMix } = await supabase.from('stem_mixes').select('likes_count').eq('id', mixId).single();
+      await db.from('mix_likes').insert([{ mix_id: mixId, user_id: user.id }]);
+      const { data: currentMix } = await db.from('stem_mixes').select('likes_count').eq('id', mixId).single();
       if (currentMix) {
-        await supabase.from('stem_mixes').update({ likes_count: (currentMix.likes_count || 0) + 1 }).eq('id', mixId);
+        await db.from('stem_mixes').update({ likes_count: (currentMix.likes_count || 0) + 1 }).eq('id', mixId);
       }
       revalidatePath(`/stems/${stemId}`);
       revalidatePath('/showcase');

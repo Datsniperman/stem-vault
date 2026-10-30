@@ -1,4 +1,4 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
 import { StemFeed } from '@/components/StemFeed';
 import { Stem } from '@/types';
 
@@ -8,12 +8,12 @@ export default async function Home() {
   let stems: Stem[] = [];
 
   try {
-    const supabaseServer = await createSupabaseServerClient();
-    const supabaseAdmin = await createSupabaseAdminClient();
-    const supabase = supabaseAdmin || supabaseServer;
+    const dbServer = await createDbServerClient();
+    const dbAdmin = await createDbAdminClient();
+    const db = dbAdmin || dbServer;
 
-    if (supabase) {
-      const { data, error } = await supabase
+    if (db) {
+      const { data, error } = await db
         .from('stems')
         .select('*')
         .eq('status', 'published')
@@ -24,25 +24,25 @@ export default async function Home() {
 
         const stemIds = stems.map(s => s.id);
         if (stemIds.length > 0) {
-          const { data: ratings } = await supabase
+          const { data: ratings } = await db
             .from('stem_ratings')
             .select('stem_id, rating')
             .in('stem_id', stemIds);
 
-          const { data: comments } = await supabase
+          const { data: comments } = await db
             .from('stem_comments')
             .select('stem_id')
             .in('stem_id', stemIds);
 
           const ratingMap: Record<string, { sum: number; count: number }> = {};
-          ratings?.forEach(r => {
+          (ratings as any[])?.forEach((r: any) => {
             if (!ratingMap[r.stem_id]) ratingMap[r.stem_id] = { sum: 0, count: 0 };
             ratingMap[r.stem_id].sum += r.rating;
             ratingMap[r.stem_id].count += 1;
           });
 
           const commentMap: Record<string, number> = {};
-          comments?.forEach(c => {
+          (comments as any[])?.forEach((c: any) => {
             commentMap[c.stem_id] = (commentMap[c.stem_id] || 0) + 1;
           });
 
@@ -58,11 +58,11 @@ export default async function Home() {
           });
         }
       } else if (error) {
-        console.error('[page] Supabase fetch error:', error.message);
+        console.error('[page] Database fetch error:', error.message);
       }
     }
   } catch (err) {
-    console.error('[page] Supabase fetch failed:', err);
+    console.error('[page] Database fetch failed:', err);
   }
 
   return <StemFeed initialStems={stems} />;
