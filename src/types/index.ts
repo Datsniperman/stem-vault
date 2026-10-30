@@ -166,6 +166,8 @@ export interface PluginChain {
 }
 
 export interface StorageQuotaInfo {
+  is_admin?: boolean;
+  is_unlimited?: boolean;
   user_bytes_used: number;
   user_bytes_limit: number;
   user_percent: number;

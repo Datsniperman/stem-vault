@@ -194,8 +194,13 @@ export async function getGlobalStorageUsed(): Promise<number> {
  */
 export async function validateBetaUploadQuotas(
   userId: string,
-  newUploadBytes: number
+  newUploadBytes: number,
+  isAdmin: boolean = false
 ): Promise<{ allowed: boolean; error?: string }> {
+  // Admins have unlimited storage and no upload size caps
+  if (isAdmin) {
+    return { allowed: true };
+  }
   if (newUploadBytes > PER_FILE_CAP_BYTES) {
     return {
       allowed: false,

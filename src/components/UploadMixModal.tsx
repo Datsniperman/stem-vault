@@ -132,14 +132,20 @@ export function UploadMixModal({
         {quota && (
           <div className="px-4 py-2.5 bg-neutral-900/60 border-b border-neutral-800/60 flex items-center justify-between text-xs">
             <span className="text-neutral-400">
-              Storage: <strong className="text-neutral-200">{(quota.user_bytes_used / (1024 * 1024)).toFixed(1)} MB</strong> / 2 GB used
+              {quota.is_unlimited ? (
+                <>Admin Storage: <strong className="text-neutral-200">{(quota.user_bytes_used / (1024 * 1024)).toFixed(1)} MB</strong> used <span className="text-emerald-400 font-semibold ml-1">(Unlimited)</span></>
+              ) : (
+                <>Storage: <strong className="text-neutral-200">{(quota.user_bytes_used / (1024 * 1024)).toFixed(1)} MB</strong> / 2 GB used</>
+              )}
             </span>
-            <div className="w-24 bg-neutral-800 rounded-full h-1.5 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-neutral-200"
-                style={{ width: `${Math.min(quota.user_percent, 100)}%` }}
-              />
-            </div>
+            {!quota.is_unlimited && (
+              <div className="w-24 bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-neutral-200"
+                  style={{ width: `${Math.min(quota.user_percent, 100)}%` }}
+                />
+              </div>
+            )}
           </div>
         )}
 
