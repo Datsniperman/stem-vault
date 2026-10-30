@@ -141,7 +141,7 @@ export class LocalServerClient {
           );
 
           let userId: string;
-          let email: string = discordUser.email || `${discordUser.username}@discord.kerpbot`;
+          const email: string = discordUser.email || `${discordUser.username}@discord.kerpbot`;
 
           if (profileRes.rows.length > 0) {
             userId = profileRes.rows[0].id;

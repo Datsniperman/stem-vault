@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, LogOut, User, Shield, Settings, Disc3, Plus, Music2 } from 'lucide-react';
+import { ChevronDown, LogOut, User, Shield, Settings, Disc3, Plus, Music2, Layers, Sliders, FileArchive } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { AuthModal } from './AuthModal';
 import { SubmitStemModal } from './SubmitStemModal';
+import { UploadMultiModal } from './UploadMultiModal';
+import { UploadMixModal } from './UploadMixModal';
+import { CreatePluginChainModal } from './CreatePluginChainModal';
 import { AdminModal } from './AdminModal';
 import { SettingsModal } from './SettingsModal';
 import { BugReportModal } from './BugReportModal';
@@ -29,6 +32,9 @@ export function Header({ onStemAdded }: HeaderProps) {
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [uploadMultiOpen, setUploadMultiOpen] = useState(false);
+  const [uploadMixOpen, setUploadMixOpen] = useState(false);
+  const [createChainOpen, setCreateChainOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bugReportOpen, setBugReportOpen] = useState(false);
@@ -56,7 +62,7 @@ export function Header({ onStemAdded }: HeaderProps) {
 
           {/* Left Brand & Nav */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2.5 group">
+            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
               <div className="w-7 h-7 rounded bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider shadow-xs">
                 MV
               </div>
@@ -65,18 +71,39 @@ export function Header({ onStemAdded }: HeaderProps) {
                   THE MIXING VAULT
                 </span>
                 <span className="hidden sm:inline text-[11px] text-neutral-500 font-normal">
-                  / All Access
+                  / Beta
                 </span>
               </div>
             </Link>
 
             {/* Navigation */}
-            <nav className="hidden md:flex items-center gap-1 pl-4 border-l border-neutral-800">
+            <nav className="hidden lg:flex items-center gap-1 pl-4 border-l border-neutral-800">
               <Link
                 href="/"
                 className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors"
               >
                 Archive
+              </Link>
+              <Link
+                href="/multis"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5"
+              >
+                <Layers className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Multis</span>
+              </Link>
+              <Link
+                href="/mixes"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5"
+              >
+                <Music2 className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Mixes</span>
+              </Link>
+              <Link
+                href="/plugin-chains"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5"
+              >
+                <Sliders className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Plugin Chains</span>
               </Link>
               <Link
                 href="/showcase"
@@ -91,7 +118,7 @@ export function Header({ onStemAdded }: HeaderProps) {
           {/* Right Action Cluster */}
           <div className="flex items-center gap-2.5">
             {/* Sync Status */}
-            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded">
+            <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded">
               <span className="w-1.5 h-1.5 rounded-full bg-neutral-300" />
               <span>Discord Synced</span>
             </div>
@@ -99,11 +126,12 @@ export function Header({ onStemAdded }: HeaderProps) {
             {user ? (
               <>
                 <button
-                  onClick={() => setSubmitOpen(true)}
-                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-3.5 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
+                  onClick={() => setUploadMultiOpen(true)}
+                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
+                  title="Upload a new ZIP multitrack song"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Publish Stems</span>
+                  <span>Upload Multi</span>
                 </button>
 
                 {/* User Menu */}
@@ -138,6 +166,24 @@ export function Header({ onStemAdded }: HeaderProps) {
                           <p className="text-white font-medium truncate">{displayName}</p>
                           <p className="text-[11px] text-neutral-500 truncate">{user.email}</p>
                         </div>
+
+                        <DropdownItem
+                          icon={<Layers className="w-3.5 h-3.5 text-neutral-400" />}
+                          label="Multis Catalog"
+                          onClick={() => { setDropdownOpen(false); router.push('/multis'); }}
+                        />
+
+                        <DropdownItem
+                          icon={<Music2 className="w-3.5 h-3.5 text-neutral-400" />}
+                          label="Upload a Mix"
+                          onClick={() => { setDropdownOpen(false); setUploadMixOpen(true); }}
+                        />
+
+                        <DropdownItem
+                          icon={<Sliders className="w-3.5 h-3.5 text-neutral-400" />}
+                          label="Plugin Chains"
+                          onClick={() => { setDropdownOpen(false); router.push('/plugin-chains'); }}
+                        />
 
                         <DropdownItem
                           icon={<User className="w-3.5 h-3.5 text-neutral-400" />}
@@ -193,6 +239,18 @@ export function Header({ onStemAdded }: HeaderProps) {
         isOpen={submitOpen}
         onClose={() => setSubmitOpen(false)}
         onStemAdded={onStemAdded || (() => {})}
+      />
+      <UploadMultiModal
+        isOpen={uploadMultiOpen}
+        onClose={() => setUploadMultiOpen(false)}
+      />
+      <UploadMixModal
+        isOpen={uploadMixOpen}
+        onClose={() => setUploadMixOpen(false)}
+      />
+      <CreatePluginChainModal
+        isOpen={createChainOpen}
+        onClose={() => setCreateChainOpen(false)}
       />
       <AdminModal isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
