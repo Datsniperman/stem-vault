@@ -1,3 +1,4 @@
+import { isUserAdmin } from '@/lib/auth/admin';
 import { cookies } from 'next/headers';
 import { QueryBuilder } from './queryBuilder';
 import { User, Session, DbResult } from './types';
@@ -134,6 +135,13 @@ export class LocalServerClient {
           const discordUser = await userRes.json();
           const email: string = discordUser.email || `${discordUser.username}@discord.kerpbot`;
 
+          const isAdmin = isUserAdmin({
+            email,
+            discordId: discordUser.id,
+            username: discordUser.username,
+          });
+          let userRole: 'admin' | 'verified' | 'user' = isAdmin ? 'admin' : 'user';
+
           // Generate deterministic UUID for fallback if local DB is unreachable
           const crypto = await import('crypto');
           const hash = crypto.createHash('md5').update(`discord_${discordUser.id}`).digest('hex');
@@ -143,28 +151,39 @@ export class LocalServerClient {
           try {
             const pool = getDbPool();
 
-            // Check if identity/profile exists for discordUser.id
+            // Check if identity/profile exists for discordUser.id OR email
             const profileRes = await pool.query(
-              `SELECT id, email, display_name FROM public.profiles WHERE discord_id = $1 LIMIT 1`,
-              [discordUser.id]
+              `SELECT id, email, display_name, role FROM public.profiles WHERE discord_id = $1 OR lower(email) = lower($2) LIMIT 1`,
+              [discordUser.id, email]
             );
 
             if (profileRes.rows.length > 0) {
               userId = profileRes.rows[0].id;
+              if (profileRes.rows[0].role === 'admin' || isAdmin) {
+                userRole = 'admin';
+              }
+              // Link discord_id and ensure role
+              await pool.query(
+                `UPDATE public.profiles SET discord_id = $1, role = $2 WHERE id = $3`,
+                [discordUser.id, userRole, userId]
+              ).catch(() => {});
             } else {
               // Find or insert in auth.users
               const userCheck = await pool.query(
-                `SELECT id FROM auth.users WHERE lower(email) = lower($1) LIMIT 1`,
+                `SELECT id, role FROM auth.users WHERE lower(email) = lower($1) LIMIT 1`,
                 [email]
               );
               if (userCheck.rows.length > 0) {
                 userId = userCheck.rows[0].id;
+                if (userCheck.rows[0].role === 'admin' || isAdmin) {
+                  userRole = 'admin';
+                }
               } else {
                 userId = crypto.randomUUID();
                 await pool.query(
                   `INSERT INTO auth.users (id, instance_id, email, raw_user_meta_data, role, aud, created_at, updated_at)
-                   VALUES ($1, '00000000-0000-0000-0000-000000000000', $2, $3, 'authenticated', 'authenticated', now(), now())`,
-                  [userId, email, JSON.stringify({ display_name: discordUser.global_name || discordUser.username })]
+                   VALUES ($1, '00000000-0000-0000-0000-000000000000', $2, $3, $4, 'authenticated', now(), now())`,
+                  [userId, email, JSON.stringify({ display_name: discordUser.global_name || discordUser.username, role: userRole }), userRole === 'admin' ? 'admin' : 'authenticated']
                 );
               }
             }
@@ -175,14 +194,15 @@ export class LocalServerClient {
           const resolvedUser: User = {
             id: userId,
             email,
-            role: 'authenticated',
+            role: userRole === 'admin' ? 'admin' : 'authenticated',
             user_metadata: {
               provider_id: discordUser.id,
               display_name: discordUser.global_name || discordUser.username,
-              custom_claims: { global_name: discordUser.global_name || discordUser.username },
+              custom_claims: { global_name: discordUser.global_name || discordUser.username, role: userRole },
               avatar_url: discordUser.avatar
                 ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
                 : null,
+              role: userRole,
             },
             identities: [{ provider: 'discord', id: discordUser.id, identity_data: { provider_id: discordUser.id } }],
           };

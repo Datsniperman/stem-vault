@@ -1,3 +1,4 @@
+import { isUserAdmin } from '@/lib/auth/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyJwt } from '@/lib/db/jwt';
 import { getDbPool } from '@/lib/db/pool';
@@ -26,12 +27,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ session: null, user: null });
     }
 
+    const isAdmin = isUserAdmin({
+      email: payload.email,
+      discordId: payload.user_metadata?.provider_id,
+      username: payload.user_metadata?.display_name,
+      role: payload.role,
+      userMetadata: payload.user_metadata,
+    });
+
+    const calculatedRole = isAdmin ? 'admin' : (payload.role || 'authenticated');
+
     // Verified user directly from the signed JWT payload
     let user: User = {
       id: payload.sub,
       email: payload.email || '',
-      role: payload.role || 'authenticated',
-      user_metadata: payload.user_metadata || {},
+      role: calculatedRole,
+      user_metadata: {
+        ...(payload.user_metadata || {}),
+        role: isAdmin ? 'admin' : (payload.user_metadata?.role || 'user'),
+      },
     };
 
     // Optionally enrich with database row if Postgres is reachable

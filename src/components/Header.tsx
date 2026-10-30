@@ -1,5 +1,7 @@
 'use client';
 
+import { isUserAdmin } from '@/lib/auth/admin';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, LogOut, User, Shield, Settings, Disc3, Plus, Music2, Layers, Sliders, FileArchive } from 'lucide-react';
@@ -54,7 +56,8 @@ export function Header({ onStemAdded }: HeaderProps) {
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const roleInfo = profile ? ROLE_LABELS[profile.role] : null;
+  const isAdminUser = profile?.role === 'admin' || (user ? isUserAdmin({ email: user.email, discordId: user.user_metadata?.provider_id, username: user.user_metadata?.display_name, role: user.role, userMetadata: user.user_metadata }) : false);
+  const roleInfo = isAdminUser ? ROLE_LABELS.admin : (profile ? ROLE_LABELS[profile.role] : null);
   const displayName =
     profile?.server_display_name ||
     profile?.display_name ||
@@ -216,7 +219,7 @@ export function Header({ onStemAdded }: HeaderProps) {
                           onClick={handleMySubmissionsClick}
                         />
 
-                        {profile?.role === 'admin' && (
+                        {(profile?.role === 'admin' || isAdminUser) && (
                           <DropdownItem
                             icon={<Shield className="w-3.5 h-3.5 text-neutral-300" />}
                             label="Admin Center"

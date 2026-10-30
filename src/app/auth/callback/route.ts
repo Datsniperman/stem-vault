@@ -1,6 +1,8 @@
+import { isUserAdmin } from '@/lib/auth/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
+import { createUserToken } from '@/lib/db/jwt';
 
 export async function GET(request: NextRequest) {
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
@@ -80,8 +82,29 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}/unauthorized?reason=not_in_guild`);
       }
 
+      let isGuildAdmin = false;
       if (memberRes.ok) {
         const member = await memberRes.json();
+
+        // Check Discord administrator permission bit 0x8
+        try {
+          if (member.permissions && (BigInt(member.permissions) & BigInt(8)) === BigInt(8)) {
+            isGuildAdmin = true;
+          }
+        } catch {}
+
+        // Check Discord server owner
+        try {
+          const guildRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
+            headers: { Authorization: `Bot ${botToken}` },
+          });
+          if (guildRes.ok) {
+            const guildData = await guildRes.json();
+            if (guildData.owner_id === discordUserId) {
+              isGuildAdmin = true;
+            }
+          }
+        } catch {}
 
         // Resolve display name: member.nick -> member.user.global_name -> member.user.username
         const resolvedServerName =
@@ -152,6 +175,20 @@ export async function GET(request: NextRequest) {
       const adminDb = await createDbAdminClient();
       const db = adminDb || dbServer;
 
+      const isCalculatedAdmin = isUserAdmin({
+        email: user.email,
+        discordId: discordUserId,
+        username: fallbackName,
+        role: user.role,
+        userMetadata: user.user_metadata,
+      });
+      const calculatedRole = isCalculatedAdmin ? 'admin' : (user.user_metadata?.role || 'user');
+      if (isCalculatedAdmin) {
+        user.role = 'admin';
+        user.user_metadata = { ...user.user_metadata, role: 'admin' };
+        data.session.access_token = createUserToken(user);
+      }
+
       await db.from('profiles').upsert(
         {
           id: user.id,
@@ -160,6 +197,7 @@ export async function GET(request: NextRequest) {
           server_display_name: fallbackName,
           discord_id: discordUserId,
           avatar_url: user.user_metadata?.avatar_url || null,
+          role: calculatedRole,
         },
         { onConflict: 'id' }
       );

@@ -1,5 +1,7 @@
 'use client';
 
+import { isUserAdmin } from '@/lib/auth/admin';
+
 import {
   createContext,
   useContext,
@@ -30,6 +32,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string, userObj?: User | null) => {
+    const isAdmin = isUserAdmin({
+      email: userObj?.email,
+      discordId: userObj?.user_metadata?.provider_id,
+      username: userObj?.user_metadata?.display_name,
+      role: userObj?.role,
+      userMetadata: userObj?.user_metadata,
+    });
+
     try {
       const db = getDbBrowserClient();
       const { data, error } = await db
@@ -39,7 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (data) {
-        setProfile(data as Profile);
+        const p = data as Profile;
+        if (isAdmin && p.role !== 'admin') {
+          p.role = 'admin';
+        }
+        setProfile(p);
         return;
       }
     } catch {}
@@ -58,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: userObj.email || null,
         display_name: fallbackName,
         server_display_name: fallbackName,
-        role: (userObj.role === 'admin' ? 'admin' : 'user') as any,
+        role: (isAdmin || userObj.role === 'admin' ? 'admin' : 'user') as any,
         created_at: new Date().toISOString(),
         avatar_url: userObj.user_metadata?.avatar_url || null,
       };
