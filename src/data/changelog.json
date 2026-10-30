@@ -1,5 +1,18 @@
 [
   {
+    "version": "1.4.0-beta",
+    "date": "2026-10-30",
+    "title": "Mixing Vault v1 Beta: Multis, Native Mixes & Plugin Chains",
+    "changes": [
+      "Added Multitrack ZIP Uploads: upload audio stem packs up to 500 MB with automatic zip-slip safety, audio validation, and filename sanitization.",
+      "Added Isolated Preview Files: each multi lists audio tracks with native web streaming playback and untranscoded full-quality downloads.",
+      "Added Native Mixes Section (/mixes): listen to finished community mixes directly in the browser with HTTP Range streaming.",
+      "Added Plugin Chains Hub (/plugin-chains): create, filter, view, and share ordered signal chains with settings & notes.",
+      "Implemented standardized JSON Schema for chains (PLUGIN-CHAIN-SCHEMA.md) with /api/plugin-chains/[id]/export and import.",
+      "Connected Cloudflare R2 object storage with automated 2 GB per-user beta quotas and 9 GB global protection limits."
+    ]
+  },
+  {
     "version": "1.3.0",
     "date": "2026-10-05",
     "title": "Stem Session Editing & Management",

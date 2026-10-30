@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 interface HeroProps {
   totalSessions: number;
   totalTracks: number;
@@ -23,6 +25,28 @@ export function Hero({ totalSessions, totalTracks, activeEngineers }: HeroProps)
             <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed pt-1">
               Download studio multitracks, share session templates, and submit finished mixes for feedback in the Discord community.
             </p>
+
+            {/* Quick Access Badges for Beta Features */}
+            <div className="flex flex-wrap items-center gap-2 pt-3">
+              <Link
+                href="/multis"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
+              >
+                <span>📦 Multitrack Packs</span>
+              </Link>
+              <Link
+                href="/mixes"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
+              >
+                <span>🎧 Finished Mixes</span>
+              </Link>
+              <Link
+                href="/plugin-chains"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
+              >
+                <span>🎛️ Plugin Chains</span>
+              </Link>
+            </div>
           </div>
 
           {/* Right: Clean Stats */}

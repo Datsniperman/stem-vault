@@ -20,6 +20,7 @@ import {
 import { PluginChain, PluginChainItem } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { CreatePluginChainModal } from '@/components/CreatePluginChainModal';
+import { Header } from '@/components/Header';
 
 export default function PluginChainDetailPage() {
   const params = useParams();
@@ -105,6 +106,7 @@ export default function PluginChainDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 pb-24">
+      <Header />
       {/* Top Bar */}
       <div className="border-b border-neutral-800 bg-[#0d0d0d] px-4 sm:px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">

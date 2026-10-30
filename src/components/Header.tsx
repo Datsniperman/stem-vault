@@ -77,37 +77,37 @@ export function Header({ onStemAdded }: HeaderProps) {
             </Link>
 
             {/* Navigation */}
-            <nav className="hidden lg:flex items-center gap-1 pl-4 border-l border-neutral-800">
+            <nav className="flex items-center gap-1 pl-2 sm:pl-4 border-l border-neutral-800 overflow-x-auto max-w-[50vw] sm:max-w-none">
               <Link
                 href="/"
-                className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors whitespace-nowrap"
               >
                 Archive
               </Link>
               <Link
                 href="/multis"
-                className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
               >
                 <Layers className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Multis</span>
               </Link>
               <Link
                 href="/mixes"
-                className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
               >
                 <Music2 className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Mixes</span>
               </Link>
               <Link
                 href="/plugin-chains"
-                className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
               >
                 <Sliders className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Plugin Chains</span>
               </Link>
               <Link
                 href="/showcase"
-                className="text-xs font-medium text-neutral-300 hover:text-white px-2.5 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
               >
                 <Disc3 className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Mix Showcase</span>
@@ -116,7 +116,14 @@ export function Header({ onStemAdded }: HeaderProps) {
           </div>
 
           {/* Right Action Cluster */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setUpdateLogsOpen(true)}
+              className="text-[11px] font-medium text-neutral-400 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-2 py-1 rounded transition-colors whitespace-nowrap"
+              title="View v1 Beta Update Notes"
+            >
+              ✨ What&apos;s New
+            </button>
             {/* Sync Status */}
             <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded">
               <span className="w-1.5 h-1.5 rounded-full bg-neutral-300" />

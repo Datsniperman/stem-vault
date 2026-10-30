@@ -7,6 +7,7 @@ import { Mix } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { UploadMixModal } from '@/components/UploadMixModal';
+import { Header } from '@/components/Header';
 
 export default function MixesPage() {
   const { user, profile } = useAuth();
@@ -67,6 +68,7 @@ export default function MixesPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 pb-20">
+      <Header />
       {/* Hero Header */}
       <div className="border-b border-neutral-800 bg-neutral-950/60 backdrop-blur-sm py-10 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">

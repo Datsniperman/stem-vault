@@ -6,6 +6,7 @@ import { Layers, Search, Plus, Calendar, HardDrive, Music, User as UserIcon } fr
 import { Multi } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { UploadMultiModal } from '@/components/UploadMultiModal';
+import { Header } from '@/components/Header';
 
 export default function MultisPage() {
   const { user } = useAuth();
@@ -40,6 +41,7 @@ export default function MultisPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 pb-20">
+      <Header />
       {/* Hero Header */}
       <div className="border-b border-neutral-800 bg-neutral-950/60 backdrop-blur-sm py-10 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
