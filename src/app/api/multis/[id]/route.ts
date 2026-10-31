@@ -18,6 +18,9 @@ export async function GET(
         m.owner_id,
         m.title,
         m.description,
+        m.zip_r2_key,
+        m.zip_public_url,
+        m.zip_size_bytes,
         m.created_at,
         m.updated_at,
         COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
@@ -80,6 +83,7 @@ export async function GET(
     return NextResponse.json({
       multi: {
         ...multi,
+        zip_size_bytes: multi.zip_size_bytes ? Number(multi.zip_size_bytes) : null,
         track_count: tracksRes.rows.length,
         total_size_bytes: totalSizeBytes,
         tracks: tracksRes.rows.map(t => ({
@@ -101,6 +105,84 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const db = await createDbServerClient();
+    const { data: { user } } = await db.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const pool = getDbPool();
+
+    // Verify ownership or admin
+    const checkRes = await pool.query(
+      `SELECT m.id, m.owner_id, p.role
+       FROM public.multis m
+       LEFT JOIN public.profiles p ON p.id = $1
+       WHERE m.id = $2`,
+      [user.id, id]
+    );
+
+    if (checkRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Multi not found' }, { status: 404 });
+    }
+
+    const item = checkRes.rows[0];
+    if (item.owner_id !== user.id && item.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { title, description, zip_r2_key, zip_public_url, zip_size_bytes } = body;
+
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (title !== undefined) {
+      fields.push(`title = $${idx++}`);
+      values.push(title.trim());
+    }
+    if (description !== undefined) {
+      fields.push(`description = $${idx++}`);
+      values.push(description ? description.trim() : null);
+    }
+    if (zip_r2_key !== undefined) {
+      fields.push(`zip_r2_key = $${idx++}`);
+      values.push(zip_r2_key);
+    }
+    if (zip_public_url !== undefined) {
+      fields.push(`zip_public_url = $${idx++}`);
+      values.push(zip_public_url);
+    }
+    if (zip_size_bytes !== undefined) {
+      fields.push(`zip_size_bytes = $${idx++}`);
+      values.push(zip_size_bytes ? Number(zip_size_bytes) : null);
+    }
+
+    if (fields.length === 0) {
+      return NextResponse.json({ message: 'No fields provided to update.' });
+    }
+
+    fields.push(`updated_at = now()`);
+    values.push(id);
+
+    const updateQuery = `UPDATE public.multis SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
+    const result = await pool.query(updateQuery, values);
+
+    return NextResponse.json({ multi: result.rows[0] });
+  } catch (err: any) {
+    console.error('[multis/patch] Error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -118,7 +200,7 @@ export async function DELETE(
 
     // Check multi ownership or admin
     const checkRes = await pool.query(
-      `SELECT m.id, m.owner_id, p.role
+      `SELECT m.id, m.owner_id, m.zip_r2_key, p.role
        FROM public.multis m
        LEFT JOIN public.profiles p ON p.id = $1
        WHERE m.id = $2`,
@@ -137,6 +219,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden: you cannot delete this multi.' }, { status: 403 });
     }
 
+    // Delete full ZIP archive if present
+    if (item.zip_r2_key) {
+      await deleteBlob(item.zip_r2_key).catch(() => {});
+    }
+
     // Get all track r2_keys to delete from storage
     const tracksRes = await pool.query(
       `SELECT r2_key FROM public.multi_tracks WHERE multi_id = $1`,
@@ -146,7 +233,7 @@ export async function DELETE(
     // Delete tracks from storage
     for (const row of tracksRes.rows) {
       if (row.r2_key) {
-        await deleteBlob(row.r2_key);
+        await deleteBlob(row.r2_key).catch(() => {});
       }
     }
 

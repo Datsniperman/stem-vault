@@ -152,7 +152,40 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       const multiId = multiData.multi.id;
       setCreatedMultiId(multiId);
 
-      // 3. Upload each track directly to Cloudflare R2 via presigned URLs
+      // 3. Upload the full ZIP archive directly to Cloudflare R2
+      setStatusMessage('Uploading full ZIP archive to cloud storage...');
+      try {
+        const safeZipName = `${title.trim().replace(/[^a-zA-Z0-9_-]/g, '_')}_stems.zip`;
+        const zipPresignRes = await fetch('/api/storage/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: safeZipName,
+            contentType: 'application/zip',
+            folder: `multis/${multiId}/zip`,
+          }),
+        });
+
+        if (zipPresignRes.ok) {
+          const zipPresignData = await zipPresignRes.json();
+          if (zipPresignData?.uploadUrl) {
+            await uploadDirectToR2(zipPresignData.uploadUrl, file, 'application/zip');
+            await fetch(`/api/multis/${multiId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                zip_r2_key: zipPresignData.key,
+                zip_public_url: zipPresignData.publicUrl,
+                zip_size_bytes: file.size,
+              }),
+            });
+          }
+        }
+      } catch (zipUploadErr) {
+        console.warn('Could not upload full zip archive to R2:', zipUploadErr);
+      }
+
+      // 4. Upload each track directly to Cloudflare R2 via presigned URLs
       const mappings: RenameMapping[] = [];
       const usedNames = new Set<string>();
 

@@ -81,11 +81,11 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
     // 1. Post Embed with Link Buttons to multitrack-releases channel (1565366257996275847)
     const message = (await rest.post(Routes.channelMessages(channelId), {
       body: {
-        content: `🚨 **New Multitrack Drop by ${engineerMention}!**`,
+        content: 'New Multitracks:',
         embeds: [
           {
             title: `🎛️ Multitrack Pack: ${payload.title}`,
-            description: `Uploaded by: ${engineerMention}\nAll isolated stems are uploaded and ready to download or audition on The Mixing Vault!`,
+            description: `Uploaded by: ${engineerMention}`,
             color: 0x00ffaa,
             fields,
             footer: { text: 'The Mixing Vault • Download stems and post your mix for feedback!' },
@@ -178,7 +178,28 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
       fields.push({ name: 'Multitrack Song', value: payload.multiTitle, inline: true });
     }
 
-    const message = (await rest.post(Routes.channelMessages(targetChannelOrThread), {
+    const files: any[] = [];
+    try {
+      if (payload.publicUrl) {
+        const audioRes = await fetch(payload.publicUrl);
+        if (audioRes.ok) {
+          const arrayBuf = await audioRes.arrayBuffer();
+          const audioBuffer = Buffer.from(arrayBuf);
+          if (audioBuffer.length > 0 && audioBuffer.length <= 25 * 1024 * 1024) {
+            const ext = (payload.format || 'mp3').toLowerCase().replace(/^\./, '');
+            const safeTitle = (payload.title || 'mix').replace(/[^a-zA-Z0-9_-]/g, '_');
+            files.push({
+              data: audioBuffer,
+              name: `${safeTitle}.${ext}`,
+            });
+          }
+        }
+      }
+    } catch (attachErr) {
+      console.warn('[Discord] Could not download mix audio for attachment:', attachErr);
+    }
+
+    const messagePayload: any = {
       body: {
         content: `🚨 **New Mix Uploaded by ${engineerMention}!**`,
         embeds: [
@@ -199,7 +220,13 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
           },
         ],
       },
-    })) as { id: string };
+    };
+
+    if (files.length > 0) {
+      messagePayload.files = files;
+    }
+
+    const message = (await rest.post(Routes.channelMessages(targetChannelOrThread), messagePayload)) as { id: string };
 
     return message.id;
   } catch (error: any) {

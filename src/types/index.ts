@@ -103,6 +103,9 @@ export interface Multi {
   owner_id: string;
   title: string;
   description?: string | null;
+  zip_r2_key?: string | null;
+  zip_public_url?: string | null;
+  zip_size_bytes?: number | null;
   created_at: string;
   updated_at: string;
   owner?: Profile | null;

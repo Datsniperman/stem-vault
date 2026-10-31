@@ -207,7 +207,17 @@ export default function MultiDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <a
+                href={`/api/multis/${multi.id}/download`}
+                download
+                className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-2 shadow-xs"
+                title="Download all stems bundled as a single ZIP file"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download Full Session (ZIP)</span>
+              </a>
+
               {user && (
                 <button
                   onClick={() => setMixModalOpen(true)}
@@ -231,9 +241,19 @@ export default function MultiDetailPage() {
               <FileAudio className="w-4 h-4 text-neutral-400" />
               <span>Preview Files & Audio Stems ({multi.tracks?.length || 0})</span>
             </h2>
-            <span className="text-[11px] text-neutral-500 font-mono">
-              Native web playback • Exact untranscoded downloads
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-neutral-500 font-mono hidden sm:inline">
+                Native web playback • Exact untranscoded downloads
+              </span>
+              <a
+                href={`/api/multis/${multi.id}/download`}
+                download
+                className="text-xs text-neutral-300 hover:text-white flex items-center gap-1.5 underline underline-offset-4 font-medium"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download All (ZIP)</span>
+              </a>
+            </div>
           </div>
 
           {!multi.tracks || multi.tracks.length === 0 ? (

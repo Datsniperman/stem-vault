@@ -6,7 +6,7 @@ export const metadata = {
 };
 
 export default function UnauthorizedPage() {
-  const inviteUrl = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || 'https://discord.gg';
+  const inviteUrl = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || 'https://discord.gg/mixing';
 
   return (
     <main className="min-h-[85vh] flex items-center justify-center px-4 py-16 bg-[#0a0a0a]">
