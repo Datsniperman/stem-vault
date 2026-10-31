@@ -96,7 +96,7 @@ export default function PrivacyPolicyPage() {
                 The Service is strictly restricted to individuals who are at least 13 years old (or 16 in certain EU member states). We comply with the Children&apos;s Online Privacy Protection Act (COPPA). We do not knowingly collect personal information from children under 13.
               </p>
               <p className="text-neutral-400 leading-relaxed">
-                If a parent or guardian becomes aware that their child has provided personal information to us without consent, please notify us immediately at <a href="mailto:privacy@stemvault.app" className="text-white underline">privacy@stemvault.app</a> or <a href="mailto:connorwbrown07@gmail.com" className="text-white underline">connorwbrown07@gmail.com</a>.
+                If a parent or guardian becomes aware that their child has provided personal information to us without consent, please notify us immediately at <a href="mailto:privacy@mixingvault.com" className="text-white underline">privacy@mixingvault.com</a> or <a href="mailto:connorwbrown07@gmail.com" className="text-white underline">connorwbrown07@gmail.com</a>.
               </p>
             </div>
           </section>
@@ -134,7 +134,7 @@ export default function PrivacyPolicyPage() {
             <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-400 space-y-1 font-mono">
               <p><strong className="text-white">Data Controller:</strong> The Mixing Vault / Tyler Kerpsack All Access</p>
               <p><strong className="text-white">Privacy Officer:</strong> Connor Brown</p>
-              <p><strong className="text-white">Email:</strong> <a href="mailto:privacy@stemvault.app" className="text-white underline">privacy@stemvault.app</a> or <a href="mailto:connorwbrown07@gmail.com" className="text-white underline">connorwbrown07@gmail.com</a></p>
+              <p><strong className="text-white">Email:</strong> <a href="mailto:privacy@mixingvault.com" className="text-white underline">privacy@mixingvault.com</a> or <a href="mailto:connorwbrown07@gmail.com" className="text-white underline">connorwbrown07@gmail.com</a></p>
               <p><strong className="text-white">Physical Address:</strong> P.O. Box 412, Nashville, TN 37203, United States</p>
             </div>
           </section>

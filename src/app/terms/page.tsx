@@ -157,7 +157,7 @@ export default function TermsOfServicePage() {
             </h2>
             <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-400 space-y-1 font-mono">
               <p><strong className="text-white">Operator:</strong> Tyler Kerpsack All Access / The Mixing Vault</p>
-              <p><strong className="text-white">Email:</strong> <a href="mailto:support@stemvault.app" className="text-white underline">support@stemvault.app</a> or <a href="mailto:connorwbrown07@gmail.com" className="text-white underline">connorwbrown07@gmail.com</a></p>
+              <p><strong className="text-white">Email:</strong> <a href="mailto:support@mixingvault.com" className="text-white underline">support@mixingvault.com</a> or <a href="mailto:connorwbrown07@gmail.com" className="text-white underline">connorwbrown07@gmail.com</a></p>
               <p><strong className="text-white">Physical Address:</strong> P.O. Box 412, Nashville, TN 37203, United States</p>
             </div>
           </section>

@@ -52,7 +52,7 @@ export default function DmcaPage() {
               <p><strong className="text-white">Designated Agent:</strong> Connor Brown / Legal Compliance Officer</p>
               <p><strong className="text-white">Platform / Entity:</strong> The Mixing Vault (Tyler Kerpsack All Access)</p>
               <p><strong className="text-white">Email:</strong> <a href="mailto:connorwbrown07@gmail.com" className="text-white hover:underline underline">connorwbrown07@gmail.com</a></p>
-              <p><strong className="text-white">Alternate Contact:</strong> <a href="mailto:dmca@stemvault.app" className="text-white hover:underline underline">dmca@stemvault.app</a></p>
+              <p><strong className="text-white">Alternate Contact:</strong> <a href="mailto:dmca@mixingvault.com" className="text-white hover:underline underline">dmca@mixingvault.com</a></p>
               <p><strong className="text-white">Mailing Address:</strong> Attn: DMCA Copyright Agent, P.O. Box 412, Nashville, TN 37203, USA</p>
               <p><strong className="text-white">Phone:</strong> (615) 852-5793</p>
             </div>
