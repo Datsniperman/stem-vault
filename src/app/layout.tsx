@@ -12,22 +12,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: 'The Mixing Vault — Tyler Kerpsack All Access',
-    template: '%s | The Mixing Vault',
-  },
+  title: 'The Mixing Vault',
   description:
     'Exclusive in-house multitrack session archive & mix critique hub for Tyler Kerpsack All Access. Powered by KerpBot.',
   metadataBase: new URL('https://www.mixingvault.com'),
   openGraph: {
-    title: 'The Mixing Vault — Tyler Kerpsack All Access',
+    title: 'The Mixing Vault',
     description: 'In-house multitrack session archive & mix critique hub powered by KerpBot.',
     type: 'website',
     siteName: 'The Mixing Vault',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'The Mixing Vault — Tyler Kerpsack All Access',
+    title: 'The Mixing Vault',
     description: 'In-house multitrack session archive & mix critique hub powered by KerpBot.',
   },
 };

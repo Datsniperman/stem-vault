@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Upload, Music2, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { Multi } from '@/types';
 
@@ -9,6 +9,13 @@ interface UploadMixModalProps {
   onClose: () => void;
   defaultMultiId?: string;
   onSuccess?: () => void;
+}
+
+interface StagedUpload {
+  key: string;
+  publicUrl: string;
+  format: string;
+  sizeBytes: number;
 }
 
 export function UploadMixModal({
@@ -26,11 +33,17 @@ export function UploadMixModal({
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
+  // Background upload tracking
+  const [stagedUpload, setStagedUpload] = useState<StagedUpload | null>(null);
+  const bgUploadPromiseRef = useRef<Promise<StagedUpload> | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       setError(null);
       setUploadProgress(null);
       setStatusMessage('');
+      setStagedUpload(null);
+      bgUploadPromiseRef.current = null;
       setSelectedMultiId(defaultMultiId || '');
       fetch('/api/multis')
         .then(res => res.json())
@@ -40,6 +53,91 @@ export function UploadMixModal({
   }, [isOpen, defaultMultiId]);
 
   if (!isOpen) return null;
+
+  const uploadDirectToR2 = (uploadUrl: string, fileData: Blob, contentType: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl, true);
+      xhr.setRequestHeader('Content-Type', contentType);
+
+      xhr.upload.onprogress = (evt) => {
+        if (evt.lengthComputable) {
+          const percent = Math.round((evt.loaded / evt.total) * 100);
+          setUploadProgress(percent);
+          setStatusMessage(`Uploading audio to Cloudflare: ${percent}%`);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Storage server returned HTTP ${xhr.status}: ${xhr.statusText}`));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Storage upload failed. Please check network connection.'));
+      };
+
+      xhr.send(fileData);
+    });
+  };
+
+  const startBackgroundUpload = (selectedFile: File): Promise<StagedUpload> => {
+    const ext = selectedFile.name.slice(selectedFile.name.lastIndexOf('.')).toLowerCase();
+    const format = ext.replace('.', '').toUpperCase();
+
+    setStatusMessage('Preparing direct cloud upload...');
+    setUploadProgress(2);
+
+    const promise = (async () => {
+      // 1. Get presigned upload URL
+      const presignRes = await fetch('/api/storage/presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: selectedFile.name,
+          contentType: selectedFile.type || 'audio/wav',
+          folder: 'mixes',
+        }),
+      });
+
+      if (!presignRes.ok) {
+        throw new Error('Failed to obtain cloud storage upload authorization.');
+      }
+
+      const presignData = await presignRes.json();
+      if (!presignData?.uploadUrl) {
+        throw new Error(presignData?.error || 'Presigned upload URL missing.');
+      }
+
+      // 2. Stream directly to Cloudflare R2
+      await uploadDirectToR2(presignData.uploadUrl, selectedFile, selectedFile.type || 'audio/wav');
+
+      const staged: StagedUpload = {
+        key: presignData.key,
+        publicUrl: presignData.publicUrl,
+        format,
+        sizeBytes: selectedFile.size,
+      };
+
+      setStagedUpload(staged);
+      setStatusMessage('Upload complete! Ready to submit.');
+      setUploadProgress(100);
+      return staged;
+    })();
+
+    bgUploadPromiseRef.current = promise;
+    promise.catch(err => {
+      console.warn('Background upload error:', err);
+      setError(err.message || 'Background upload failed.');
+      setUploadProgress(null);
+      setStatusMessage('');
+    });
+
+    return promise;
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -55,40 +153,15 @@ export function UploadMixModal({
 
     setError(null);
     setFile(selected);
-  };
 
-  const uploadDirectToR2 = (uploadUrl: string, fileData: Blob, contentType: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', uploadUrl, true);
-      xhr.setRequestHeader('Content-Type', contentType);
+    // Auto-fill title from filename if title is blank
+    if (!title.trim()) {
+      const cleanTitle = selected.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      setTitle(cleanTitle);
+    }
 
-      xhr.upload.onprogress = (evt) => {
-        if (evt.lengthComputable) {
-          const percent = Math.round((evt.loaded / evt.total) * 100);
-          setUploadProgress(percent);
-          setStatusMessage(`Uploading to Cloudflare R2: ${percent}%`);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
-        } else {
-          reject(new Error(`Storage server returned HTTP ${xhr.status}: ${xhr.statusText}`));
-        }
-      };
-
-      xhr.onerror = () => {
-        reject(
-          new Error(
-            'Direct Cloudflare R2 upload was blocked by browser CORS policy. Please configure CORS on your "mixing-vault-files" bucket in Cloudflare Dashboard.'
-          )
-        );
-      };
-
-      xhr.send(fileData);
-    });
+    // Immediately trigger background upload so upload feels instant!
+    startBackgroundUpload(selected);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,95 +176,42 @@ export function UploadMixModal({
     }
 
     setUploading(true);
-    setUploadProgress(null);
-    setStatusMessage('Initiating upload...');
     setError(null);
 
-    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-
     try {
-      // 1. Request presigned upload URL for direct-to-R2 upload (bypasses Vercel 4.5MB limit)
-      let presignRes: Response | null = null;
-      try {
-        presignRes = await fetch('/api/storage/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type || 'audio/wav',
-            folder: 'mixes',
-          }),
-        });
-      } catch (e) {
-        console.warn('Presign request error, falling back:', e);
+      let uploadInfo = stagedUpload;
+
+      // If background upload is still in progress, wait for it
+      if (!uploadInfo && bgUploadPromiseRef.current) {
+        setStatusMessage('Finalizing file upload...');
+        uploadInfo = await bgUploadPromiseRef.current;
+      } else if (!uploadInfo) {
+        uploadInfo = await startBackgroundUpload(file);
       }
 
-      let presignData: any = null;
-      if (presignRes && presignRes.ok) {
-        try {
-          presignData = await presignRes.json();
-        } catch {}
-      }
+      setStatusMessage('Saving mix and notifying Discord...');
 
-      // If presigning succeeded and R2 is active, do direct browser PUT to R2
-      if (presignData?.uploadUrl && presignData?.isR2) {
-        setStatusMessage('Streaming directly to Cloudflare R2...');
-        await uploadDirectToR2(presignData.uploadUrl, file, file.type || 'audio/wav');
-
-        setStatusMessage('Saving mix metadata...');
-        const createRes = await fetch('/api/mixes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: title.trim(),
-            multi_id: selectedMultiId || null,
-            r2_key: presignData.key,
-            public_url: presignData.publicUrl,
-            format: ext.replace('.', '').toUpperCase(),
-            size_bytes: file.size,
-          }),
-        });
-
-        const text = await createRes.text();
-        let createData: any = null;
-        try {
-          createData = text ? JSON.parse(text) : null;
-        } catch {}
-
-        if (!createRes.ok) {
-          throw new Error(createData?.error || text || 'Failed to save mix details.');
-        }
-
-        if (onSuccess) onSuccess();
-        onClose();
-        return;
-      }
-
-      // 2. Fallback to standard server upload (for local server environments)
-      setStatusMessage('Uploading to server...');
-      const formData = new FormData();
-      formData.append('title', title.trim());
-      if (selectedMultiId) formData.append('multi_id', selectedMultiId);
-      formData.append('file', file);
-
-      const res = await fetch('/api/mixes/upload', {
+      const createRes = await fetch('/api/mixes', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          multi_id: selectedMultiId || null,
+          r2_key: uploadInfo.key,
+          public_url: uploadInfo.publicUrl,
+          format: uploadInfo.format,
+          size_bytes: uploadInfo.sizeBytes,
+        }),
       });
 
-      const resText = await res.text();
-      let data: any = null;
+      const text = await createRes.text();
+      let createData: any = null;
       try {
-        data = resText ? JSON.parse(resText) : null;
-      } catch {
-        if (res.status === 413 || resText.includes('Request Entity')) {
-          throw new Error('Vercel 4.5 MB serverless limit reached. Cloudflare R2 direct upload is required for large files.');
-        }
-        throw new Error(resText || `Upload failed with HTTP ${res.status}`);
-      }
+        createData = text ? JSON.parse(text) : null;
+      } catch {}
 
-      if (!res.ok) {
-        throw new Error(data?.error || `Upload failed with status ${res.status}`);
+      if (!createRes.ok || !createData?.mix?.id) {
+        throw new Error(createData?.error || text || 'Failed to save mix.');
       }
 
       if (onSuccess) onSuccess();
@@ -200,8 +220,6 @@ export function UploadMixModal({
       setError(err.message || 'Error uploading mix.');
     } finally {
       setUploading(false);
-      setUploadProgress(null);
-      setStatusMessage('');
     }
   };
 
@@ -239,6 +257,51 @@ export function UploadMixModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-neutral-300 mb-1">
+                Audio File <span className="text-red-400">*</span>
+              </label>
+              <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
+                <Music2 className="w-7 h-7 text-neutral-500 mb-1.5" />
+                <p className="text-xs text-neutral-200 font-medium truncate max-w-xs">
+                  {file ? file.name : 'Choose audio file to begin instant upload'}
+                </p>
+                <p className="text-[11px] text-neutral-500 mt-0.5">
+                  {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : 'WAV, FLAC, MP3, AIFF, OGG (unlimited)'}
+                </p>
+                <input
+                  type="file"
+                  accept="audio/*,.wav,.flac,.mp3,.aiff,.aif,.ogg"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Visual Animated Progress Bar */}
+            {uploadProgress !== null && (
+              <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3 rounded-lg">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-neutral-300 font-mono text-[11px] truncate flex items-center gap-1.5">
+                    {uploadProgress === 100 ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    ) : (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-400 shrink-0" />
+                    )}
+                    <span>{statusMessage || 'Processing upload...'}</span>
+                  </span>
+                  <span className="text-white font-mono font-bold text-xs shrink-0">{uploadProgress}%</span>
+                </div>
+                <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-300 mb-1">
                 Mix Title <span className="text-red-400">*</span>
               </label>
               <input
@@ -259,7 +322,7 @@ export function UploadMixModal({
                 value={selectedMultiId}
                 onChange={e => setSelectedMultiId(e.target.value)}
                 disabled={uploading}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
               >
                 <option value="">None (Standalone Mix)</option>
                 {multis.map(m => (
@@ -270,51 +333,12 @@ export function UploadMixModal({
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1">
-                Audio File <span className="text-red-400">*</span>
-              </label>
-              <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
-                <Music2 className="w-7 h-7 text-neutral-500 mb-1.5" />
-                <p className="text-xs text-neutral-300 font-medium">
-                  {file ? file.name : 'Choose audio file'}
-                </p>
-                <p className="text-[11px] text-neutral-500 mt-0.5">
-                  {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : 'WAV, FLAC, MP3, AIFF, OGG (unlimited)'}
-                </p>
-                <input
-                  type="file"
-                  accept="audio/*,.wav,.flac,.mp3,.aiff,.aif,.ogg"
-                  onChange={handleFileChange}
-                  disabled={uploading}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {uploading && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs text-neutral-400">
-                  <span>{statusMessage || 'Uploading...'}</span>
-                  {uploadProgress !== null && <span>{uploadProgress}%</span>}
-                </div>
-                {uploadProgress !== null && (
-                  <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className="bg-white h-full rounded-full transition-all duration-150"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="pt-2 flex items-center justify-end gap-2.5">
+            <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={uploading}
-                className="text-xs text-neutral-400 hover:text-white px-3 py-1.5 rounded transition-colors"
+                className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors"
               >
                 Cancel
               </button>
@@ -326,12 +350,12 @@ export function UploadMixModal({
                 {uploading ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Uploading...</span>
+                    <span>Publishing Mix...</span>
                   </>
                 ) : (
                   <>
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Upload Mix</span>
+                    <span>Post Mix</span>
                   </>
                 )}
               </button>

@@ -242,9 +242,6 @@ export default function MultiDetailPage() {
               <span>Preview Files & Audio Stems ({multi.tracks?.length || 0})</span>
             </h2>
             <div className="flex items-center gap-3">
-              <span className="text-[11px] text-neutral-500 font-mono hidden sm:inline">
-                Native web playback • Exact untranscoded downloads
-              </span>
               <a
                 href={`/api/multis/${multi.id}/download`}
                 download

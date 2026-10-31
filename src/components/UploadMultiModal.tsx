@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Upload, FileArchive, CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 import JSZip from 'jszip';
@@ -19,6 +19,12 @@ interface RenameMapping {
   duration_seconds: number | null;
 }
 
+interface ParsedAudioEntry {
+  entry: JSZip.JSZipObject;
+  filename: string;
+  ext: string;
+}
+
 const ALLOWED_AUDIO_EXTENSIONS = new Set(['.wav', '.flac', '.mp3', '.aiff', '.aif', '.ogg']);
 
 export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModalProps) {
@@ -33,6 +39,10 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   const [resultMappings, setResultMappings] = useState<RenameMapping[] | null>(null);
   const [createdMultiId, setCreatedMultiId] = useState<string | null>(null);
 
+  // Background parsing tracking
+  const [parsedEntries, setParsedEntries] = useState<ParsedAudioEntry[] | null>(null);
+  const bgParsePromiseRef = useRef<Promise<ParsedAudioEntry[]> | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       setError(null);
@@ -40,10 +50,58 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       setUploadProgress(null);
       setResultMappings(null);
       setCreatedMultiId(null);
+      setParsedEntries(null);
+      bgParsePromiseRef.current = null;
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const startBackgroundZipParsing = (zipFile: File): Promise<ParsedAudioEntry[]> => {
+    setStatusMessage('Scanning ZIP archive in background...');
+    setUploadProgress(5);
+
+    const promise = (async () => {
+      let zip: JSZip;
+      try {
+        zip = await JSZip.loadAsync(zipFile);
+      } catch (err: any) {
+        throw new Error('Could not parse ZIP archive. Please ensure it is a valid ZIP file.');
+      }
+
+      const audioEntries: ParsedAudioEntry[] = [];
+      zip.forEach((relativePath, entry) => {
+        if (entry.dir) return;
+        const name = entry.name.replace(/^.*[\\\/]/, '');
+        if (name.startsWith('._') || name === '.DS_Store' || relativePath.includes('__MACOSX')) return;
+
+        const lastDot = name.lastIndexOf('.');
+        const ext = lastDot !== -1 ? name.slice(lastDot).toLowerCase() : '';
+        if (ALLOWED_AUDIO_EXTENSIONS.has(ext)) {
+          audioEntries.push({ entry, filename: name, ext });
+        }
+      });
+
+      if (audioEntries.length === 0) {
+        throw new Error('No valid audio files (WAV, FLAC, MP3, AIFF, OGG) found in this ZIP archive.');
+      }
+
+      setParsedEntries(audioEntries);
+      setStatusMessage(`Ready: ${audioEntries.length} audio tracks detected in ZIP.`);
+      setUploadProgress(15);
+      return audioEntries;
+    })();
+
+    bgParsePromiseRef.current = promise;
+    promise.catch(err => {
+      console.warn('Background zip parse error:', err);
+      setError(err.message || 'Failed to inspect ZIP file.');
+      setUploadProgress(null);
+      setStatusMessage('');
+    });
+
+    return promise;
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -57,13 +115,34 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
     setError(null);
     setFile(selected);
+
+    // Auto-fill title from filename if title is blank
+    if (!title.trim()) {
+      const cleanTitle = selected.name.replace(/\.zip$/i, '').replace(/[-_]/g, ' ');
+      setTitle(cleanTitle);
+    }
+
+    // Immediately start background parsing
+    startBackgroundZipParsing(selected);
   };
 
-  const uploadDirectToR2 = (uploadUrl: string, fileData: Blob, contentType: string): Promise<void> => {
+  const uploadDirectToR2 = (
+    uploadUrl: string,
+    fileData: Blob,
+    contentType: string,
+    onProgress?: (percent: number) => void
+  ): Promise<void> => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('PUT', uploadUrl, true);
       xhr.setRequestHeader('Content-Type', contentType);
+
+      xhr.upload.onprogress = (evt) => {
+        if (evt.lengthComputable && onProgress) {
+          const percent = Math.round((evt.loaded / evt.total) * 100);
+          onProgress(percent);
+        }
+      };
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
@@ -74,11 +153,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       };
 
       xhr.onerror = () => {
-        reject(
-          new Error(
-            'Direct Cloudflare R2 upload was blocked by browser CORS policy. Please configure CORS on your "mixing-vault-files" bucket in Cloudflare Dashboard.'
-          )
-        );
+        reject(new Error('Storage upload failed. Please check network connection.'));
       };
 
       xhr.send(fileData);
@@ -97,37 +172,20 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
     }
 
     setUploading(true);
-    setStatusMessage('Reading ZIP archive...');
-    setUploadProgress(null);
     setError(null);
 
     try {
-      // 1. Unpack ZIP in browser to bypass Vercel 4.5MB serverless body limit
-      let zip: JSZip;
-      try {
-        zip = await JSZip.loadAsync(file);
-      } catch (err: any) {
-        throw new Error('Could not parse ZIP archive. Please ensure it is a valid ZIP file.');
+      // 1. Get parsed audio entries (wait for background promise if still running)
+      let audioEntries = parsedEntries;
+      if (!audioEntries && bgParsePromiseRef.current) {
+        setStatusMessage('Reading ZIP archive...');
+        audioEntries = await bgParsePromiseRef.current;
+      } else if (!audioEntries) {
+        audioEntries = await startBackgroundZipParsing(file);
       }
 
-      const audioEntries: { entry: JSZip.JSZipObject; filename: string; ext: string }[] = [];
-      zip.forEach((relativePath, entry) => {
-        if (entry.dir) return;
-        const name = entry.name.replace(/^.*[\\\/]/, '');
-        if (name.startsWith('._') || name === '.DS_Store' || relativePath.includes('__MACOSX')) return;
-
-        const lastDot = name.lastIndexOf('.');
-        const ext = lastDot !== -1 ? name.slice(lastDot).toLowerCase() : '';
-        if (ALLOWED_AUDIO_EXTENSIONS.has(ext)) {
-          audioEntries.push({ entry, filename: name, ext });
-        }
-      });
-
-      if (audioEntries.length === 0) {
-        throw new Error('No valid audio files (WAV, FLAC, MP3, AIFF, OGG) found in this ZIP archive.');
-      }
-
-      setStatusMessage(`Found ${audioEntries.length} audio tracks. Creating multi...`);
+      setStatusMessage(`Found ${audioEntries.length} audio tracks. Creating multi pack...`);
+      setUploadProgress(20);
 
       // 2. Create the Multi record in database
       const multiRes = await fetch('/api/multis', {
@@ -153,7 +211,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       setCreatedMultiId(multiId);
 
       // 3. Upload the full ZIP archive directly to Cloudflare R2
-      setStatusMessage('Uploading full ZIP archive to cloud storage...');
+      setStatusMessage('Uploading full session ZIP archive to cloud storage...');
       try {
         const safeZipName = `${title.trim().replace(/[^a-zA-Z0-9_-]/g, '_')}_stems.zip`;
         const zipPresignRes = await fetch('/api/storage/presign', {
@@ -169,7 +227,9 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         if (zipPresignRes.ok) {
           const zipPresignData = await zipPresignRes.json();
           if (zipPresignData?.uploadUrl) {
-            await uploadDirectToR2(zipPresignData.uploadUrl, file, 'application/zip');
+            await uploadDirectToR2(zipPresignData.uploadUrl, file, 'application/zip', (pct) => {
+              setUploadProgress(20 + Math.round(pct * 0.2));
+            });
             await fetch(`/api/multis/${multiId}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
@@ -185,7 +245,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         console.warn('Could not upload full zip archive to R2:', zipUploadErr);
       }
 
-      // 4. Upload each track directly to Cloudflare R2 via presigned URLs
+      // 4. Upload each individual stem track directly to Cloudflare R2
       const mappings: RenameMapping[] = [];
       const usedNames = new Set<string>();
 
@@ -194,9 +254,9 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         const storedName = sanitizeTrackFilename(item.filename, usedNames);
         usedNames.add(storedName.toLowerCase());
 
-        const progressPercent = Math.round(((i + 1) / audioEntries.length) * 100);
-        setUploadProgress(progressPercent);
-        setStatusMessage(`Extracting & uploading track ${i + 1} of ${audioEntries.length}: ${storedName}...`);
+        const overallProgress = 40 + Math.round(((i + 1) / audioEntries.length) * 55);
+        setUploadProgress(overallProgress);
+        setStatusMessage(`Uploading stem ${i + 1} of ${audioEntries.length}: ${storedName}...`);
 
         const blob = await item.entry.async('blob');
 
@@ -239,13 +299,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
           }),
         });
 
-        const trackText = await trackRes.text();
-        let trackData: any = null;
-        try {
-          trackData = trackText ? JSON.parse(trackText) : null;
-        } catch {}
-
         if (!trackRes.ok) {
+          const trackData = await trackRes.json().catch(() => ({}));
           throw new Error(trackData?.error || 'Failed to save track record.');
         }
 
@@ -260,6 +315,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       setResultMappings(mappings);
 
       // Finalize multitrack and announce to Discord once files are uploaded
+      setUploadProgress(98);
       setStatusMessage('Finalizing multitrack and announcing to Discord...');
       try {
         const pubRes = await fetch('/api/multis/' + multiId + '/publish', {
@@ -271,12 +327,13 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       } catch (pubErr) {
         console.error('[upload] Failed to publish announcement:', pubErr);
       }
+
+      setUploadProgress(100);
+      setStatusMessage('Upload complete!');
     } catch (err: any) {
       setError(err.message || 'Failed to upload multitrack ZIP.');
     } finally {
       setUploading(false);
-      setUploadProgress(null);
-      setStatusMessage('');
     }
   };
 
@@ -290,13 +347,13 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-neutral-800">
           <div>
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <FileArchive className="w-5 h-5 text-neutral-300" />
-              <span>{resultMappings ? 'Upload Completed' : 'Upload Multi (Stem Pack)'}</span>
+              <span>Upload Multitrack Song (ZIP)</span>
             </h3>
             <p className="text-xs text-neutral-400 mt-0.5">
               {resultMappings
@@ -313,7 +370,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
           {error && (
             <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-lg text-red-200 text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
@@ -373,6 +430,53 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Multitrack ZIP Archive <span className="text-red-400">*</span>
+                </label>
+                <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
+                  <FileArchive className="w-8 h-8 text-neutral-500 mb-1.5" />
+                  <p className="text-xs text-neutral-200 font-medium truncate max-w-sm">
+                    {file ? file.name : 'Click to select or drag & drop a ZIP file'}
+                  </p>
+                  <p className="text-[11px] text-neutral-500 mt-0.5">
+                    {file
+                      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB • Analyzing stems in background`
+                      : 'WAV, FLAC, MP3, AIFF, OGG files inside — Unlimited upload'}
+                  </p>
+                  <input
+                    type="file"
+                    accept=".zip,application/zip"
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Visual Animated Progress Bar */}
+              {uploadProgress !== null && (
+                <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3.5 rounded-lg">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-300 font-mono text-[11px] truncate flex items-center gap-1.5">
+                      {uploadProgress === 100 ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      ) : (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-400 shrink-0" />
+                      )}
+                      <span>{statusMessage || 'Processing upload...'}</span>
+                    </span>
+                    <span className="text-white font-mono font-bold text-xs shrink-0">{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
                   Song / Multi Title <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -399,53 +503,12 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1">
-                  Multitrack ZIP Archive <span className="text-red-400">*</span>
-                </label>
-                <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
-                  <FileArchive className="w-8 h-8 text-neutral-500 mb-2" />
-                  <p className="text-xs text-neutral-300 font-medium">
-                    {file ? file.name : 'Click to select or drag & drop a ZIP file'}
-                  </p>
-                  <p className="text-[11px] text-neutral-500 mt-1">
-                    {file
-                      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-                      : 'WAV, FLAC, MP3, AIFF, OGG files inside — Unlimited upload'}
-                  </p>
-                  <input
-                    type="file"
-                    accept=".zip,application/zip"
-                    onChange={handleFileChange}
-                    disabled={uploading}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              {uploading && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs text-neutral-400">
-                    <span>{statusMessage || 'Processing upload...'}</span>
-                    {uploadProgress !== null && <span>{uploadProgress}%</span>}
-                  </div>
-                  {uploadProgress !== null && (
-                    <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className="bg-white h-full rounded-full transition-all duration-150"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="pt-2 flex items-center justify-end gap-2.5">
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={uploading}
-                  className="text-xs text-neutral-400 hover:text-white px-3 py-1.5 rounded transition-colors"
+                  className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
@@ -457,12 +520,12 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                   {uploading ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Uploading...</span>
+                      <span>Uploading Multi...</span>
                     </>
                   ) : (
                     <>
                       <Upload className="w-3.5 h-3.5" />
-                      <span>Upload Multi</span>
+                      <span>Upload Multi (ZIP)</span>
                     </>
                   )}
                 </button>

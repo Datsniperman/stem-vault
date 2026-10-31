@@ -6,7 +6,7 @@ const rest = new REST({ version: '10' }).setToken(botToken);
 
 export const GUILD_ID = process.env.DISCORD_GUILD_ID || '';
 export const MULTITRACK_CHANNEL_ID = process.env.DISCORD_MULTITRACKS_CHANNEL_ID || '1565366257996275847';
-export const MIXES_CHANNEL_ID = process.env.DISCORD_MIXES_CHANNEL_ID || '1488267886605766878';
+export const MIXES_CHANNEL_ID = process.env.DISCORD_MIXES_CHANNEL_ID || '1566216856115609610';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com';
 
 export interface StemAnnouncementPayload {
@@ -137,7 +137,7 @@ export interface MixAnnouncementPayload {
 }
 
 export async function announceMix(payload: MixAnnouncementPayload): Promise<string | null> {
-  const channelId = process.env.DISCORD_MIXES_CHANNEL_ID || MIXES_CHANNEL_ID || '1488267886605766878';
+  const channelId = process.env.DISCORD_MIXES_CHANNEL_ID || MIXES_CHANNEL_ID || '1566216856115609610';
   if (!process.env.DISCORD_BOT_TOKEN) {
     console.warn('[Discord] Bot token not set. Skipping mix announcement.');
     return null;
@@ -160,51 +160,26 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
       {
         type: 2,
         style: 5,
-        label: 'Listen on Vault',
+        label: 'View on Mixing Vault',
         url: `${siteUrl}/mixes`,
-      },
-      {
-        type: 2,
-        style: 5,
-        label: 'Direct Audio Stream',
-        url: payload.publicUrl,
       },
     ];
 
     const fields: any[] = [
+      { name: 'Uploaded by', value: engineerMention, inline: true },
       { name: 'Format', value: payload.format || 'WAV', inline: true },
     ];
     if (payload.multiTitle) {
       fields.push({ name: 'Multitrack Song', value: payload.multiTitle, inline: true });
     }
 
-    const files: any[] = [];
-    try {
-      if (payload.publicUrl) {
-        const audioRes = await fetch(payload.publicUrl);
-        if (audioRes.ok) {
-          const arrayBuf = await audioRes.arrayBuffer();
-          const audioBuffer = Buffer.from(arrayBuf);
-          if (audioBuffer.length > 0 && audioBuffer.length <= 25 * 1024 * 1024) {
-            const ext = (payload.format || 'mp3').toLowerCase().replace(/^\./, '');
-            const safeTitle = (payload.title || 'mix').replace(/[^a-zA-Z0-9_-]/g, '_');
-            files.push({
-              data: audioBuffer,
-              name: `${safeTitle}.${ext}`,
-            });
-          }
-        }
-      }
-    } catch (attachErr) {
-      console.warn('[Discord] Could not download mix audio for attachment:', attachErr);
-    }
-
-    const messagePayload: any = {
+    // 1. Post the main Announcement Embed
+    const message = (await rest.post(Routes.channelMessages(targetChannelOrThread), {
       body: {
-        content: `🚨 **New Mix Uploaded by ${engineerMention}!**`,
+        content: 'New Mix',
         embeds: [
           {
-            title: `🎧 Mix: ${payload.title}`,
+            title: `🎧 ${payload.title}`,
             description: payload.multiTitle
               ? `Song: **${payload.multiTitle}**\nUploaded by: ${engineerMention}`
               : `Uploaded by: ${engineerMention}`,
@@ -220,13 +195,40 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
           },
         ],
       },
-    };
+    })) as { id: string };
 
-    if (files.length > 0) {
-      messagePayload.files = files;
+    // 2. Fetch the audio file from R2 and post directly so Discord renders the inline audio player
+    try {
+      if (payload.publicUrl) {
+        const audioRes = await fetch(payload.publicUrl);
+        if (audioRes.ok) {
+          const arrayBuf = await audioRes.arrayBuffer();
+          const audioBuffer = Buffer.from(arrayBuf);
+          if (audioBuffer.length > 0 && audioBuffer.length <= 25 * 1024 * 1024) {
+            const ext = (payload.format || 'mp3').toLowerCase().replace(/^\./, '');
+            const safeTitle = (payload.title || 'mix').replace(/[^a-zA-Z0-9_-]/g, '_');
+            await rest.post(Routes.channelMessages(targetChannelOrThread), {
+              body: {
+                content: '▶️ **Listen in Discord:**',
+                message_reference: {
+                  message_id: message.id,
+                },
+              },
+              files: [
+                {
+                  data: audioBuffer,
+                  name: `${safeTitle}.${ext}`,
+                },
+              ],
+            });
+          } else {
+            console.warn(`[Discord] Mix file size (${audioBuffer.length} bytes) exceeds 25MB attachment limit.`);
+          }
+        }
+      }
+    } catch (attachErr) {
+      console.warn('[Discord] Could not upload inline audio player file:', attachErr);
     }
-
-    const message = (await rest.post(Routes.channelMessages(targetChannelOrThread), messagePayload)) as { id: string };
 
     return message.id;
   } catch (error: any) {
