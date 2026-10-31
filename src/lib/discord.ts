@@ -5,39 +5,50 @@ const botToken = process.env.DISCORD_BOT_TOKEN || 'dummy_token_for_build';
 const rest = new REST({ version: '10' }).setToken(botToken);
 
 export const GUILD_ID = process.env.DISCORD_GUILD_ID || '';
-export const MULTITRACK_CHANNEL_ID = process.env.DISCORD_MULTITRACKS_CHANNEL_ID || '';
+export const MULTITRACK_CHANNEL_ID = process.env.DISCORD_MULTITRACKS_CHANNEL_ID || '1565366257996275847';
 export const MIXES_CHANNEL_ID = process.env.DISCORD_MIXES_CHANNEL_ID || '1488267886605766878';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com';
 
 export interface StemAnnouncementPayload {
   stemId: string;
   title: string;
-  artist: string;
-  bpm: number | null;
-  key: string | null;
-  trackCount: number | null;
+  artist?: string;
+  bpm?: number | null;
+  key?: string | null;
+  trackCount?: number | null;
+  totalSize?: string | null;
+  tracksPreview?: string | null;
   downloadUrl: string;
   dawTemplateUrl?: string | null;
   uploaderHandle: string;
+  discordId?: string | null;
 }
 
 export async function announceMultitrack(payload: StemAnnouncementPayload): Promise<{
   messageId: string | null;
   threadId: string | null;
 }> {
-  const channelId = MULTITRACK_CHANNEL_ID || '1488267886605766878';
+  const channelId = process.env.DISCORD_MULTITRACKS_CHANNEL_ID || MULTITRACK_CHANNEL_ID || '1565366257996275847';
   if (!process.env.DISCORD_BOT_TOKEN || !channelId) {
     console.warn('[Discord] Bot token or multitracks channel ID not set. Skipping Discord announcement.');
     return { messageId: null, threadId: null };
   }
+
+  const engineerMention = payload.discordId ? `<@${payload.discordId}>` : `**${payload.uploaderHandle}**`;
 
   try {
     const actionButtons: any[] = [
       {
         type: 2, // Button
         style: 5, // Link
-        label: 'Download Stems',
+        label: 'Open in Mixing Vault',
         url: payload.downloadUrl,
+      },
+      {
+        type: 2,
+        style: 5,
+        label: 'Submit Your Mix',
+        url: `${SITE_URL}/mixes?multi_id=${payload.stemId}`,
       },
     ];
 
@@ -50,34 +61,31 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
       });
     }
 
-    actionButtons.push({
-      type: 2,
-      style: 5,
-      label: 'Submit Your Mix',
-      url: `${SITE_URL}/stems/${payload.stemId}?action=submit`,
-    });
-
-    const fields = [
-      { name: 'Key', value: payload.key || 'N/A', inline: true },
-      { name: 'BPM', value: payload.bpm ? `${payload.bpm}` : 'N/A', inline: true },
-      { name: 'Track Count', value: payload.trackCount ? `${payload.trackCount} Channels` : 'N/A', inline: true },
-    ];
-
-    if (payload.dawTemplateUrl) {
-      fields.push({
-        name: 'DAW Template',
-        value: `[Download Template](${payload.dawTemplateUrl})`,
-        inline: true,
-      });
+    const fields: any[] = [];
+    if (payload.trackCount) {
+      fields.push({ name: 'Channels', value: `${payload.trackCount} Tracks`, inline: true });
+    }
+    if (payload.totalSize) {
+      fields.push({ name: 'Archive Size', value: payload.totalSize, inline: true });
+    }
+    if (payload.key) {
+      fields.push({ name: 'Key', value: payload.key, inline: true });
+    }
+    if (payload.bpm) {
+      fields.push({ name: 'BPM', value: String(payload.bpm), inline: true });
+    }
+    if (payload.tracksPreview) {
+      fields.push({ name: 'Included Stems', value: payload.tracksPreview, inline: false });
     }
 
-    // 1. Post Embed with Link Buttons
+    // 1. Post Embed with Link Buttons to multitrack-releases channel (1565366257996275847)
     const message = (await rest.post(Routes.channelMessages(channelId), {
       body: {
+        content: `🚨 **New Multitrack Drop by ${engineerMention}!**`,
         embeds: [
           {
-            title: `🎛️ New Multitrack Pack: ${payload.title}`,
-            description: `Artist: **${payload.artist}**\nUploaded by: **${payload.uploaderHandle}**`,
+            title: `🎛️ Multitrack Pack: ${payload.title}`,
+            description: `Uploaded by: ${engineerMention}\nAll isolated stems are uploaded and ready to download or audition on The Mixing Vault!`,
             color: 0x00ffaa,
             fields,
             footer: { text: 'The Mixing Vault • Download stems and post your mix for feedback!' },
@@ -129,7 +137,7 @@ export interface MixAnnouncementPayload {
 }
 
 export async function announceMix(payload: MixAnnouncementPayload): Promise<string | null> {
-  const channelId = process.env.DISCORD_MIXES_CHANNEL_ID || MULTITRACK_CHANNEL_ID || '1488267886605766878';
+  const channelId = process.env.DISCORD_MIXES_CHANNEL_ID || MIXES_CHANNEL_ID || '1488267886605766878';
   if (!process.env.DISCORD_BOT_TOKEN) {
     console.warn('[Discord] Bot token not set. Skipping mix announcement.');
     return null;

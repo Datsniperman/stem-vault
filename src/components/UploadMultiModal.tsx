@@ -225,6 +225,19 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       }
 
       setResultMappings(mappings);
+
+      // Finalize multitrack and announce to Discord once files are uploaded
+      setStatusMessage('Finalizing multitrack and announcing to Discord...');
+      try {
+        const pubRes = await fetch('/api/multis/' + multiId + '/publish', {
+          method: 'POST',
+        });
+        if (!pubRes.ok) {
+          console.warn('[upload] Publish notification warning:', await pubRes.text());
+        }
+      } catch (pubErr) {
+        console.error('[upload] Failed to publish announcement:', pubErr);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to upload multitrack ZIP.');
     } finally {
