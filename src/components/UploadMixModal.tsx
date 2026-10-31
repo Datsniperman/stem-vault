@@ -37,6 +37,7 @@ export function UploadMixModal({
   const [stagedUpload, setStagedUpload] = useState<StagedUpload | null>(null);
   const bgUploadPromiseRef = useRef<Promise<StagedUpload> | null>(null);
   const bgErrorRef = useRef<string | null>(null);
+  const activeXhrRef = useRef<XMLHttpRequest | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -46,6 +47,7 @@ export function UploadMixModal({
       setStagedUpload(null);
       bgUploadPromiseRef.current = null;
       bgErrorRef.current = null;
+      activeXhrRef.current = null;
       setSelectedMultiId(defaultMultiId || '');
       fetch('/api/multis')
         .then(res => res.json())
@@ -56,9 +58,43 @@ export function UploadMixModal({
 
   if (!isOpen) return null;
 
+  const handleCancel = () => {
+    // 1. Immediately abort active network request if currently uploading
+    if (activeXhrRef.current) {
+      try {
+        activeXhrRef.current.abort();
+      } catch (e) {}
+      activeXhrRef.current = null;
+    }
+
+    // 2. If an R2 key was uploaded, immediately delete it from R2 storage
+    if (stagedUpload?.key) {
+      const keyToDelete = stagedUpload.key;
+      fetch('/api/storage/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: keyToDelete }),
+      }).catch(err => console.warn('Could not delete cancelled upload key:', err));
+    }
+
+    // 3. Reset all state and close modal
+    setFile(null);
+    setTitle('');
+    setUploading(false);
+    setUploadProgress(null);
+    setStatusMessage('');
+    setStagedUpload(null);
+    bgUploadPromiseRef.current = null;
+    bgErrorRef.current = null;
+    setError(null);
+
+    onClose();
+  };
+
   const uploadDirectToR2 = (uploadUrl: string, fileData: Blob, contentType: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
+      activeXhrRef.current = xhr;
       xhr.open('PUT', uploadUrl, true);
       xhr.setRequestHeader('Content-Type', contentType);
 
@@ -71,6 +107,7 @@ export function UploadMixModal({
       };
 
       xhr.onload = () => {
+        activeXhrRef.current = null;
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve();
         } else {
@@ -79,7 +116,13 @@ export function UploadMixModal({
       };
 
       xhr.onerror = () => {
+        activeXhrRef.current = null;
         reject(new Error('Storage upload failed. Please check network connection.'));
+      };
+
+      xhr.onabort = () => {
+        activeXhrRef.current = null;
+        reject(new Error('Upload cancelled.'));
       };
 
       xhr.send(fileData);
@@ -242,8 +285,9 @@ export function UploadMixModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition-colors"
+            title="Cancel and close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -342,11 +386,10 @@ export function UploadMixModal({
             <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
               <button
                 type="button"
-                onClick={onClose}
-                disabled={uploading}
+                onClick={handleCancel}
                 className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors"
               >
-                Cancel
+                {uploading ? 'Cancel Upload' : 'Cancel'}
               </button>
               <button
                 type="submit"

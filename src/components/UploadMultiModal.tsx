@@ -39,13 +39,23 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   const [resultMappings, setResultMappings] = useState<RenameMapping[] | null>(null);
   const [createdMultiId, setCreatedMultiId] = useState<string | null>(null);
 
-  // Background parsing tracking
+  // Background parsing and cancellation tracking
   const [parsedEntries, setParsedEntries] = useState<ParsedAudioEntry[] | null>(null);
   const bgParsePromiseRef = useRef<Promise<ParsedAudioEntry[]> | null>(null);
   const bgErrorRef = useRef<string | null>(null);
+  const isCancelledRef = useRef<boolean>(false);
+  const activeXhrsRef = useRef<Set<XMLHttpRequest>>(new Set());
+  const abortControllerRef = useRef<AbortController>(new AbortController());
+  const uploadedKeysRef = useRef<string[]>([]);
+  const runningMultiIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      isCancelledRef.current = false;
+      activeXhrsRef.current.clear();
+      abortControllerRef.current = new AbortController();
+      uploadedKeysRef.current = [];
+      runningMultiIdRef.current = null;
       setError(null);
       setStatusMessage('');
       setUploadProgress(null);
@@ -58,6 +68,66 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleCancel = async () => {
+    isCancelledRef.current = true;
+
+    // 1. Immediately abort all active in-flight XMLHttpRequests
+    for (const xhr of activeXhrsRef.current) {
+      try {
+        xhr.abort();
+      } catch (e) {}
+    }
+    activeXhrsRef.current.clear();
+
+    // 2. Abort all fetch requests
+    try {
+      abortControllerRef.current.abort();
+    } catch (e) {}
+
+    // 3. If a multitrack was created in DB, delete it and its tracks from database and R2
+    const targetMultiId = runningMultiIdRef.current || createdMultiId;
+    if (targetMultiId) {
+      try {
+        await fetch(`/api/multis/${targetMultiId}`, {
+          method: 'DELETE',
+        });
+      } catch (delErr) {
+        console.warn('Could not delete multi on cancel:', delErr);
+      }
+    }
+
+    // 4. Delete any R2 keys uploaded so far
+    if (uploadedKeysRef.current.length > 0) {
+      try {
+        await fetch('/api/storage/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keys: [...uploadedKeysRef.current] }),
+        });
+      } catch (delErr) {
+        console.warn('Could not delete uploaded keys on cancel:', delErr);
+      }
+    }
+
+    // 5. Reset all state and close modal
+    setUploading(false);
+    setUploadProgress(null);
+    setStatusMessage('');
+    setFile(null);
+    setTitle('');
+    setDescription('');
+    setResultMappings(null);
+    setCreatedMultiId(null);
+    runningMultiIdRef.current = null;
+    uploadedKeysRef.current = [];
+    activeXhrsRef.current.clear();
+    bgParsePromiseRef.current = null;
+    bgErrorRef.current = null;
+    setError(null);
+
+    onClose();
+  };
 
   const startBackgroundZipParsing = (zipFile: File): Promise<ParsedAudioEntry[]> => {
     bgErrorRef.current = null;
@@ -130,11 +200,18 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
     onProgress?: (percent: number) => void
   ): Promise<void> => {
     return new Promise((resolve, reject) => {
+      if (isCancelledRef.current) {
+        return reject(new Error('Upload cancelled.'));
+      }
+
       const xhr = new XMLHttpRequest();
+      activeXhrsRef.current.add(xhr);
+
       xhr.open('PUT', uploadUrl, true);
       xhr.setRequestHeader('Content-Type', contentType);
 
       xhr.upload.onprogress = (evt) => {
+        if (isCancelledRef.current) return;
         if (evt.lengthComputable && onProgress) {
           const percent = Math.round((evt.loaded / evt.total) * 100);
           onProgress(percent);
@@ -142,7 +219,10 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       };
 
       xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
+        activeXhrsRef.current.delete(xhr);
+        if (isCancelledRef.current) {
+          reject(new Error('Upload cancelled.'));
+        } else if (xhr.status >= 200 && xhr.status < 300) {
           resolve();
         } else {
           reject(new Error(`Storage server returned HTTP ${xhr.status}: ${xhr.statusText}`));
@@ -150,7 +230,13 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       };
 
       xhr.onerror = () => {
+        activeXhrsRef.current.delete(xhr);
         reject(new Error('Storage upload failed. Please check network connection.'));
+      };
+
+      xhr.onabort = () => {
+        activeXhrsRef.current.delete(xhr);
+        reject(new Error('Upload cancelled.'));
       };
 
       xhr.send(fileData);
@@ -168,6 +254,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       return;
     }
 
+    isCancelledRef.current = false;
+    abortControllerRef.current = new AbortController();
     setUploading(true);
     setError(null);
     setStatusMessage('Reading ZIP archive...');
@@ -186,6 +274,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         audioEntries = await startBackgroundZipParsing(file);
       }
 
+      if (isCancelledRef.current) return;
+
       setStatusMessage(`Found ${audioEntries.length} audio tracks. Creating multi pack...`);
       setUploadProgress(20);
 
@@ -197,6 +287,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
           title: title.trim(),
           description: description.trim() || null,
         }),
+        signal: abortControllerRef.current.signal,
       });
 
       const multiText = await multiRes.text();
@@ -210,7 +301,10 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       }
 
       const multiId = multiData.multi.id;
+      runningMultiIdRef.current = multiId;
       setCreatedMultiId(multiId);
+
+      if (isCancelledRef.current) return;
 
       // 3. Upload the full ZIP archive directly to Cloudflare R2
       setStatusMessage('Uploading full session ZIP archive to cloud storage...');
@@ -224,14 +318,17 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
             contentType: 'application/zip',
             folder: `multis/${multiId}/zip`,
           }),
+          signal: abortControllerRef.current.signal,
         });
 
         if (zipPresignRes.ok) {
           const zipPresignData = await zipPresignRes.json();
           if (zipPresignData?.uploadUrl) {
+            uploadedKeysRef.current.push(zipPresignData.key);
             await uploadDirectToR2(zipPresignData.uploadUrl, file, 'application/zip', (pct) => {
               setUploadProgress(20 + Math.round(pct * 0.2));
             });
+            if (isCancelledRef.current) return;
             await fetch(`/api/multis/${multiId}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
@@ -240,18 +337,24 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 zip_public_url: zipPresignData.publicUrl,
                 zip_size_bytes: file.size,
               }),
+              signal: abortControllerRef.current.signal,
             });
           }
         }
-      } catch (zipUploadErr) {
+      } catch (zipUploadErr: any) {
+        if (isCancelledRef.current) return;
         console.warn('Could not upload full zip archive to R2:', zipUploadErr);
       }
+
+      if (isCancelledRef.current) return;
 
       // 4. Upload each individual stem track directly to Cloudflare R2
       const mappings: RenameMapping[] = [];
       const usedNames = new Set<string>();
 
       for (let i = 0; i < audioEntries.length; i++) {
+        if (isCancelledRef.current) return;
+
         const item = audioEntries[i];
         const storedName = sanitizeTrackFilename(item.filename, usedNames);
         usedNames.add(storedName.toLowerCase());
@@ -261,6 +364,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         setStatusMessage(`Uploading stem ${i + 1} of ${audioEntries.length}: ${storedName}...`);
 
         const blob = await item.entry.async('blob');
+        if (isCancelledRef.current) return;
 
         // Request presigned URL
         const presignRes = await fetch('/api/storage/presign', {
@@ -271,6 +375,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
             contentType: blob.type || 'audio/wav',
             folder: `multis/${multiId}`,
           }),
+          signal: abortControllerRef.current.signal,
         });
 
         const presignText = await presignRes.text();
@@ -283,8 +388,12 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
           throw new Error(presignData?.error || 'Failed to get presigned upload URL.');
         }
 
+        if (isCancelledRef.current) return;
+        uploadedKeysRef.current.push(presignData.key);
+
         // Direct upload to R2
         await uploadDirectToR2(presignData.uploadUrl, blob, blob.type || 'audio/wav');
+        if (isCancelledRef.current) return;
 
         // Register track in database
         const trackRes = await fetch(`/api/multis/${multiId}/tracks`, {
@@ -299,6 +408,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
             public_url: presignData.publicUrl,
             duration_seconds: null,
           }),
+          signal: abortControllerRef.current.signal,
         });
 
         if (!trackRes.ok) {
@@ -314,6 +424,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         });
       }
 
+      if (isCancelledRef.current) return;
+
       setResultMappings(mappings);
 
       // Finalize multitrack and announce to Discord once files are uploaded
@@ -322,17 +434,26 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       try {
         const pubRes = await fetch('/api/multis/' + multiId + '/publish', {
           method: 'POST',
+          signal: abortControllerRef.current.signal,
         });
         if (!pubRes.ok) {
           console.warn('[upload] Publish notification warning:', await pubRes.text());
         }
       } catch (pubErr) {
-        console.error('[upload] Failed to publish announcement:', pubErr);
+        if (!isCancelledRef.current) {
+          console.error('[upload] Failed to publish announcement:', pubErr);
+        }
       }
+
+      if (isCancelledRef.current) return;
 
       setUploadProgress(100);
       setStatusMessage('Upload complete!');
     } catch (err: any) {
+      if (isCancelledRef.current || err.name === 'AbortError' || err.message === 'Upload cancelled.') {
+        console.log('Upload intentionally cancelled by user.');
+        return;
+      }
       setError(err.message || 'Failed to upload multitrack ZIP.');
     } finally {
       setUploading(false);
@@ -364,8 +485,9 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition-colors"
+            title="Cancel and close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -510,11 +632,10 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
               <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
                 <button
                   type="button"
-                  onClick={onClose}
-                  disabled={uploading}
+                  onClick={handleCancel}
                   className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors"
                 >
-                  Cancel
+                  {uploading ? 'Cancel Upload' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
