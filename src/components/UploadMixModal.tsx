@@ -36,6 +36,7 @@ export function UploadMixModal({
   // Background upload tracking
   const [stagedUpload, setStagedUpload] = useState<StagedUpload | null>(null);
   const bgUploadPromiseRef = useRef<Promise<StagedUpload> | null>(null);
+  const bgErrorRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +45,7 @@ export function UploadMixModal({
       setStatusMessage('');
       setStagedUpload(null);
       bgUploadPromiseRef.current = null;
+      bgErrorRef.current = null;
       setSelectedMultiId(defaultMultiId || '');
       fetch('/api/multis')
         .then(res => res.json())
@@ -88,8 +90,8 @@ export function UploadMixModal({
     const ext = selectedFile.name.slice(selectedFile.name.lastIndexOf('.')).toLowerCase();
     const format = ext.replace('.', '').toUpperCase();
 
-    setStatusMessage('Preparing direct cloud upload...');
-    setUploadProgress(2);
+    setStatusMessage('Uploading audio to Cloudflare...');
+    setUploadProgress(10);
 
     const promise = (async () => {
       // 1. Get presigned upload URL
@@ -123,7 +125,7 @@ export function UploadMixModal({
       };
 
       setStagedUpload(staged);
-      setStatusMessage('Upload complete! Ready to submit.');
+      setStatusMessage('Upload complete! Saving mix...');
       setUploadProgress(100);
       return staged;
     })();
@@ -131,9 +133,7 @@ export function UploadMixModal({
     bgUploadPromiseRef.current = promise;
     promise.catch(err => {
       console.warn('Background upload error:', err);
-      setError(err.message || 'Background upload failed.');
-      setUploadProgress(null);
-      setStatusMessage('');
+      bgErrorRef.current = err.message || 'Background upload failed.';
     });
 
     return promise;
@@ -160,7 +160,7 @@ export function UploadMixModal({
       setTitle(cleanTitle);
     }
 
-    // Immediately trigger background upload so upload feels instant!
+    // Silently start background upload (hidden from user until they click upload button)
     startBackgroundUpload(selected);
   };
 
@@ -181,14 +181,18 @@ export function UploadMixModal({
     try {
       let uploadInfo = stagedUpload;
 
-      // If background upload is still in progress, wait for it
-      if (!uploadInfo && bgUploadPromiseRef.current) {
-        setStatusMessage('Finalizing file upload...');
+      // If background upload encountered an error, retry
+      if (bgErrorRef.current && !uploadInfo) {
+        bgErrorRef.current = null;
+        uploadInfo = await startBackgroundUpload(file);
+      } else if (!uploadInfo && bgUploadPromiseRef.current) {
+        setStatusMessage('Uploading audio to Cloudflare...');
         uploadInfo = await bgUploadPromiseRef.current;
       } else if (!uploadInfo) {
         uploadInfo = await startBackgroundUpload(file);
       }
 
+      setUploadProgress(100);
       setStatusMessage('Saving mix and notifying Discord...');
 
       const createRes = await fetch('/api/mixes', {
@@ -262,10 +266,10 @@ export function UploadMixModal({
               <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
                 <Music2 className="w-7 h-7 text-neutral-500 mb-1.5" />
                 <p className="text-xs text-neutral-200 font-medium truncate max-w-xs">
-                  {file ? file.name : 'Choose audio file to begin instant upload'}
+                  {file ? file.name : 'Choose audio file (WAV, FLAC, MP3, AIFF, OGG)'}
                 </p>
                 <p className="text-[11px] text-neutral-500 mt-0.5">
-                  {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : 'WAV, FLAC, MP3, AIFF, OGG (unlimited)'}
+                  {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : 'Unlimited upload size'}
                 </p>
                 <input
                   type="file"
@@ -277,24 +281,26 @@ export function UploadMixModal({
               </div>
             </div>
 
-            {/* Visual Animated Progress Bar */}
-            {uploadProgress !== null && (
-              <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3 rounded-lg">
+            {/* Visual Animated Progress Bar - ONLY shown once the user clicks upload */}
+            {uploading && (
+              <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3 rounded-lg animate-[fade-in_0.15s_ease-out]">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-neutral-300 font-mono text-[11px] truncate flex items-center gap-1.5">
-                    {uploadProgress === 100 ? (
+                    {(uploadProgress ?? 0) === 100 ? (
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     ) : (
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-400 shrink-0" />
                     )}
-                    <span>{statusMessage || 'Processing upload...'}</span>
+                    <span>{statusMessage || 'Uploading audio to Cloudflare...'}</span>
                   </span>
-                  <span className="text-white font-mono font-bold text-xs shrink-0">{uploadProgress}%</span>
+                  <span className="text-white font-mono font-bold text-xs shrink-0">
+                    {uploadProgress !== null ? `${uploadProgress}%` : ''}
+                  </span>
                 </div>
                 <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 transition-all duration-300 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
+                    style={{ width: `${uploadProgress ?? 10}%` }}
                   />
                 </div>
               </div>

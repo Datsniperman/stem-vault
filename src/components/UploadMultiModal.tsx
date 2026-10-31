@@ -42,6 +42,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   // Background parsing tracking
   const [parsedEntries, setParsedEntries] = useState<ParsedAudioEntry[] | null>(null);
   const bgParsePromiseRef = useRef<Promise<ParsedAudioEntry[]> | null>(null);
+  const bgErrorRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -52,14 +53,14 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       setCreatedMultiId(null);
       setParsedEntries(null);
       bgParsePromiseRef.current = null;
+      bgErrorRef.current = null;
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const startBackgroundZipParsing = (zipFile: File): Promise<ParsedAudioEntry[]> => {
-    setStatusMessage('Scanning ZIP archive in background...');
-    setUploadProgress(5);
+    bgErrorRef.current = null;
 
     const promise = (async () => {
       let zip: JSZip;
@@ -87,17 +88,13 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       }
 
       setParsedEntries(audioEntries);
-      setStatusMessage(`Ready: ${audioEntries.length} audio tracks detected in ZIP.`);
-      setUploadProgress(15);
       return audioEntries;
     })();
 
     bgParsePromiseRef.current = promise;
     promise.catch(err => {
       console.warn('Background zip parse error:', err);
-      setError(err.message || 'Failed to inspect ZIP file.');
-      setUploadProgress(null);
-      setStatusMessage('');
+      bgErrorRef.current = err.message || 'Failed to inspect ZIP file.';
     });
 
     return promise;
@@ -173,11 +170,16 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
     setUploading(true);
     setError(null);
+    setStatusMessage('Reading ZIP archive...');
+    setUploadProgress(10);
 
     try {
       // 1. Get parsed audio entries (wait for background promise if still running)
       let audioEntries = parsedEntries;
-      if (!audioEntries && bgParsePromiseRef.current) {
+      if (bgErrorRef.current && !audioEntries) {
+        bgErrorRef.current = null;
+        audioEntries = await startBackgroundZipParsing(file);
+      } else if (!audioEntries && bgParsePromiseRef.current) {
         setStatusMessage('Reading ZIP archive...');
         audioEntries = await bgParsePromiseRef.current;
       } else if (!audioEntries) {
@@ -439,7 +441,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                   </p>
                   <p className="text-[11px] text-neutral-500 mt-0.5">
                     {file
-                      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB • Analyzing stems in background`
+                      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
                       : 'WAV, FLAC, MP3, AIFF, OGG files inside — Unlimited upload'}
                   </p>
                   <input
@@ -452,9 +454,9 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 </div>
               </div>
 
-              {/* Visual Animated Progress Bar */}
-              {uploadProgress !== null && (
-                <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3.5 rounded-lg">
+              {/* Visual Animated Progress Bar - ONLY shown once the user clicks upload */}
+              {uploading && (
+                <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3.5 rounded-lg animate-[fade-in_0.15s_ease-out]">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-neutral-300 font-mono text-[11px] truncate flex items-center gap-1.5">
                       {uploadProgress === 100 ? (
@@ -464,12 +466,14 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                       )}
                       <span>{statusMessage || 'Processing upload...'}</span>
                     </span>
-                    <span className="text-white font-mono font-bold text-xs shrink-0">{uploadProgress}%</span>
+                    <span className="text-white font-mono font-bold text-xs shrink-0">
+                      {uploadProgress !== null ? `${uploadProgress}%` : ''}
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 transition-all duration-300 ease-out"
-                      style={{ width: `${uploadProgress}%` }}
+                      style={{ width: `${uploadProgress ?? 10}%` }}
                     />
                   </div>
                 </div>
