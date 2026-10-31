@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   description:
     'Exclusive in-house multitrack session archive & mix critique hub for Tyler Kerpsack All Access. Powered by KerpBot.',
-  metadataBase: new URL('https://stem-vault-tau.vercel.app'),
+  metadataBase: new URL('https://www.mixingvault.com'),
   openGraph: {
     title: 'The Mixing Vault — Tyler Kerpsack All Access',
     description: 'In-house multitrack session archive & mix critique hub powered by KerpBot.',

@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 const resendApiKey = process.env.RESEND_API_KEY || 'dummy_key_for_build';
 export const resend = new Resend(resendApiKey);
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stem-vault-tau.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com';
 const PHYSICAL_MAILING_ADDRESS = 'The Mixing Vault, P.O. Box 412, Nashville, TN 37203, United States';
 
 function getEmailFooterHtml() {

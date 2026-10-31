@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
 import { createDbServerClient } from '@/lib/db/server';
+import { announceMultitrack } from '@/lib/discord';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +103,33 @@ export async function POST(request: NextRequest) {
       [user.id, title.trim(), description ? description.trim() : null]
     );
 
-    return NextResponse.json({ multi: result.rows[0] }, { status: 201 });
+    const createdMulti = result.rows[0];
+
+    // Announce new multitrack to Discord & create mix feedback thread
+    try {
+      const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com').replace(/\/+$/, '');
+      const disc = await announceMultitrack({
+        stemId: createdMulti.id,
+        title: createdMulti.title,
+        artist: 'Community Worship',
+        bpm: null,
+        key: null,
+        trackCount: null,
+        downloadUrl: `${siteUrl}/multis/${createdMulti.id}`,
+        uploaderHandle: displayName,
+      });
+
+      if (disc.messageId || disc.threadId) {
+        await pool.query(
+          `UPDATE public.multis SET discord_message_id = $1, discord_thread_id = $2 WHERE id = $3`,
+          [disc.messageId, disc.threadId, createdMulti.id]
+        ).catch(() => {});
+      }
+    } catch (discErr) {
+      console.error('[multis/create] Discord announcement error:', discErr);
+    }
+
+    return NextResponse.json({ multi: createdMulti }, { status: 201 });
   } catch (err: any) {
     console.error('[multis/create] Error:', err);
     return NextResponse.json({ error: err.message || 'Failed to create multi.' }, { status: 500 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
 import { createDbServerClient } from '@/lib/db/server';
+import { announceMix } from '@/lib/discord';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,7 +128,46 @@ export async function POST(request: NextRequest) {
       ]
     );
 
-    return NextResponse.json({ mix: result.rows[0] }, { status: 201 });
+    const createdMix = result.rows[0];
+
+    // Announce to Discord
+    try {
+      let multiTitle: string | null = null;
+      let threadId: string | null = null;
+
+      if (multi_id) {
+        const multiRes = await pool.query(
+          `SELECT title, discord_thread_id FROM public.multis WHERE id = $1`,
+          [multi_id]
+        );
+        if (multiRes.rows.length > 0) {
+          multiTitle = multiRes.rows[0].title;
+          threadId = multiRes.rows[0].discord_thread_id;
+        }
+      }
+
+      const discordPostId = await announceMix({
+        mixId: createdMix.id,
+        title: createdMix.title,
+        format: createdMix.format,
+        publicUrl: createdMix.public_url,
+        uploaderName: displayName,
+        discordId,
+        multiTitle,
+        threadId,
+      });
+
+      if (discordPostId) {
+        await pool.query(
+          `UPDATE public.mixes SET discord_post_id = $1 WHERE id = $2`,
+          [discordPostId, createdMix.id]
+        ).catch(() => {});
+      }
+    } catch (discErr) {
+      console.error('[mixes/create] Discord announcement error:', discErr);
+    }
+
+    return NextResponse.json({ mix: createdMix }, { status: 201 });
   } catch (err: any) {
     console.error('[mixes/create] Error:', err);
     return NextResponse.json({ error: err.message || 'Failed to save mix record.' }, { status: 500 });

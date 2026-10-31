@@ -17,7 +17,7 @@ function getOrigin() {
   if (typeof window !== 'undefined' && window.location.origin) {
     return window.location.origin;
   }
-  return 'https://stem-vault-tau.vercel.app';
+  return 'https://www.mixingvault.com';
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
