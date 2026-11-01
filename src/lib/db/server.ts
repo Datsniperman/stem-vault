@@ -182,10 +182,39 @@ export class LocalServerClient {
           const discordUser = await userRes.json();
           const email: string = discordUser.email || `${discordUser.username}@discord.kerpbot`;
 
+          // Query Discord Guild Member to resolve server nickname (member.nick)
+          let serverNick: string | null = null;
+          let avatarUrl: string | null = discordUser.avatar
+            ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+            : null;
+
+          const botToken = (process.env.DISCORD_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
+          const guildId = (process.env.DISCORD_GUILD_ID || '').trim().replace(/^["']|["']$/g, '');
+
+          if (botToken && guildId) {
+            try {
+              const memberRes = await fetch(
+                `https://discord.com/api/v10/guilds/${guildId}/members/${discordUser.id}`,
+                { headers: { Authorization: `Bot ${botToken}` } }
+              );
+              if (memberRes.ok) {
+                const member = await memberRes.json();
+                serverNick = member.nick || member.user?.global_name || member.user?.username || null;
+                if (member.avatar) {
+                  avatarUrl = `https://cdn.discordapp.com/guilds/${guildId}/users/${discordUser.id}/avatars/${member.avatar}.png`;
+                }
+              }
+            } catch (mErr) {
+              console.warn('[exchangeCodeForSession] Could not fetch guild member:', mErr);
+            }
+          }
+
+          const effectiveName = serverNick || discordUser.global_name || discordUser.username;
+
           const isAdmin = isUserAdmin({
             email,
             discordId: discordUser.id,
-            username: discordUser.username,
+            username: effectiveName,
           });
           let userRole: 'admin' | 'verified' | 'user' = isAdmin ? 'admin' : 'user';
 
@@ -200,7 +229,7 @@ export class LocalServerClient {
 
             // Check if identity/profile exists for discordUser.id OR email
             const profileRes = await pool.query(
-              `SELECT id, email, display_name, role FROM public.profiles WHERE discord_id = $1 OR lower(email) = lower($2) LIMIT 1`,
+              `SELECT id, email, display_name, server_display_name, role FROM public.profiles WHERE discord_id = $1 OR lower(email) = lower($2) LIMIT 1`,
               [discordUser.id, email]
             );
 
@@ -209,10 +238,10 @@ export class LocalServerClient {
               if (profileRes.rows[0].role === 'admin' || isAdmin) {
                 userRole = 'admin';
               }
-              // Link discord_id and ensure role
+              // Link discord_id and ensure role and server display name
               await pool.query(
-                `UPDATE public.profiles SET discord_id = $1, role = $2 WHERE id = $3`,
-                [discordUser.id, userRole, userId]
+                `UPDATE public.profiles SET discord_id = $1, role = $2, display_name = $3, server_display_name = $3, avatar_url = COALESCE($4, avatar_url) WHERE id = $5`,
+                [discordUser.id, userRole, effectiveName, avatarUrl, userId]
               ).catch(() => {});
             } else {
               // Find or insert in auth.users
@@ -225,12 +254,16 @@ export class LocalServerClient {
                 if (userCheck.rows[0].role === 'admin' || isAdmin) {
                   userRole = 'admin';
                 }
+                await pool.query(
+                  `UPDATE auth.users SET raw_user_meta_data = raw_user_meta_data || $1::jsonb, updated_at = now() WHERE id = $2`,
+                  [JSON.stringify({ display_name: effectiveName, server_display_name: effectiveName, role: userRole }), userId]
+                ).catch(() => {});
               } else {
                 userId = crypto.randomUUID();
                 await pool.query(
                   `INSERT INTO auth.users (id, instance_id, email, raw_user_meta_data, role, aud, created_at, updated_at)
                    VALUES ($1, '00000000-0000-0000-0000-000000000000', $2, $3, $4, 'authenticated', now(), now())`,
-                  [userId, email, JSON.stringify({ display_name: discordUser.global_name || discordUser.username, role: userRole }), userRole === 'admin' ? 'admin' : 'authenticated']
+                  [userId, email, JSON.stringify({ display_name: effectiveName, server_display_name: effectiveName, role: userRole }), userRole === 'admin' ? 'admin' : 'authenticated']
                 );
               }
             }
@@ -244,11 +277,10 @@ export class LocalServerClient {
             role: userRole === 'admin' ? 'admin' : 'authenticated',
             user_metadata: {
               provider_id: discordUser.id,
-              display_name: discordUser.global_name || discordUser.username,
-              custom_claims: { global_name: discordUser.global_name || discordUser.username, role: userRole },
-              avatar_url: discordUser.avatar
-                ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
-                : null,
+              display_name: effectiveName,
+              server_display_name: effectiveName,
+              custom_claims: { server_display_name: effectiveName, global_name: effectiveName, role: userRole },
+              avatar_url: avatarUrl,
               role: userRole,
             },
             identities: [{ provider: 'discord', id: discordUser.id, identity_data: { provider_id: discordUser.id } }],

@@ -71,11 +71,23 @@ export async function POST(request: NextRequest) {
     const pool = getDbPool();
 
     // Auto-upsert profile for this user if missing so left joins always show the uploader's name
-    const displayName =
+    let displayName =
+      user.user_metadata?.server_display_name ||
       user.user_metadata?.display_name ||
       user.user_metadata?.name ||
       user.email?.split('@')[0] ||
       'Member';
+
+    try {
+      const pRes = await pool.query(
+        `SELECT server_display_name, display_name FROM public.profiles WHERE id = $1`,
+        [user.id]
+      );
+      if (pRes.rows.length > 0) {
+        displayName = pRes.rows[0].server_display_name || pRes.rows[0].display_name || displayName;
+      }
+    } catch {}
+
     const avatarUrl = user.user_metadata?.avatar_url || null;
     const discordId = user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id) || null;
 
@@ -83,6 +95,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO public.profiles (id, email, display_name, server_display_name, avatar_url, discord_id, role)
        VALUES ($1, $2, $3, $3, $4, $5, $6)
        ON CONFLICT (id) DO UPDATE SET
+         server_display_name = COALESCE(public.profiles.server_display_name, EXCLUDED.server_display_name),
          display_name = COALESCE(public.profiles.display_name, EXCLUDED.display_name),
          avatar_url = COALESCE(public.profiles.avatar_url, EXCLUDED.avatar_url)`,
       [

@@ -70,6 +70,25 @@ export async function GET(request: NextRequest) {
           confirmed_at: row.confirmed_at,
         };
       }
+
+      // Check public.profiles for server_display_name
+      const profileRes = await pool.query(
+        `SELECT display_name, server_display_name, avatar_url, role FROM public.profiles WHERE id = $1 LIMIT 1`,
+        [payload.sub]
+      );
+      if (profileRes.rows.length > 0) {
+        const prof = profileRes.rows[0];
+        const effectiveName = prof.server_display_name || prof.display_name;
+        if (effectiveName) {
+          user.user_metadata = {
+            ...(user.user_metadata || {}),
+            server_display_name: effectiveName,
+            display_name: effectiveName,
+            avatar_url: prof.avatar_url || user.user_metadata?.avatar_url,
+            role: prof.role || user.role,
+          };
+        }
+      }
     } catch {
       // Local database query skipped or unreachable - JWT is cryptographically verified
     }

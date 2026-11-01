@@ -173,15 +173,21 @@ export async function GET(request: NextRequest) {
 
   const calculatedRole = isAdmin ? 'admin' : (user.user_metadata?.role || 'user');
 
-  if (isAdmin) {
-    user.role = 'admin';
-    user.user_metadata = {
-      ...user.user_metadata,
-      role: 'admin',
-      custom_claims: { ...(user.user_metadata?.custom_claims || {}), role: 'admin' },
-    };
-    data.session.access_token = createUserToken(user);
-  }
+  user.role = calculatedRole as any;
+  user.user_metadata = {
+    ...user.user_metadata,
+    server_display_name: resolvedServerName,
+    display_name: resolvedServerName,
+    role: calculatedRole,
+    custom_claims: {
+      ...(user.user_metadata?.custom_claims || {}),
+      server_display_name: resolvedServerName,
+      global_name: resolvedServerName,
+      role: calculatedRole,
+    },
+    avatar_url: avatarUrl,
+  };
+  data.session.access_token = createUserToken(user);
 
   if (discordUserId) {
     try {

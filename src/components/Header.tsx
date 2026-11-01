@@ -65,8 +65,10 @@ export function Header({ onStemAdded }: HeaderProps) {
   const displayName =
     profile?.server_display_name ||
     profile?.display_name ||
-    user?.user_metadata?.custom_claims?.global_name ||
+    user?.user_metadata?.server_display_name ||
     user?.user_metadata?.display_name ||
+    user?.user_metadata?.custom_claims?.server_display_name ||
+    user?.user_metadata?.custom_claims?.global_name ||
     user?.email?.split('@')[0] ||
     'Member';
   const initials = displayName.slice(0, 2).toUpperCase();
