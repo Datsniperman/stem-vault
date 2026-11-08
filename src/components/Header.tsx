@@ -4,7 +4,7 @@ import { isUserAdmin } from '@/lib/auth/admin';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, LogOut, User, Shield, Settings, Disc3, Plus, Music2, Layers, Sliders, FileArchive } from 'lucide-react';
+import { ChevronDown, LogOut, User, Shield, Settings, Disc3, Plus, Music2, Layers, Sliders, FileArchive, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
@@ -132,6 +132,13 @@ export function Header({ onStemAdded }: HeaderProps) {
               >
                 <Disc3 className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Mix Showcase</span>
+              </Link>
+              <Link
+                href="/beta"
+                className="text-xs font-semibold text-sky-400 hover:text-sky-300 px-2.5 py-1.5 rounded bg-sky-950/50 border border-sky-800/60 hover:bg-sky-900/40 transition-all flex items-center gap-1.5 whitespace-nowrap shadow-xs shadow-sky-900/30"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                <span>Liquid Glass Beta</span>
               </Link>
             </nav>
           </div>

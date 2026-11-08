@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import { BetaThemeProvider } from '@/context/BetaThemeContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
 import { Analytics } from '@vercel/analytics/next';
@@ -39,7 +40,7 @@ export default function RootLayout({
       <body className="antialiased bg-[#0a0a0a] text-neutral-200">
         <AuthProvider>
           <ToastProvider>
-            {children}
+            <BetaThemeProvider>{children}</BetaThemeProvider>
             <CookieConsentBanner />
             <Analytics />
           </ToastProvider>
