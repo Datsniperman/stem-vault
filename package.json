@@ -6,15 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "start:beta": "next start -p 3003",
-    "dev:beta": "next dev -p 3003",
     "lint": "eslint"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1160.0",
     "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "@discordjs/rest": "^2.6.3",
-    "@onlymoein/liquidglass": "^0.11.2",
     "@vercel/analytics": "^2.0.1",
     "adm-zip": "^0.6.1",
     "bcryptjs": "^3.0.3",
