@@ -128,6 +128,7 @@ export async function proxy(request: NextRequest) {
   const isPublicAssetOrAuth =
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/cron') ||
     pathname.startsWith('/auth') ||
     pathname === '/membership' ||
     pathname === '/unauthorized' ||

@@ -21,6 +21,8 @@ export async function GET(
         m.zip_r2_key,
         m.zip_public_url,
         m.zip_size_bytes,
+        m.zip_last_downloaded_at,
+        m.zip_status,
         m.created_at,
         m.updated_at,
         COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
@@ -84,6 +86,8 @@ export async function GET(
       multi: {
         ...multi,
         zip_size_bytes: multi.zip_size_bytes ? Number(multi.zip_size_bytes) : null,
+        zip_last_downloaded_at: multi.zip_last_downloaded_at,
+        zip_status: multi.zip_status || 'ready',
         track_count: tracksRes.rows.length,
         total_size_bytes: totalSizeBytes,
         tracks: tracksRes.rows.map(t => ({
@@ -139,7 +143,15 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { title, description, zip_r2_key, zip_public_url, zip_size_bytes } = body;
+    const {
+      title,
+      description,
+      zip_r2_key,
+      zip_public_url,
+      zip_size_bytes,
+      zip_last_downloaded_at,
+      zip_status,
+    } = body;
 
     const fields: string[] = [];
     const values: any[] = [];
@@ -165,6 +177,14 @@ export async function PATCH(
       fields.push(`zip_size_bytes = $${idx++}`);
       values.push(zip_size_bytes ? Number(zip_size_bytes) : null);
     }
+    if (zip_last_downloaded_at !== undefined) {
+      fields.push(`zip_last_downloaded_at = $${idx++}`);
+      values.push(zip_last_downloaded_at);
+    }
+    if (zip_status !== undefined) {
+      fields.push(`zip_status = $${idx++}`);
+      values.push(zip_status);
+    }
 
     if (fields.length === 0) {
       return NextResponse.json({ message: 'No fields provided to update.' });
@@ -178,7 +198,7 @@ export async function PATCH(
 
     return NextResponse.json({ multi: result.rows[0] });
   } catch (err: any) {
-    console.error('[multis/patch] Error:', err);
+    console.error('[multis/update] Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -198,7 +218,7 @@ export async function DELETE(
 
     const pool = getDbPool();
 
-    // Check multi ownership or admin
+    // Verify ownership or admin
     const checkRes = await pool.query(
       `SELECT m.id, m.owner_id, m.zip_r2_key, p.role
        FROM public.multis m
@@ -212,11 +232,8 @@ export async function DELETE(
     }
 
     const item = checkRes.rows[0];
-    const isOwner = item.owner_id === user.id;
-    const isAdmin = item.role === 'admin';
-
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: you cannot delete this multi.' }, { status: 403 });
+    if (item.owner_id !== user.id && item.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Delete full ZIP archive if present
@@ -224,20 +241,31 @@ export async function DELETE(
       await deleteBlob(item.zip_r2_key).catch(() => {});
     }
 
-    // Get all track r2_keys to delete from storage
+    // Delete individual track blobs from R2
     const tracksRes = await pool.query(
       `SELECT r2_key FROM public.multi_tracks WHERE multi_id = $1`,
       [id]
     );
 
-    // Delete tracks from storage
-    for (const row of tracksRes.rows) {
-      if (row.r2_key) {
-        await deleteBlob(row.r2_key).catch(() => {});
+    for (const track of tracksRes.rows) {
+      if (track.r2_key) {
+        await deleteBlob(track.r2_key).catch(() => {});
       }
     }
 
-    // Delete multi from DB (cascade deletes multi_tracks)
+    // Delete individual mix blobs from R2
+    const mixesRes = await pool.query(
+      `SELECT r2_key FROM public.mixes WHERE multi_id = $1`,
+      [id]
+    );
+
+    for (const mix of mixesRes.rows) {
+      if (mix.r2_key) {
+        await deleteBlob(mix.r2_key).catch(() => {});
+      }
+    }
+
+    // Delete record from DB (cascades to tracks, mixes, etc.)
     await pool.query(`DELETE FROM public.multis WHERE id = $1`, [id]);
 
     return NextResponse.json({ success: true, message: 'Multi deleted successfully.' });

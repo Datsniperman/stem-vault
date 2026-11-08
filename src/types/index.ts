@@ -106,6 +106,8 @@ export interface Multi {
   zip_r2_key?: string | null;
   zip_public_url?: string | null;
   zip_size_bytes?: number | null;
+  zip_last_downloaded_at?: string | null;
+  zip_status?: 'ready' | 'generating' | 'expired' | null;
   created_at: string;
   updated_at: string;
   owner?: Profile | null;
