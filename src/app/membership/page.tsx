@@ -11,7 +11,6 @@ import {
   Sparkles,
   RefreshCw,
   LogOut,
-  AlertTriangle,
 } from 'lucide-react';
 
 const LAUNCHPASS_URL = 'https://www.launchpass.com/all-access-by-tyler/membership';
@@ -22,6 +21,7 @@ function MembershipContent() {
 
   const { user, profile, signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 
   const displayName =
     profile?.server_display_name ||
@@ -36,10 +36,24 @@ function MembershipContent() {
     user?.user_metadata?.avatar_url ||
     null;
 
-  const handleRefreshRoles = () => {
+  const handleRefreshRoles = async () => {
     setRefreshing(true);
-    const destination = returnTo.startsWith('/membership') ? '/' : returnTo;
-    window.location.href = `/api/auth/discord?redirectTo=${encodeURIComponent(destination)}`;
+    setRefreshMessage(null);
+    try {
+      const res = await fetch('/api/auth/refresh-membership', { method: 'POST' });
+      const data = await res.json();
+      if (data.hasMembership) {
+        const destination = returnTo.startsWith('/membership') ? '/' : returnTo;
+        window.location.href = destination;
+        return;
+      }
+      setRefreshMessage(data.message || 'Members role not detected in Discord. Please ensure you have completed checkout.');
+    } catch {
+      const destination = returnTo.startsWith('/membership') ? '/' : returnTo;
+      window.location.href = `/api/auth/discord?redirectTo=${encodeURIComponent(destination)}`;
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleDiscordSignIn = () => {
@@ -90,16 +104,18 @@ function MembershipContent() {
               </div>
             </div>
 
-            <div className="bg-amber-950/30 border border-amber-900/40 rounded-lg p-3.5 text-xs text-amber-200/90 flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-semibold text-amber-300">
-                  Membership Role Required
-                </p>
-                <p className="text-neutral-400 text-[11px] leading-relaxed">
-                  Your Discord account is connected, but you do not have the required &quot;Members&quot; role in our server. You can activate your membership below.
-                </p>
-              </div>
+            <div className="bg-[#181818] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-300">
+              <p className="leading-relaxed">
+                You must have the <strong className="text-white font-medium">Members</strong> role to access the website. You can activate your membership here at this link:{' '}
+                <a
+                  href={LAUNCHPASS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white underline underline-offset-2 hover:text-neutral-300 break-all font-medium"
+                >
+                  {LAUNCHPASS_URL}
+                </a>
+              </p>
             </div>
 
             {/* Primary CTA: LaunchPass */}
@@ -123,6 +139,11 @@ function MembershipContent() {
                 <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
                 <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
               </button>
+              {refreshMessage && (
+                <p className="text-[11px] text-amber-300 text-center px-2.5 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
+                  {refreshMessage}
+                </p>
+              )}
 
               {/* Disconnect / Switch Account */}
               <button

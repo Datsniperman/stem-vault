@@ -184,6 +184,8 @@ export async function GET(request: NextRequest) {
   user.role = calculatedRole as any;
   user.user_metadata = {
     ...user.user_metadata,
+    discord_id: discordUserId,
+    provider_id: discordUserId,
     server_display_name: resolvedServerName,
     display_name: resolvedServerName,
     role: calculatedRole,

@@ -27,15 +27,24 @@ export function createServiceToken(): string {
 
 export function createUserToken(user: User): string {
   const role = user.role === 'admin' ? 'admin' : (user.role || 'authenticated');
+  const discordId =
+    (user.user_metadata?.discord_id as string) ||
+    (user.user_metadata?.provider_id as string) ||
+    (user.identities?.find((i: any) => i.provider === 'discord')?.id as string) ||
+    (user.identities?.find((i: any) => i.provider === 'discord')?.identity_data?.provider_id as string) ||
+    null;
+
   return signJwt(
     {
       sub: user.id,
       email: user.email,
+      discord_id: discordId,
       role,
       aud: 'authenticated',
       iss: 'local-auth',
       user_metadata: {
         ...(user.user_metadata || {}),
+        discord_id: discordId,
         role,
       },
     },

@@ -276,6 +276,7 @@ export class LocalServerClient {
             email,
             role: userRole === 'admin' ? 'admin' : 'authenticated',
             user_metadata: {
+              discord_id: discordUser.id,
               provider_id: discordUser.id,
               display_name: effectiveName,
               server_display_name: effectiveName,

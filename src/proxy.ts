@@ -5,8 +5,77 @@ const JWT_SECRET =
   (process.env.JWT_SECRET || '').trim().replace(/^["']|["']$/g, '') ||
   'super-secret-jwt-token-with-at-least-32-characters-kerpbot-mixingvault';
 
+const DISCORD_BOT_TOKEN =
+  (process.env.DISCORD_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
+
+const DISCORD_GUILD_ID =
+  (process.env.DISCORD_GUILD_ID || '').trim().replace(/^["']|["']$/g, '') ||
+  '1488266305743360252';
+
 const REQUIRED_MEMBERSHIP_ROLE_ID =
   (process.env.DISCORD_REQUIRED_ROLE_ID || '1488271670119633047').trim();
+
+// In-memory cache for live Discord role checks
+// 10-second TTL prevents Discord 429 rate-limiting during rapid page navigation while guaranteeing instant revocation upon subscription loss
+interface CachedRole {
+  hasRole: boolean;
+  checkedAt: number;
+}
+const roleCache = new Map<string, CachedRole>();
+const ROLE_CACHE_TTL_MS = 10 * 1000;
+
+export function invalidateDiscordRoleCache(discordId?: string) {
+  if (discordId) {
+    roleCache.delete(discordId);
+  } else {
+    roleCache.clear();
+  }
+}
+
+async function verifyLiveDiscordRole(discordId: string): Promise<boolean> {
+  const cached = roleCache.get(discordId);
+  const now = Date.now();
+  if (cached && now - cached.checkedAt < ROLE_CACHE_TTL_MS) {
+    return cached.hasRole;
+  }
+
+  try {
+    const res = await fetch(
+      `https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/${discordId}`,
+      {
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        },
+        cache: 'no-store',
+      }
+    );
+
+    if (res.status === 404) {
+      // User left or is not in the guild
+      roleCache.set(discordId, { hasRole: false, checkedAt: now });
+      return false;
+    }
+
+    if (!res.ok) {
+      console.warn(`[Proxy] Discord API returned ${res.status} for member ${discordId}`);
+      if (res.status === 429 && cached) {
+        return cached.hasRole;
+      }
+      return false;
+    }
+
+    const data = await res.json();
+    const roles: string[] = Array.isArray(data.roles) ? data.roles : [];
+    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
+
+    roleCache.set(discordId, { hasRole, checkedAt: now });
+    return hasRole;
+  } catch (err: any) {
+    console.error(`[Proxy] Live Discord role check error for ${discordId}:`, err?.message);
+    if (cached) return cached.hasRole;
+    return false;
+  }
+}
 
 /**
  * Edge-compatible JWT verification using Web Crypto API.
@@ -102,29 +171,45 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(membershipUrl);
   }
 
-  // 3. Verify membership clearance: Must have required role OR be master admin
+  // 3. Extract identity
   const userMetadata = payload.user_metadata || {};
+  const discordId =
+    (payload.discord_id as string) ||
+    (userMetadata.discord_id as string) ||
+    (userMetadata.provider_id as string) ||
+    null;
+
+  // Master admin check: admins always have full access across the entire app
   const isAdmin =
     payload.role === 'admin' ||
     userMetadata.role === 'admin' ||
     userMetadata.custom_claims?.role === 'admin' ||
     isUserAdmin({
       email: payload.email,
-      discordId: userMetadata.provider_id || payload.sub,
+      discordId: discordId || payload.sub,
       username: userMetadata.display_name || userMetadata.server_display_name,
       role: payload.role,
       userMetadata,
     });
 
-  const roles: string[] = Array.isArray(userMetadata.roles) ? userMetadata.roles : [];
-  const hasMembershipRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
-  const hasMembership = isAdmin || userMetadata.has_membership === true || hasMembershipRole;
+  if (isAdmin) {
+    const response = NextResponse.next();
+    response.headers.set('x-user-id', payload.sub);
+    response.headers.set('x-user-role', 'admin');
+    return response;
+  }
+
+  // 4. Non-admin users: must verify LIVE Discord role on every request
+  let hasMembership = false;
+  if (discordId) {
+    hasMembership = await verifyLiveDiscordRole(discordId);
+  }
 
   if (!hasMembership) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
         {
-          error: 'Forbidden: All Access Discord membership role required (Role ID: 1488271670119633047).',
+          error: 'Forbidden: Members Discord role required (Role ID: 1488271670119633047).',
           code: 'MEMBERSHIP_REQUIRED',
           membershipUrl: 'https://www.launchpass.com/all-access-by-tyler/membership',
         },
@@ -138,7 +223,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(membershipUrl);
   }
 
-  // 4. User is authorized
+  // 5. User is verified and authorized
   const response = NextResponse.next();
   response.headers.set('x-user-id', payload.sub);
   response.headers.set('x-user-role', payload.role || 'authenticated');
