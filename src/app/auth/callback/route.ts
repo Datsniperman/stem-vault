@@ -2,8 +2,10 @@ import { isUserAdmin } from '@/lib/auth/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
-import { getDbPool } from '@/lib/db/pool';
 import { createUserToken } from '@/lib/db/jwt';
+
+const REQUIRED_MEMBERSHIP_ROLE_ID =
+  (process.env.DISCORD_REQUIRED_ROLE_ID || '1488271670119633047').trim();
 
 export async function GET(request: NextRequest) {
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
@@ -36,14 +38,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Prevent recursive redirect loop back to /auth/callback
-  if (!targetNext || targetNext.includes('/auth/callback')) {
+  // Prevent recursive redirect loop back to /auth/callback or /membership
+  if (!targetNext || targetNext.includes('/auth/callback') || targetNext.includes('/membership')) {
     targetNext = '/';
   }
 
   // Handle user cancellation or missing code
   if (authError || !code) {
-    // If the user already has a valid session token, redirect smoothly to targetNext
     const existingToken =
       request.cookies.get('mv_session_token')?.value ||
       request.cookies.get('sb-access-token')?.value;
@@ -56,12 +57,12 @@ export async function GET(request: NextRequest) {
 
     const msg = authError ? `Discord returned: ${authError}` : 'No authorization code received from Discord';
     console.warn('[Auth Callback] Discord OAuth error:', msg);
-    return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(msg)}`);
+    return NextResponse.redirect(`${origin}/membership?auth_error=${encodeURIComponent(msg)}`);
   }
 
   const dbServer = await createDbServerClient();
   if (!dbServer) {
-    return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent('Database server client failed to initialize')}`);
+    return NextResponse.redirect(`${origin}/membership?auth_error=${encodeURIComponent('Database server client failed to initialize')}`);
   }
 
   // Use exchangeOrigin matching what was sent to Discord
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
   if (error || !data.session?.user) {
     const msg = error?.message || 'Session exchange failed';
     console.error('[Auth Callback] Direct Discord code exchange failed:', msg);
-    return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(msg)}`);
+    return NextResponse.redirect(`${origin}/membership?auth_error=${encodeURIComponent(msg)}`);
   }
 
   const user = data.session.user;
@@ -95,6 +96,8 @@ export async function GET(request: NextRequest) {
     user.email?.split('@')[0] ||
     'Member';
   let avatarUrl: string | null = user.user_metadata?.avatar_url || null;
+  let memberRoles: string[] = [];
+  let userInGuild = false;
 
   if (discordUserId && botToken && guildId) {
     try {
@@ -109,19 +112,20 @@ export async function GET(request: NextRequest) {
 
       // If user is not in the guild (404 Unknown Member)
       if (memberRes.status === 404) {
+        userInGuild = false;
         const isMasterAdmin = isUserAdmin({
           email: user.email,
           discordId: discordUserId,
         });
         if (!isMasterAdmin) {
-          console.warn(`[Auth Callback] User ${discordUserId} is not in guild ${guildId}. Denying access.`);
-          await dbServer.auth.signOut();
-          return NextResponse.redirect(`${origin}/unauthorized?reason=not_in_guild`);
+          console.warn(`[Auth Callback] User ${discordUserId} is not in guild ${guildId}.`);
         }
       }
 
       if (memberRes.ok) {
+        userInGuild = true;
         const member = await memberRes.json();
+        memberRoles = Array.isArray(member.roles) ? member.roles : [];
 
         // Check Discord administrator permission bit 0x8
         try {
@@ -171,6 +175,10 @@ export async function GET(request: NextRequest) {
     userMetadata: user.user_metadata,
   });
 
+  // Check required membership role "1488271670119633047"
+  const hasMembershipRole = memberRoles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
+  const hasMembership = isAdmin || hasMembershipRole;
+
   const calculatedRole = isAdmin ? 'admin' : (user.user_metadata?.role || 'user');
 
   user.role = calculatedRole as any;
@@ -179,14 +187,20 @@ export async function GET(request: NextRequest) {
     server_display_name: resolvedServerName,
     display_name: resolvedServerName,
     role: calculatedRole,
+    has_membership: hasMembership,
+    roles: memberRoles,
+    in_guild: userInGuild,
     custom_claims: {
       ...(user.user_metadata?.custom_claims || {}),
       server_display_name: resolvedServerName,
       global_name: resolvedServerName,
       role: calculatedRole,
+      has_membership: hasMembership,
+      roles: memberRoles,
     },
     avatar_url: avatarUrl,
   };
+
   data.session.access_token = createUserToken(user);
 
   if (discordUserId) {
@@ -209,7 +223,6 @@ export async function GET(request: NextRequest) {
       );
 
       if (upsertErr && (upsertErr.code === '23505' || upsertErr.message?.includes('unique'))) {
-        // If display_name collided with another user, append last 4 digits of discord id
         await db.from('profiles').upsert(
           {
             id: user.id,
@@ -228,8 +241,16 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Create redirect response with local session cookies
-  const targetUrl = targetNext.startsWith('http') ? targetNext : new URL(targetNext, origin).toString();
+  // Determine final destination
+  let finalDestination = targetNext;
+  if (!hasMembership) {
+    console.warn(`[Auth Callback] User ${discordUserId} (${resolvedServerName}) lacks required role ${REQUIRED_MEMBERSHIP_ROLE_ID}. Redirecting to /membership.`);
+    finalDestination = `/membership?reason=missing_role&returnTo=${encodeURIComponent(targetNext)}`;
+  }
+
+  const targetUrl = finalDestination.startsWith('http')
+    ? finalDestination
+    : new URL(finalDestination, origin).toString();
   const response = NextResponse.redirect(targetUrl);
 
   const cookieDomain = (!isLocal && host && host.includes('mixingvault.com')) ? '.mixingvault.com' : undefined;
@@ -258,6 +279,6 @@ export async function GET(request: NextRequest) {
   response.cookies.set('mv_session_token', sessionToken, cookieOptions);
   response.cookies.set('sb-access-token', sessionToken, cookieOptions);
 
-  console.log(`[Auth Callback] Discord sign-in succeeded for user ${user.id} (role: ${user.role}). Redirecting to destination: ${targetUrl}`);
+  console.log(`[Auth Callback] Discord sign-in succeeded for user ${user.id} (membership: ${hasMembership}). Redirecting to: ${targetUrl}`);
   return response;
 }
