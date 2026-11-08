@@ -178,7 +178,6 @@ export async function submitStem(
     }
 
     revalidatePath('/');
-    revalidatePath('/showcase');
     return {
       success: true,
       message: '✓ Published! Your multitrack pack is live in The Mixing Vault and announced on Discord.',
@@ -305,7 +304,6 @@ export async function updateStem(
     revalidatePath('/');
     revalidatePath('/profile');
     revalidatePath(`/stems/${stemId}`);
-    revalidatePath('/showcase');
 
     return {
       success: true,
@@ -469,7 +467,6 @@ export async function approveStem(id: string): Promise<{ success: boolean; messa
 
     revalidatePath('/');
     revalidatePath(`/stems/${id}`);
-    revalidatePath('/showcase');
     return { success: true, message: 'Stem approved and published to vault & Discord!' };
   } catch {
     return { success: false, message: 'Approval failed.' };
@@ -1089,7 +1086,6 @@ export async function submitMix(payload: SubmitMixPayload): Promise<{
     }
 
     revalidatePath(`/stems/${payload.stemId}`);
-    revalidatePath('/showcase');
 
     return {
       success: true,
@@ -1156,7 +1152,6 @@ export async function toggleMixLike(
         await db.from('stem_mixes').update({ likes_count: Math.max(0, (currentMix.likes_count || 1) - 1) }).eq('id', mixId);
       }
       revalidatePath(`/stems/${stemId}`);
-      revalidatePath('/showcase');
       return { success: true, message: 'Unliked mix.', liked: false };
     } else {
       // Add like
@@ -1166,7 +1161,6 @@ export async function toggleMixLike(
         await db.from('stem_mixes').update({ likes_count: (currentMix.likes_count || 0) + 1 }).eq('id', mixId);
       }
       revalidatePath(`/stems/${stemId}`);
-      revalidatePath('/showcase');
       return { success: true, message: 'Liked mix!', liked: true };
     }
   } catch (err) {
