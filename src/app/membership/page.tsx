@@ -4,9 +4,7 @@ import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
-  Lock,
   ExternalLink,
-  ShieldCheck,
   Disc3,
   Sliders,
   Layers,
@@ -51,12 +49,6 @@ function MembershipContent() {
 
   return (
     <div className="w-full max-w-xl mx-auto text-center space-y-8">
-      {/* Header Tag */}
-      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-[11px] font-mono text-neutral-300">
-        <Lock className="w-3 h-3 text-amber-400" />
-        <span>MEMBER ONLY ARCHIVE & MIX CHALLENGES</span>
-      </div>
-
       {/* Title & Explainer */}
       <div className="space-y-3">
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
@@ -91,9 +83,6 @@ function MembershipContent() {
                   <span className="text-xs font-semibold text-white truncate">
                     {displayName}
                   </span>
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-red-950/80 text-red-400 border border-red-900/50">
-                    Missing Role
-                  </span>
                 </div>
                 <p className="text-[11px] text-neutral-400 truncate mt-0.5">
                   {user.email || 'Discord Connected'}
@@ -108,7 +97,7 @@ function MembershipContent() {
                   Membership Role Required
                 </p>
                 <p className="text-neutral-400 text-[11px] leading-relaxed">
-                  Your Discord account is connected, but you do not have the required <strong className="text-neutral-200">All Access</strong> role in our server. You can activate your membership below.
+                  Your Discord account is connected, but you do not have the required &quot;Members&quot; role in our server. You can activate your membership below.
                 </p>
               </div>
             </div>
@@ -132,7 +121,7 @@ function MembershipContent() {
                 className="w-full bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-neutral-200 border border-neutral-700/80 font-medium text-xs py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-                <span>{refreshing ? 'Refreshing Roles...' : 'I Already Purchased — Re-check My Roles'}</span>
+                <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
               </button>
 
               {/* Disconnect / Switch Account */}
@@ -189,12 +178,6 @@ function MembershipContent() {
             </div>
           </div>
         )}
-
-        {/* Micro Trust Badge */}
-        <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-center gap-2 text-[11px] text-neutral-500">
-          <ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />
-          <span>Instant Discord role sync after checkout</span>
-        </div>
       </div>
 
       {/* Features Grid */}
