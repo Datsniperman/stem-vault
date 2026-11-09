@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Upload, Video, Sparkles, Loader2, ShieldCheck } from 'lucide-react';
+import { X, Upload, Video, Loader2 } from 'lucide-react';
 import { createRecordedSession } from '@/app/actions/sessions';
 
 interface UploadSessionModalProps {
@@ -15,11 +15,10 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
   const [description, setDescription] = useState('');
   const [presenter, setPresenter] = useState('Tyler Kerpsack');
   const [durationMinutes, setDurationMinutes] = useState('45');
-  const [requiredTier, setRequiredTier] = useState<'PLUS' | 'PREMIUM'>('PLUS');
   const [storageProvider, setStorageProvider] = useState<'hls' | 'cloudflare_stream' | 'mux'>('hls');
   const [videoAssetId, setVideoAssetId] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
-  const [tags, setTags] = useState('worship, live mix, compression');
+  const [tags, setTags] = useState('worship, live mix, console breakdown');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +27,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !videoAssetId.trim()) {
-      setError('Title and Video Asset ID / HLS Manifest URL are required.');
+      setError('Title and Video Asset ID or Stream URL are required.');
       return;
     }
 
@@ -46,7 +45,6 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
         description: description.trim() || undefined,
         presenter: presenter.trim() || undefined,
         duration_seconds: durationMinutes ? Math.round(Number(durationMinutes) * 60) : undefined,
-        required_tier: requiredTier,
         storage_provider: storageProvider,
         video_asset_id: videoAssetId.trim(),
         video_url: videoAssetId.startsWith('http') ? videoAssetId.trim() : undefined,
@@ -107,7 +105,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Mixing In-Ears & Front-of-House from One Console"
+              placeholder="e.g. Mixing In-Ears and Front-of-House from One Console"
               className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500"
             />
           </div>
@@ -136,62 +134,10 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
             </div>
           </div>
 
-          {/* Required Tier Selection */}
-          <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-2">
-              Required Membership Tier
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                  requiredTier === 'PLUS'
-                    ? 'bg-emerald-950/30 border-emerald-500 text-white'
-                    : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-neutral-200'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="required_tier"
-                  value="PLUS"
-                  checked={requiredTier === 'PLUS'}
-                  onChange={() => setRequiredTier('PLUS')}
-                  className="sr-only"
-                />
-                <ShieldCheck className={`w-4 h-4 ${requiredTier === 'PLUS' ? 'text-emerald-400' : 'text-neutral-500'}`} />
-                <div>
-                  <div className="font-semibold text-xs">Plus Tier</div>
-                  <div className="text-[10px] text-neutral-500">Accessible by Plus & Premium</div>
-                </div>
-              </label>
-
-              <label
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                  requiredTier === 'PREMIUM'
-                    ? 'bg-amber-950/30 border-amber-500 text-white'
-                    : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-neutral-200'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="required_tier"
-                  value="PREMIUM"
-                  checked={requiredTier === 'PREMIUM'}
-                  onChange={() => setRequiredTier('PREMIUM')}
-                  className="sr-only"
-                />
-                <Sparkles className={`w-4 h-4 ${requiredTier === 'PREMIUM' ? 'text-amber-400' : 'text-neutral-500'}`} />
-                <div>
-                  <div className="font-semibold text-xs">Premium Tier</div>
-                  <div className="text-[10px] text-neutral-500">Exclusive to Pro Members</div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Streaming Platform */}
+          {/* Video Source Platform */}
           <div>
             <label className="block text-xs font-medium text-neutral-300 mb-1">
-              Video Source / Platform
+              Video Source Platform
             </label>
             <select
               value={storageProvider}
@@ -217,7 +163,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
               className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500 font-mono text-xs"
             />
             <p className="text-[11px] text-neutral-500 mt-1">
-              Delivered via chunked HLS tokens to prevent file downloads.
+              Delivered via chunked HLS streaming to prevent file downloads.
             </p>
           </div>
 
@@ -240,7 +186,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Session breakdown, covered consoles, routing techniques..."
+              placeholder="Session overview, console routing, topics discussed..."
               className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500"
             />
           </div>

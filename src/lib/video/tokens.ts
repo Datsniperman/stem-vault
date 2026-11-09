@@ -6,7 +6,6 @@ const STREAM_SECRET =
 export interface StreamTokenPayload {
   sessionId: string;
   userId: string;
-  tier: 'PLUS' | 'PREMIUM';
   exp: number; // unix timestamp in seconds
 }
 
@@ -17,14 +16,12 @@ export interface StreamTokenPayload {
 export function generateStreamToken(
   sessionId: string,
   userId: string,
-  tier: 'PLUS' | 'PREMIUM',
   expiresInSeconds: number = 900
 ): string {
   const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
   const payload: StreamTokenPayload = {
     sessionId,
     userId,
-    tier,
     exp,
   };
 
@@ -54,7 +51,6 @@ export function verifyStreamToken(
       .update(payloadB64)
       .digest('base64url');
 
-    // Constant-time comparison to prevent timing attacks
     if (!crypto.timingSafeEqual(Buffer.from(providedHmac), Buffer.from(expectedHmac))) {
       return null;
     }
@@ -65,11 +61,11 @@ export function verifyStreamToken(
 
     const now = Math.floor(Date.now() / 1000);
     if (payload.exp < now) {
-      return null; // Expired
+      return null;
     }
 
     if (expectedSessionId && payload.sessionId !== expectedSessionId) {
-      return null; // Session ID mismatch
+      return null;
     }
 
     return payload;

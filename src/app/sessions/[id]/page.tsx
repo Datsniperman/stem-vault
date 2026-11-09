@@ -7,19 +7,17 @@ import { Header } from '@/components/Header';
 import { SecureVideoPlayer } from '@/components/SecureVideoPlayer';
 import { getSessionById } from '@/app/actions/sessions';
 import { RecordedSession } from '@/types/sessions';
-import { MembershipTier } from '@/lib/auth/tiers';
 import { useAuth } from '@/context/AuthContext';
 import {
   ArrowLeft,
   Lock,
-  Sparkles,
-  ShieldCheck,
   User,
   Clock,
   Calendar,
   ExternalLink,
   ShieldAlert,
   Loader2,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function SessionDetailPage() {
@@ -31,8 +29,7 @@ export default function SessionDetailPage() {
   const [session, setSession] = useState<RecordedSession | null>(null);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
-  const [requiredTier, setRequiredTier] = useState<'PLUS' | 'PREMIUM'>('PLUS');
-  const [userTier, setUserTier] = useState<MembershipTier>('FREE');
+  const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,8 +48,7 @@ export default function SessionDetailPage() {
         setSession(res.session);
         setStreamUrl(res.streamUrl);
         setIsLocked(res.isLocked);
-        if (res.requiredTier) setRequiredTier(res.requiredTier);
-        setUserTier(res.userTier);
+        setIsMember(res.isMember);
       } catch (err: any) {
         setError(err.message || 'Failed to load session details.');
       } finally {
@@ -102,33 +98,23 @@ export default function SessionDetailPage() {
             </button>
           </div>
         ) : isLocked ? (
-          /* Locked State for Unauthorized Users */
+          /* Locked State for Non-Members */
           <div className="relative w-full aspect-video bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden flex flex-col items-center justify-center p-8 text-center shadow-2xl">
             <div className="w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-amber-400 mb-4 shadow-inner">
               <Lock className="w-8 h-8" />
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-amber-950/60 text-amber-400 border border-amber-800/80 mb-3">
-              {requiredTier === 'PREMIUM' ? (
-                <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Premium Member Exclusive</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Plus Member Exclusive</span>
-                </>
-              )}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-950/60 text-emerald-400 border border-emerald-800/80 mb-3">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>All Access Exclusive</span>
             </div>
 
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 max-w-lg">
-              {session?.title || 'Exclusive Masterclass'}
+              {session?.title || 'Recorded Session'}
             </h2>
 
             <p className="text-xs sm:text-sm text-neutral-400 max-w-md mb-6 leading-relaxed">
-              This session is restricted to {requiredTier} tier subscribers. Your current tier is{' '}
-              <span className="text-white font-semibold">{userTier}</span>. Upgrade via Tyler Kerpsack All Access to get instant access to the full video vault.
+              This session is restricted to paying members. Join Tyler Kerpsack All Access to unlock the complete video archive.
             </p>
 
             <div className="flex items-center gap-3">
@@ -136,9 +122,9 @@ export default function SessionDetailPage() {
                 href="https://www.launchpass.com/all-access-by-tyler/membership"
                 target="_blank"
                 rel="noreferrer"
-                className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-lg cursor-pointer"
+                className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-lg cursor-pointer"
               >
-                <span>Upgrade to {requiredTier}</span>
+                <span>Join Membership</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
 
@@ -164,17 +150,10 @@ export default function SessionDetailPage() {
             <div className="space-y-4 border-b border-neutral-800 pb-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  {session?.required_tier === 'PREMIUM' ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-amber-950/80 text-amber-300 border border-amber-800/80">
-                      <Sparkles className="w-3 h-3 text-amber-400" />
-                      Premium Tier
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
-                      <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                      Plus Tier
-                    </span>
-                  )}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    Member Access
+                  </span>
 
                   <span className="text-xs text-neutral-500 font-mono">
                     Protected Stream (HLS)
