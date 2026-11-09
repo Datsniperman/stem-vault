@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
   let origin = host ? `${proto}://${host}` : request.nextUrl.origin;
   if (!isLocal && host.includes('mixingvault.com')) {
-    origin = 'https://www.mixingvault.com';
+    origin = host.includes('beta.') ? 'https://beta.mixingvault.com' : 'https://www.mixingvault.com';
   }
 
   const { searchParams } = new URL(request.url);

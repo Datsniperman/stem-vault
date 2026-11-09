@@ -16,6 +16,9 @@ import {
   AlertCircle,
   Loader2,
   Download,
+  Sliders,
+  ChevronDown,
+  FileCode,
 } from 'lucide-react';
 import { Multi, MultiTrack, Mix } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -33,6 +36,7 @@ export default function MultiDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mixModalOpen, setMixModalOpen] = useState(false);
+  const [dawDropdownOpen, setDawDropdownOpen] = useState(false);
   const [deletingMulti, setDeletingMulti] = useState(false);
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
 
@@ -217,6 +221,68 @@ export default function MultiDetailPage() {
                 <Download className="w-3.5 h-3.5" />
                 <span>Download Full Session (ZIP)</span>
               </a>
+
+              {/* DAW Project Template Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setDawDropdownOpen(!dawDropdownOpen)}
+                  className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white font-medium text-xs px-3.5 py-2 rounded transition-colors flex items-center gap-2 shadow-xs"
+                  title="Generate a pre-aligned session file for your digital audio workstation"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>DAW Project</span>
+                  <ChevronDown className="w-3 h-3 text-neutral-400" />
+                </button>
+
+                {dawDropdownOpen && (
+                  <div
+                    className="absolute right-0 mt-1 w-64 bg-neutral-900 border border-neutral-800 rounded-lg shadow-xl z-50 p-2 space-y-1 text-xs"
+                    onMouseLeave={() => setDawDropdownOpen(false)}
+                  >
+                    <div className="px-2 py-1 text-[10px] uppercase font-mono tracking-wider text-neutral-500 border-b border-neutral-800/80 mb-1">
+                      Export Ready-to-Open Session
+                    </div>
+                    <a
+                      href={`/api/multis/${multi.id}/daw?format=reaper`}
+                      download
+                      onClick={() => setDawDropdownOpen(false)}
+                      className="flex items-center justify-between p-2 rounded hover:bg-neutral-800 text-neutral-200 hover:text-white transition-colors"
+                    >
+                      <span className="font-medium">REAPER Project</span>
+                      <span className="font-mono text-[10px] text-cyan-400">.RPP</span>
+                    </a>
+                    <a
+                      href={`/api/multis/${multi.id}/daw?format=ableton`}
+                      download
+                      onClick={() => setDawDropdownOpen(false)}
+                      className="flex items-center justify-between p-2 rounded hover:bg-neutral-800 text-neutral-200 hover:text-white transition-colors"
+                    >
+                      <span className="font-medium">Ableton Live Set</span>
+                      <span className="font-mono text-[10px] text-yellow-400">.ALS</span>
+                    </a>
+                    <a
+                      href={`/api/multis/${multi.id}/daw?format=dawproject`}
+                      download
+                      onClick={() => setDawDropdownOpen(false)}
+                      className="flex items-center justify-between p-2 rounded hover:bg-neutral-800 text-neutral-200 hover:text-white transition-colors"
+                    >
+                      <span className="font-medium">DAWproject Standard</span>
+                      <span className="font-mono text-[10px] text-purple-400">Studio One / Bitwig</span>
+                    </a>
+                    <div className="pt-1 mt-1 border-t border-neutral-800">
+                      <Link
+                        href="/daw-converter"
+                        className="flex items-center gap-2 p-1.5 rounded hover:bg-neutral-800 text-[11px] text-neutral-400 hover:text-cyan-400 transition-colors"
+                        onClick={() => setDawDropdownOpen(false)}
+                      >
+                        <FileCode className="w-3.5 h-3.5" />
+                        <span>Advanced DAW Converter Tool</span>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {user && (
                 <button

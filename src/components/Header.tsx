@@ -126,6 +126,13 @@ export function Header({ onStemAdded }: HeaderProps) {
                 <Sliders className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Plugin Chains</span>
               </Link>
+              <Link
+                href="/daw-converter"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <FileArchive className="w-3.5 h-3.5 text-neutral-400" />
+                <span>DAW Converter</span>
+              </Link>
             </nav>
           </div>
 
