@@ -13,19 +13,15 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'The Mixing Vault',
-  description:
-    'Exclusive in-house multitrack session archive & mix critique hub for Tyler Kerpsack All Access. Powered by KerpBot.',
-  metadataBase: new URL('https://www.mixingvault.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com'),
   openGraph: {
     title: 'The Mixing Vault',
-    description: 'In-house multitrack session archive & mix critique hub powered by KerpBot.',
     type: 'website',
     siteName: 'The Mixing Vault',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'The Mixing Vault',
-    description: 'In-house multitrack session archive & mix critique hub powered by KerpBot.',
   },
 };
 
