@@ -129,6 +129,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/cron') ||
+    pathname.startsWith('/api/daw/convert') ||
+    pathname === '/daw-converter' ||
     pathname.startsWith('/auth') ||
     pathname === '/membership' ||
     pathname === '/unauthorized' ||
