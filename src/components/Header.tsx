@@ -4,7 +4,7 @@ import { isUserAdmin } from '@/lib/auth/admin';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, LogOut, User, Shield, Settings, Plus, Music2, Layers, Sliders, FileArchive } from 'lucide-react';
+import { ChevronDown, LogOut, User, Shield, Settings, Plus, Music2, Layers, Sliders, FileArchive, Video } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
@@ -125,6 +125,13 @@ export function Header({ onStemAdded }: HeaderProps) {
               >
                 <Sliders className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Plugin Chains</span>
+              </Link>
+              <Link
+                href="/sessions"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Video className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Sessions</span>
               </Link>
               <Link
                 href="/daw-converter"

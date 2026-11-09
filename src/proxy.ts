@@ -15,6 +15,9 @@ const DISCORD_GUILD_ID =
 const REQUIRED_MEMBERSHIP_ROLE_ID =
   (process.env.DISCORD_REQUIRED_ROLE_ID || '1488271670119633047').trim();
 
+const PRO_MEMBER_ROLE_ID =
+  (process.env.DISCORD_PREMIUM_ROLE_ID || '1488346107351269526').trim();
+
 // In-memory cache for live Discord role checks
 // 10-second TTL prevents Discord 429 rate-limiting during rapid page navigation while guaranteeing instant revocation upon subscription loss
 interface CachedRole {
@@ -66,7 +69,7 @@ async function verifyLiveDiscordRole(discordId: string): Promise<boolean> {
 
     const data = await res.json();
     const roles: string[] = Array.isArray(data.roles) ? data.roles : [];
-    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
+    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID) || roles.includes(PRO_MEMBER_ROLE_ID);
 
     roleCache.set(discordId, { hasRole, checkedAt: now });
     return hasRole;
@@ -129,6 +132,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/cron') ||
+    pathname.startsWith('/api/sessions/') ||
     pathname.startsWith('/api/daw/convert') ||
     pathname === '/daw-converter' ||
     pathname.startsWith('/auth') ||
