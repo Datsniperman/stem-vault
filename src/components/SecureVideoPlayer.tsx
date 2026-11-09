@@ -15,10 +15,10 @@ import {
 } from 'lucide-react';
 
 interface SecureVideoPlayerProps {
-  src: string; // The authenticated HLS endpoint e.g. /api/sessions/[id]/stream?token=...
+  src: string; // The authenticated streaming endpoint e.g. /api/sessions/[id]/stream?token=...
   poster?: string;
   title?: string;
-  userIdentifier?: string; // Watermark identifier (e.g., username or Discord ID)
+  userIdentifier?: string; // Watermark identifier (e.g. username or Discord handle)
 }
 
 export function SecureVideoPlayer({
@@ -44,7 +44,6 @@ export function SecureVideoPlayer({
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Format seconds to mm:ss or hh:mm:ss
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || seconds < 0) return '0:00';
     const h = Math.floor(seconds / 3600);
@@ -56,7 +55,6 @@ export function SecureVideoPlayer({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Initialize HLS.js streaming
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
@@ -64,7 +62,6 @@ export function SecureVideoPlayer({
     setIsLoading(true);
     setErrorMessage(null);
 
-    // Clean up previous HLS instance if any
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
@@ -91,6 +88,20 @@ export function SecureVideoPlayer({
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
+          // If the stream is not an HLS manifest (e.g. direct tokenized video file), fall back to native video element
+          if (
+            data.details === 'manifestParsingError' ||
+            data.details === 'manifestLoadError' ||
+            data.details === 'bufferAddCodecError'
+          ) {
+            hls.destroy();
+            hlsRef.current = null;
+            video.src = src;
+            video.load();
+            setIsLoading(false);
+            return;
+          }
+
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.warn('[HLS] Network error encountered, attempting recovery...');
@@ -103,22 +114,22 @@ export function SecureVideoPlayer({
             default:
               console.error('[HLS] Fatal playback error:', data);
               hls.destroy();
-              setErrorMessage('Streaming playback error. Please verify your membership tier access.');
+              setErrorMessage('Streaming playback error. Please verify your membership access.');
               break;
           }
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS for Safari (iOS & macOS)
       video.src = src;
       video.addEventListener('loadedmetadata', () => {
         setIsLoading(false);
       });
       video.addEventListener('error', () => {
-        setErrorMessage('Playback error. Safari native HLS stream failed to load.');
+        setErrorMessage('Playback error. Stream failed to load.');
       });
     } else {
-      setErrorMessage('Your browser does not support secure HLS video streaming.');
+      video.src = src;
+      video.load();
     }
 
     return () => {
@@ -129,13 +140,11 @@ export function SecureVideoPlayer({
     };
   }, [src]);
 
-  // Video event handlers
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
     const curr = videoRef.current.currentTime;
     setCurrentTime(curr);
 
-    // Buffer percentage
     const b = videoRef.current.buffered;
     if (b.length > 0 && duration > 0) {
       for (let i = b.length - 1; i >= 0; i--) {
@@ -204,24 +213,21 @@ export function SecureVideoPlayer({
     }
   };
 
-  // Anti-download: Intercept right click and keyboard shortcuts
+  // Anti-download protections: context menu & shortcuts
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Intercept Ctrl+S / Cmd+S (Save Page / Save Video)
     if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
       e.preventDefault();
     }
-    // Spacebar to play/pause
     if (e.key === ' ' || e.code === 'Space') {
       e.preventDefault();
       togglePlay();
     }
   };
 
-  // Auto-hide controls when user is inactive
   const handleMouseMove = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -239,7 +245,6 @@ export function SecureVideoPlayer({
       tabIndex={0}
       className="relative w-full aspect-video bg-black rounded-xl overflow-hidden select-none outline-none group border border-neutral-800 shadow-2xl"
     >
-      {/* HTML5 Video element strictly configured with anti-download attributes */}
       <video
         ref={videoRef}
         poster={poster}
@@ -257,21 +262,18 @@ export function SecureVideoPlayer({
         className="w-full h-full object-contain cursor-pointer pointer-events-auto"
       />
 
-      {/* Dynamic Security Watermark to deter screen recording */}
       {userIdentifier && (
         <div className="absolute top-4 right-4 pointer-events-none opacity-25 hover:opacity-10 select-none text-[10px] font-mono text-white/50 tracking-widest uppercase">
           {userIdentifier}
         </div>
       )}
 
-      {/* Loading Spinner */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none backdrop-blur-xs">
           <Loader2 className="w-10 h-10 text-white animate-spin" />
         </div>
       )}
 
-      {/* Error state */}
       {errorMessage && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950/90 text-center p-6 space-y-3 z-30">
           <ShieldAlert className="w-10 h-10 text-amber-400" />
@@ -280,20 +282,17 @@ export function SecureVideoPlayer({
         </div>
       )}
 
-      {/* Custom Sleek Controls Bar */}
+      {/* Controls Bar */}
       <div
         className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 transition-opacity duration-300 flex flex-col gap-2 z-20 ${
           showControls || !isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
-        {/* Progress Bar & Buffering Indicator */}
         <div className="relative w-full flex items-center group/scrubber cursor-pointer">
-          {/* Buffer track */}
           <div
             className="absolute h-1 bg-neutral-700/60 rounded-full pointer-events-none"
             style={{ width: `${buffered}%` }}
           />
-          {/* Scrubber input */}
           <input
             type="range"
             min={0}
@@ -304,7 +303,6 @@ export function SecureVideoPlayer({
           />
         </div>
 
-        {/* Buttons Row */}
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-3">
             <button
@@ -325,7 +323,6 @@ export function SecureVideoPlayer({
               <RotateCcw className="w-4 h-4" />
             </button>
 
-            {/* Volume */}
             <div className="flex items-center gap-2 group/vol">
               <button onClick={toggleMute} className="text-white hover:text-neutral-300 transition-colors p-1">
                 {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
@@ -341,7 +338,6 @@ export function SecureVideoPlayer({
               />
             </div>
 
-            {/* Time Display */}
             <span className="text-[11px] font-mono text-neutral-400 select-none">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
