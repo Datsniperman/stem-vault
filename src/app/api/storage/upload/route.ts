@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createDbServerClient } from '@/lib/db/server';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import { Readable } from 'stream';
 
 export const dynamic = 'force-dynamic';
@@ -35,25 +36,29 @@ export async function PUT(request: NextRequest) {
     }
 
     const contentType = request.headers.get('content-type') || 'application/octet-stream';
-    const contentLengthStr = request.headers.get('content-length');
-    const contentLength = contentLengthStr ? parseInt(contentLengthStr, 10) : undefined;
 
     if (!request.body) {
       return NextResponse.json({ error: 'No data stream provided' }, { status: 400 });
     }
 
     const nodeStream = Readable.fromWeb(request.body as any);
-
     const s3 = getS3Client();
-    await s3.send(
-      new PutObjectCommand({
+
+    // Use lib-storage Upload to handle arbitrary stream sizes without Content-Length header mismatch
+    const parallelUpload = new Upload({
+      client: s3,
+      params: {
         Bucket: process.env.R2_BUCKET_NAME!,
         Key: key,
         Body: nodeStream,
         ContentType: contentType,
-        ContentLength: contentLength,
-      })
-    );
+      },
+      queueSize: 4,
+      partSize: 1024 * 1024 * 5, // 5MB parts
+      leavePartsOnError: false,
+    });
+
+    await parallelUpload.done();
 
     const publicBase = (process.env.R2_PUBLIC_URL || '').replace(/\/+$/, '');
     const publicUrl = `${publicBase}/${key}`;
