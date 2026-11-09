@@ -6,7 +6,6 @@ import {
   Upload,
   Video,
   Image as ImageIcon,
-  CheckCircle2,
   AlertCircle,
   Loader2,
   Trash2,
@@ -70,7 +69,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
     onClose();
   };
 
-  // Helper to upload file directly to R2 using presigned URL with progress
+  // Upload file via same-origin streaming endpoint to bypass cross-origin CORS limitations
   const uploadToStorage = async (
     file: File,
     folder: string,
@@ -91,12 +90,13 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
       throw new Error(data?.error || 'Failed to prepare cloud upload');
     }
 
-    const { uploadUrl, publicUrl } = await presignRes.json();
+    const { key, publicUrl } = await presignRes.json();
+    const proxyUploadUrl = `/api/storage/upload?key=${encodeURIComponent(key)}`;
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       activeXhrRef.current = xhr;
-      xhr.open('PUT', uploadUrl, true);
+      xhr.open('PUT', proxyUploadUrl, true);
       xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
 
       xhr.upload.onprogress = (evt) => {
@@ -111,13 +111,18 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(publicUrl);
         } else {
-          reject(new Error(`Storage server returned HTTP ${xhr.status}`));
+          try {
+            const errJson = JSON.parse(xhr.responseText);
+            reject(new Error(errJson.error || `Upload failed with status ${xhr.status}`));
+          } catch {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
         }
       };
 
       xhr.onerror = () => {
         activeXhrRef.current = null;
-        reject(new Error('Network error during file upload.'));
+        reject(new Error('Network error during file upload. Check your connection.'));
       };
 
       xhr.send(file);
@@ -128,7 +133,6 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
     setVideoFile(file);
     setError(null);
 
-    // Auto-fill title from clean filename if empty
     if (!title.trim()) {
       const clean = file.name
         .replace(/\.[a-zA-Z0-9]+$/, '')
@@ -137,7 +141,6 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
       setTitle(clean);
     }
 
-    // Attempt to extract video duration locally
     const url = URL.createObjectURL(file);
     const tempVideo = document.createElement('video');
     tempVideo.preload = 'metadata';
@@ -336,7 +339,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
           {/* Thumbnail Dropzone */}
           <div>
             <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-              Thumbnail Image (Optional)
+              Thumbnail Cover Image (Optional)
             </label>
             <input
               ref={thumbInputRef}
