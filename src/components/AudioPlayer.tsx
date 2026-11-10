@@ -10,6 +10,7 @@ interface AudioPlayerProps {
   format?: string;
   title?: string;
   sizeBytes?: number;
+  showDownload?: boolean;
 }
 
 export function AudioPlayer({
@@ -19,6 +20,7 @@ export function AudioPlayer({
   format,
   title,
   sizeBytes,
+  showDownload = false,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -209,16 +211,18 @@ export function AudioPlayer({
           </div>
 
           {/* Full-Quality Download Button (untranscoded original) */}
-          <a
-            href={dlUrl}
-            download={downloadFilename || true}
-            className="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-[11px] font-medium px-2.5 py-1.5 rounded border border-neutral-700 transition-colors"
-            title={`Download original full-quality file (${formatSize(sizeBytes)})`}
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Download</span>
-            {sizeBytes && <span className="text-[10px] text-neutral-400 font-mono">({formatSize(sizeBytes)})</span>}
-          </a>
+          {showDownload && (
+            <a
+              href={dlUrl}
+              download={downloadFilename || true}
+              className="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-[11px] font-medium px-2.5 py-1.5 rounded border border-neutral-700 transition-colors"
+              title={`Download original full-quality file (${formatSize(sizeBytes)})`}
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Download</span>
+              {sizeBytes && <span className="text-[10px] text-neutral-400 font-mono">({formatSize(sizeBytes)})</span>}
+            </a>
+          )}
         </div>
       </div>
     </div>

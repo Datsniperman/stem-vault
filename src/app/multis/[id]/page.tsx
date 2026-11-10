@@ -284,7 +284,7 @@ export default function MultiDetailPage() {
                   title="Download all stems bundled as a single ZIP file"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download Full Session (ZIP)</span>
+                  <span>Download Zip</span>
                 </a>
               ) : (
                 <Link
@@ -319,17 +319,8 @@ export default function MultiDetailPage() {
               <FileAudio className="w-4 h-4 text-neutral-400" />
               <span>Preview Files & Audio Stems ({multi.tracks?.length || 0})</span>
             </h2>
-            <div className="flex items-center gap-3">
-              {hasProAccess ? (
-                <a
-                  href={`/api/multis/${multi.id}/download`}
-                  download
-                  className="text-xs text-neutral-300 hover:text-white flex items-center gap-1.5 underline underline-offset-4 font-medium"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download All (ZIP)</span>
-                </a>
-              ) : (
+            {!hasProAccess && (
+              <div className="flex items-center gap-3">
                 <Link
                   href="/membership"
                   className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1.5 font-medium"
@@ -337,8 +328,8 @@ export default function MultiDetailPage() {
                   <Lock className="w-3 h-3" />
                   <span>Premium Required to Download Full Stems</span>
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {!multi.tracks || multi.tracks.length === 0 ? (
