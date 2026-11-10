@@ -13,7 +13,8 @@ const DISCORD_GUILD_ID =
   '1488266305743360252';
 
 const REQUIRED_MEMBERSHIP_ROLE_ID =
-  (process.env.DISCORD_REQUIRED_ROLE_ID || '1488271670119633047').trim();
+  (process.env.DISCORD_REQUIRED_ROLE_ID || '1569410882822475837').trim();
+const PLUS_ROLE_IDS = [REQUIRED_MEMBERSHIP_ROLE_ID, '1569410882822475837', '1488271670119633047'];
 
 const PRO_MEMBER_ROLE_ID =
   (process.env.DISCORD_PREMIUM_ROLE_ID || '1488346107351269526').trim();
@@ -72,7 +73,7 @@ async function verifyLiveDiscordRole(discordId: string): Promise<boolean> {
 
     const data = await res.json();
     const roles: string[] = Array.isArray(data.roles) ? data.roles : [];
-    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID) || roles.includes(PRO_MEMBER_ROLE_ID) || roles.includes(ADMIN_ROLE_ID);
+    const hasRole = PLUS_ROLE_IDS.some(id => roles.includes(id)) || roles.includes(PRO_MEMBER_ROLE_ID) || roles.includes(ADMIN_ROLE_ID);
 
     roleCache.set(discordId, { hasRole, checkedAt: now });
     return hasRole;
@@ -220,7 +221,7 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
         {
-          error: 'Forbidden: Members Discord role required (Role ID: 1488271670119633047).',
+          error: 'Forbidden: Members Discord role required (Role ID: 1569410882822475837).',
           code: 'MEMBERSHIP_REQUIRED',
           membershipUrl: 'https://www.launchpass.com/all-access-by-tyler/plus',
         },

@@ -5,7 +5,8 @@ import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
 import { createUserToken } from '@/lib/db/jwt';
 
 const REQUIRED_MEMBERSHIP_ROLE_ID =
-  (process.env.DISCORD_REQUIRED_ROLE_ID || '1488271670119633047').trim();
+  (process.env.DISCORD_REQUIRED_ROLE_ID || '1569410882822475837').trim();
+const PLUS_ROLE_IDS = [REQUIRED_MEMBERSHIP_ROLE_ID, '1569410882822475837', '1488271670119633047'];
 
 export async function GET(request: NextRequest) {
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
@@ -177,8 +178,8 @@ export async function GET(request: NextRequest) {
     roles: memberRoles,
   });
 
-  // Check required membership role "1488271670119633047"
-  const hasMembershipRole = memberRoles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
+  // Check required membership role (Plus: 1569410882822475837, or Premium)
+  const hasMembershipRole = PLUS_ROLE_IDS.some(id => memberRoles.includes(id)) || memberRoles.includes('1488346107351269526');
   const hasMembership = isAdmin || hasMembershipRole;
 
   const calculatedRole = isAdmin ? 'admin' : (user.user_metadata?.role || 'user');
