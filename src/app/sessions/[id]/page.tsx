@@ -119,7 +119,7 @@ export default function SessionDetailPage() {
 
             <div className="flex items-center gap-3">
               <a
-                href="https://www.launchpass.com/all-access-by-tyler/membership"
+                href="https://www.launchpass.com/all-access-by-tyler/plus"
                 target="_blank"
                 rel="noreferrer"
                 className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-lg cursor-pointer"

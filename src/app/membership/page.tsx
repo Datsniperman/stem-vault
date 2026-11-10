@@ -14,7 +14,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-const LAUNCHPASS_URL = 'https://www.launchpass.com/all-access-by-tyler/membership';
+const LAUNCHPASS_PLUS_URL = 'https://www.launchpass.com/all-access-by-tyler/plus';
+const LAUNCHPASS_PREMIUM_URL = 'https://www.launchpass.com/all-access-by-tyler/membership';
 
 const PLUS_PERKS = [
   'Full Access to The Mixing Vault (multitracks, stems, mixes)',
@@ -223,7 +224,7 @@ function MembershipContent() {
 
           <div>
             <a
-              href={LAUNCHPASS_URL}
+              href={LAUNCHPASS_PLUS_URL}
               target="_blank"
               rel="noopener noreferrer"
               className={`w-full font-semibold text-xs py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
@@ -287,7 +288,7 @@ function MembershipContent() {
 
           <div>
             <a
-              href={LAUNCHPASS_URL}
+              href={LAUNCHPASS_PREMIUM_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"

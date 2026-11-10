@@ -168,7 +168,7 @@ export default function RecordedSessionsPage() {
                         Join All Access to stream the full video library.
                       </p>
                       <a
-                        href="https://www.launchpass.com/all-access-by-tyler/membership"
+                        href="https://www.launchpass.com/all-access-by-tyler/plus"
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-medium bg-emerald-500 hover:bg-emerald-400 text-black px-3 py-1 rounded transition-colors"

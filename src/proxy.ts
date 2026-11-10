@@ -218,7 +218,7 @@ export async function proxy(request: NextRequest) {
         {
           error: 'Forbidden: Members Discord role required (Role ID: 1488271670119633047).',
           code: 'MEMBERSHIP_REQUIRED',
-          membershipUrl: 'https://www.launchpass.com/all-access-by-tyler/membership',
+          membershipUrl: 'https://www.launchpass.com/all-access-by-tyler/plus',
         },
         { status: 403 }
       );
