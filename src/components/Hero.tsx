@@ -32,19 +32,19 @@ export function Hero({ totalSessions, totalTracks, activeEngineers }: HeroProps)
                 href="/multis"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
               >
-                <span>📦 Multitrack Packs</span>
+                <span>Multitrack Packs</span>
               </Link>
               <Link
                 href="/mixes"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
               >
-                <span>🎧 Finished Mixes</span>
+                <span>Finished Mixes</span>
               </Link>
               <Link
                 href="/plugin-chains"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
               >
-                <span>🎛️ Plugin Chains</span>
+                <span>Plugin Chains</span>
               </Link>
             </div>
           </div>

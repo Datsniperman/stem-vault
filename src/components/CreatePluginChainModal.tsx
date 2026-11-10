@@ -275,11 +275,20 @@ export function CreatePluginChainModal({
                     className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
                   >
                     <option value="">Current Owner ({chainToEdit?.owner_name || 'Keep current'})</option>
-                    {users.map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.displayName} ({u.role}{u.email ? ` · ${u.email}` : ''})
-                      </option>
-                    ))}
+                    {users.map(u => {
+                      const badge = u.isPro && u.role === 'admin'
+                        ? 'Pro / Admin'
+                        : u.isPro
+                        ? 'Pro'
+                        : u.role === 'admin'
+                        ? 'Admin'
+                        : u.role || 'Member';
+                      return (
+                        <option key={u.id} value={u.id}>
+                          {u.displayName} ({badge}{u.email ? ` - ${u.email}` : ''})
+                        </option>
+                      );
+                    })}
                   </select>
                 )}
                 <p className="text-[10px] text-neutral-500">
