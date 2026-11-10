@@ -261,3 +261,97 @@ export async function deleteRecordedSession(id: string): Promise<{ success: bool
   await pool.query(`DELETE FROM public.recorded_sessions WHERE id = $1`, [id]);
   return { success: true };
 }
+
+/**
+ * Admin action: update a recorded session.
+ */
+export async function updateRecordedSession(
+  id: string,
+  data: {
+    title?: string;
+    description?: string;
+    thumbnail_url?: string;
+    video_asset_id?: string;
+    video_url?: string;
+    storage_provider?: 'hls' | 'cloudflare_stream' | 'mux' | 'r2';
+    duration_seconds?: number;
+    presenter?: string;
+    tags?: string[];
+    published?: boolean;
+  }
+): Promise<{ success: boolean; session?: RecordedSession; error?: string }> {
+  const user = await getSessionUser();
+  const isAdmin = user
+    ? isUserAdmin({
+        email: user.email,
+        discordId: user.user_metadata?.provider_id || user.id,
+        username: user.user_metadata?.display_name,
+        role: user.role,
+        userMetadata: user.user_metadata,
+      })
+    : false;
+
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Admin privileges required.' };
+  }
+
+  const pool = getDbPool();
+  const fields: string[] = [];
+  const values: any[] = [];
+  let idx = 1;
+
+  if (data.title !== undefined) {
+    fields.push(`title = $${idx++}`);
+    values.push(data.title.trim());
+  }
+  if (data.description !== undefined) {
+    fields.push(`description = $${idx++}`);
+    values.push(data.description ? data.description.trim() : null);
+  }
+  if (data.thumbnail_url !== undefined) {
+    fields.push(`thumbnail_url = $${idx++}`);
+    values.push(data.thumbnail_url ? data.thumbnail_url.trim() : null);
+  }
+  if (data.video_asset_id !== undefined) {
+    fields.push(`video_asset_id = $${idx++}`);
+    values.push(data.video_asset_id.trim());
+  }
+  if (data.video_url !== undefined) {
+    fields.push(`video_url = $${idx++}`);
+    values.push(data.video_url ? data.video_url.trim() : null);
+  }
+  if (data.storage_provider !== undefined) {
+    fields.push(`storage_provider = $${idx++}`);
+    values.push(data.storage_provider);
+  }
+  if (data.duration_seconds !== undefined) {
+    fields.push(`duration_seconds = $${idx++}`);
+    values.push(data.duration_seconds || null);
+  }
+  if (data.presenter !== undefined) {
+    fields.push(`presenter = $${idx++}`);
+    values.push(data.presenter ? data.presenter.trim() : null);
+  }
+  if (data.tags !== undefined) {
+    fields.push(`tags = $${idx++}`);
+    values.push(data.tags);
+  }
+  if (data.published !== undefined) {
+    fields.push(`published = $${idx++}`);
+    values.push(data.published);
+  }
+
+  if (fields.length === 0) {
+    return { success: true };
+  }
+
+  fields.push(`updated_at = now()`);
+  values.push(id);
+
+  const result = await pool.query(
+    `UPDATE public.recorded_sessions SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+    values
+  );
+
+  return { success: true, session: result.rows[0] };
+}

@@ -117,7 +117,7 @@ export function StemDetailClient({
   const [reporting, setReporting] = useState(false);
   const [localVerified, setLocalVerified] = useState(stem.is_verified);
 
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || (user as any)?.role === 'admin';
   const isOwner = user?.id && user.id === stemData.user_id;
   const canEdit = isOwner || isAdmin;
 

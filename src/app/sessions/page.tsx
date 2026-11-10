@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { UploadSessionModal } from '@/components/UploadSessionModal';
+import { EditSessionModal } from '@/components/EditSessionModal';
 import { getRecordedSessions } from '@/app/actions/sessions';
 import { RecordedSessionListItem } from '@/types/sessions';
 import {
@@ -16,6 +17,7 @@ import {
   ArrowRight,
   ExternalLink,
   ShieldCheck,
+  Pencil,
 } from 'lucide-react';
 
 export default function RecordedSessionsPage() {
@@ -23,6 +25,7 @@ export default function RecordedSessionsPage() {
   const [isMember, setIsMember] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<RecordedSessionListItem | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadSessions = async () => {
@@ -220,15 +223,26 @@ export default function RecordedSessionsPage() {
                       ))}
                     </div>
 
-                    {!session.isLocked && (
-                      <Link
-                        href={`/sessions/${session.id}`}
-                        className="text-xs font-medium text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
-                      >
-                        <span>Watch</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isAdmin && (
+                        <button
+                          onClick={() => setEditingSession(session)}
+                          className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                          title="Edit session details"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {!session.isLocked && (
+                        <Link
+                          href={`/sessions/${session.id}`}
+                          className="text-xs font-medium text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                        >
+                          <span>Watch</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -240,6 +254,13 @@ export default function RecordedSessionsPage() {
       <UploadSessionModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
+        onSuccess={() => loadSessions()}
+      />
+
+      <EditSessionModal
+        isOpen={Boolean(editingSession)}
+        onClose={() => setEditingSession(null)}
+        session={editingSession}
         onSuccess={() => loadSessions()}
       />
     </div>

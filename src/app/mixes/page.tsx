@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Music2, Search, X, Plus, Calendar, HardDrive, User, Trash2, Loader2, Layers, Sparkles } from 'lucide-react';
+import { Music2, Search, X, Plus, Calendar, HardDrive, User, Trash2, Loader2, Layers, Sparkles, Pencil } from 'lucide-react';
 import { Mix } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { UploadMixModal } from '@/components/UploadMixModal';
+import { EditMixModal } from '@/components/EditMixModal';
 import { Header } from '@/components/Header';
 
 export default function MixesPage() {
@@ -16,6 +17,7 @@ export default function MixesPage() {
   const [reviewFilter, setReviewFilter] = useState<'all' | 'sunday'>('all');
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [editingMix, setEditingMix] = useState<Mix | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchMixes = async (q: string = '', sundayOnly: boolean = false) => {
@@ -246,18 +248,27 @@ export default function MixesPage() {
                       <span>{new Date(mix.created_at).toLocaleDateString()}</span>
 
                       {canDelete && (
-                        <button
-                          onClick={() => handleDeleteMix(mix.id, mix.title)}
-                          disabled={deletingId === mix.id}
-                          className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-neutral-800 transition-colors ml-1"
-                          title="Delete this mix"
-                        >
-                          {deletingId === mix.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1 ml-1">
+                          <button
+                            onClick={() => setEditingMix(mix)}
+                            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                            title="Edit mix details or reassign uploader"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMix(mix.id, mix.title)}
+                            disabled={deletingId === mix.id}
+                            className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-neutral-800 transition-colors"
+                            title="Delete this mix"
+                          >
+                            {deletingId === mix.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -279,6 +290,13 @@ export default function MixesPage() {
       <UploadMixModal
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}
+        onSuccess={() => fetchMixes(search, reviewFilter === 'sunday')}
+      />
+
+      <EditMixModal
+        isOpen={Boolean(editingMix)}
+        onClose={() => setEditingMix(null)}
+        mix={editingMix}
         onSuccess={() => fetchMixes(search, reviewFilter === 'sunday')}
       />
     </div>

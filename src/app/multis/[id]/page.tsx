@@ -21,12 +21,15 @@ import {
   FileCode,
   Sparkles,
   Lock,
+  Pencil,
 } from 'lucide-react';
 import { Multi, MultiTrack, Mix } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { canAccessProMultitracks } from '@/lib/auth/tiers';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { UploadMixModal } from '@/components/UploadMixModal';
+import { EditMultiModal } from '@/components/EditMultiModal';
+import { EditMixModal } from '@/components/EditMixModal';
 import { Header } from '@/components/Header';
 
 export default function MultiDetailPage() {
@@ -39,6 +42,8 @@ export default function MultiDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mixModalOpen, setMixModalOpen] = useState(false);
+  const [editMultiOpen, setEditMultiOpen] = useState(false);
+  const [editingMix, setEditingMix] = useState<Mix | null>(null);
   const [dawDropdownOpen, setDawDropdownOpen] = useState(false);
   const [deletingMulti, setDeletingMulti] = useState(false);
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
@@ -162,15 +167,25 @@ export default function MultiDetailPage() {
           </Link>
 
           {canManage && (
-            <button
-              onClick={handleDeleteMulti}
-              disabled={deletingMulti}
-              className="text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 border border-red-900/60 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
-              title="Delete this entire multi pack"
-            >
-              {deletingMulti ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-              <span>Delete Multi</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setEditMultiOpen(true)}
+                className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                title="Edit multi details or reassign uploader"
+              >
+                <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Edit Multi</span>
+              </button>
+              <button
+                onClick={handleDeleteMulti}
+                disabled={deletingMulti}
+                className="text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 border border-red-900/60 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                title="Delete this entire multi pack"
+              >
+                {deletingMulti ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <span>Delete Multi</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -472,6 +487,15 @@ export default function MultiDetailPage() {
                       <span className="text-neutral-300">{mix.uploader_name || 'Member'}</span>
                       <span>•</span>
                       <span>{new Date(mix.created_at).toLocaleDateString()}</span>
+                      {(isAdmin || (user && user.id === mix.owner_id)) && (
+                        <button
+                          onClick={() => setEditingMix(mix)}
+                          className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors ml-1"
+                          title="Edit mix details or reassign uploader"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -492,6 +516,20 @@ export default function MultiDetailPage() {
         isOpen={mixModalOpen}
         onClose={() => setMixModalOpen(false)}
         defaultMultiId={multi.id}
+        onSuccess={fetchMultiData}
+      />
+
+      <EditMultiModal
+        isOpen={editMultiOpen}
+        onClose={() => setEditMultiOpen(false)}
+        multi={multi}
+        onSuccess={fetchMultiData}
+      />
+
+      <EditMixModal
+        isOpen={Boolean(editingMix)}
+        onClose={() => setEditingMix(null)}
+        mix={editingMix}
         onSuccess={fetchMultiData}
       />
     </div>

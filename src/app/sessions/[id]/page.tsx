@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
+import { EditSessionModal } from '@/components/EditSessionModal';
 import { SecureVideoPlayer } from '@/components/SecureVideoPlayer';
 import { getSessionById } from '@/app/actions/sessions';
 import { RecordedSession } from '@/types/sessions';
@@ -18,6 +19,7 @@ import {
   ShieldAlert,
   Loader2,
   ShieldCheck,
+  Pencil,
 } from 'lucide-react';
 
 export default function SessionDetailPage() {
@@ -32,6 +34,8 @@ export default function SessionDetailPage() {
   const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
 
   useEffect(() => {
     if (!id) return;
@@ -176,9 +180,21 @@ export default function SessionDetailPage() {
                 </div>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                {session?.title}
-              </h1>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                  {session?.title}
+                </h1>
+                {isAdmin && (
+                  <button
+                    onClick={() => setIsEditOpen(true)}
+                    className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-xs"
+                    title="Edit session details"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                    <span>Edit Session</span>
+                  </button>
+                )}
+              </div>
 
               {session?.presenter && (
                 <div className="flex items-center gap-2 text-sm text-neutral-300">
@@ -209,6 +225,19 @@ export default function SessionDetailPage() {
           </div>
         ) : null}
       </main>
+
+      <EditSessionModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        session={session as any}
+        onSuccess={() => {
+          if (id) {
+            getSessionById(id).then(res => {
+              if (res.session) setSession(res.session);
+            });
+          }
+        }}
+      />
     </div>
   );
 }

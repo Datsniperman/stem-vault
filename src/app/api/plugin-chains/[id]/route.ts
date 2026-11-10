@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createDbServerClient } from '@/lib/db/server';
 import { getDbPool } from '@/lib/db/pool';
+import { isUserAdmin } from '@/lib/auth/admin';
 
 export async function GET(
   _request: NextRequest,
@@ -81,15 +82,25 @@ export async function PUT(
     }
 
     const chain = checkRes.rows[0];
+    const isAdmin =
+      chain.role === 'admin' ||
+      user.role === 'admin' ||
+      isUserAdmin({
+        email: user.email,
+        discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
+        username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+        role: user.role,
+        userMetadata: user.user_metadata,
+      });
+
     const isOwner = chain.owner_id === user.id;
-    const isAdmin = chain.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden: you cannot edit this chain.' }, { status: 403 });
     }
 
     const body = await request.json();
-    const { name, daw, description, items } = body;
+    const { name, daw, description, items, owner_id } = body;
 
     const client = await pool.connect();
     try {
@@ -100,9 +111,16 @@ export async function PUT(
          SET name = COALESCE($1, name),
              daw = COALESCE($2, daw),
              description = $3,
+             owner_id = CASE WHEN $4::text IS NOT NULL THEN $4 ELSE owner_id END,
              updated_at = now()
-         WHERE id = $4`,
-        [name?.trim(), daw?.trim(), description !== undefined ? description?.trim() : null, id]
+         WHERE id = $5`,
+        [
+          name?.trim(),
+          daw?.trim(),
+          description !== undefined ? description?.trim() : null,
+          isAdmin && owner_id ? owner_id : null,
+          id,
+        ]
       );
 
       if (Array.isArray(items)) {
@@ -170,14 +188,25 @@ export async function DELETE(
     }
 
     const chain = checkRes.rows[0];
+    const isAdmin =
+      chain.role === 'admin' ||
+      user.role === 'admin' ||
+      isUserAdmin({
+        email: user.email,
+        discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
+        username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+        role: user.role,
+        userMetadata: user.user_metadata,
+      });
+
     const isOwner = chain.owner_id === user.id;
-    const isAdmin = chain.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden: you cannot delete this chain.' }, { status: 403 });
     }
 
     await pool.query(`DELETE FROM public.plugin_chains WHERE id = $1`, [id]);
+
     return NextResponse.json({ success: true, message: 'Chain deleted successfully.' });
   } catch (err: any) {
     console.error('[plugin-chains/delete] Error:', err);

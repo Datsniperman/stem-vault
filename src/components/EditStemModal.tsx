@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle, Loader2, User as UserIcon } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { updateStem } from '@/app/actions/stems';
 import { Stem } from '@/types';
 import { useToast } from '@/context/ToastContext';
@@ -23,9 +24,15 @@ interface EditStemModalProps {
 }
 
 export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStemModalProps) {
+  const { user, profile } = useAuth();
+  const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
   const { addToast } = useToast();
   const [isPending, setIsPending] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [userId, setUserId] = useState('');
+  const [uploaderHandle, setUploaderHandle] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -42,7 +49,7 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
   });
 
   useEffect(() => {
-    if (stem) {
+    if (stem && isOpen) {
       setFormData({
         title: stem.title || '',
         artist: stem.artist || '',
@@ -56,9 +63,22 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
         description: stem.description || '',
         tags: (stem.tags || []).join(', '),
       });
+      setUserId(stem.user_id || '');
+      setUploaderHandle(stem.uploader_handle || '');
       setErrors({});
+
+      if (isAdmin) {
+        setLoadingUsers(true);
+        fetch('/api/admin/users')
+          .then(res => res.json())
+          .then(data => {
+            if (data.users) setUsers(data.users);
+          })
+          .catch(err => console.warn('Could not load users for reassignment:', err))
+          .finally(() => setLoadingUsers(false));
+      }
     }
-  }, [stem, isOpen]);
+  }, [stem, isOpen, isAdmin]);
 
   if (!isOpen || !stem) return null;
 
@@ -85,6 +105,10 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
       if (formData.track_count) body.append('track_count', formData.track_count);
       if (formData.description) body.append('description', formData.description);
       if (formData.tags) body.append('tags', formData.tags);
+      if (isAdmin) {
+        body.append('user_id', userId);
+        body.append('uploader_handle', uploaderHandle);
+      }
 
       const res = await updateStem(stem.id, body);
 
@@ -145,6 +169,54 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-3.5 flex-1 text-xs">
+          {isAdmin && (
+            <div className="p-3 bg-neutral-900 border border-neutral-800 rounded space-y-2">
+              <label className="flex items-center gap-1.5 text-[11px] font-mono uppercase text-neutral-300">
+                <UserIcon className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Uploader Reassignment (Admin Only)</span>
+              </label>
+              {loadingUsers ? (
+                <div className="flex items-center gap-2 text-xs text-neutral-400 py-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Loading members...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-neutral-400 mb-0.5">Select Member Account</label>
+                    <select
+                      value={userId}
+                      onChange={e => {
+                        const nextId = e.target.value;
+                        setUserId(nextId);
+                        const match = users.find(u => u.id === nextId);
+                        if (match) setUploaderHandle(match.displayName);
+                      }}
+                      className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-2.5 py-1.5 text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 cursor-pointer"
+                    >
+                      <option value="">(None / Anonymous)</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.displayName} ({u.role}{u.email ? ` · ${u.email}` : ''})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-neutral-400 mb-0.5">Uploader Display Handle</label>
+                    <input
+                      type="text"
+                      value={uploaderHandle}
+                      onChange={e => setUploaderHandle(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-2.5 py-1.5 text-neutral-200 text-xs focus:outline-none focus:border-neutral-500"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Song Title *" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Gratitude" error={errors?.title} />
             <Field label="Church / Artist *" name="artist" value={formData.artist} onChange={handleChange} placeholder="e.g. Elevation Worship" error={errors?.artist} />

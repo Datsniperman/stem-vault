@@ -5,6 +5,7 @@ import { FormState, Stem, Profile } from '@/types';
 import { createDbServerClient, createDbAdminClient } from '@/lib/db/server';
 import { sendReportEmail, sendBugReportEmail } from '@/lib/email';
 import { announceMultitrack, postMixToThread } from '@/lib/discord';
+import { isUserAdmin } from '@/lib/auth/admin';
 
 const ADMIN_EMAIL = 'connorwbrown07@gmail.com';
 const MAX_SUBMISSIONS_PER_DAY = 5;
@@ -259,7 +260,17 @@ export async function updateStem(
           .select('role')
           .eq('id', user.id)
           .single();
-        if (profile?.role === 'admin') {
+        if (
+          profile?.role === 'admin' ||
+          user.role === 'admin' ||
+          isUserAdmin({
+            email: user.email,
+            discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
+            username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+            role: user.role,
+            userMetadata: user.user_metadata,
+          })
+        ) {
           isAllowed = true;
           isAdmin = true;
         }
@@ -277,21 +288,38 @@ export async function updateStem(
     }
 
     // Perform update
+    const updatePayload: Record<string, any> = {
+      title,
+      artist,
+      bpm,
+      key: keyVal || null,
+      track_count: trackCount,
+      format,
+      host_platform: hostPlatform,
+      download_url: downloadUrl,
+      daw_template_url: dawTemplateUrl || null,
+      description: description || null,
+      tags,
+    };
+
+    if (isAdmin) {
+      const reassignedUserId = formData.get('user_id');
+      const reassignedHandle = formData.get('uploader_handle');
+      if (reassignedUserId !== null && reassignedUserId !== undefined) {
+        const uidStr = String(reassignedUserId).trim();
+        updatePayload.user_id = uidStr === '' ? null : uidStr;
+      }
+      if (reassignedHandle !== null && reassignedHandle !== undefined) {
+        const handleStr = sanitizeText(String(reassignedHandle), 50);
+        if (handleStr) {
+          updatePayload.uploader_handle = handleStr;
+        }
+      }
+    }
+
     const { data: updatedStem, error: updateErr } = await db
       .from('stems')
-      .update({
-        title,
-        artist,
-        bpm,
-        key: keyVal || null,
-        track_count: trackCount,
-        format,
-        host_platform: hostPlatform,
-        download_url: downloadUrl,
-        daw_template_url: dawTemplateUrl || null,
-        description: description || null,
-        tags,
-      })
+      .update(updatePayload)
       .eq('id', stemId)
       .select()
       .single();
