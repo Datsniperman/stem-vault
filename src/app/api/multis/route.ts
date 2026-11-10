@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     query += `
-      GROUP BY m.id, m.church, m.bpm, m.song_key, m.is_pro, m.discord_message_id, m.discord_thread_id, p.server_display_name, p.display_name, p.email, p.avatar_url
+      GROUP BY m.id, m.owner_id, m.title, m.church, m.bpm, m.song_key, m.description, m.is_pro, m.discord_message_id, m.discord_thread_id, m.created_at, m.updated_at, p.server_display_name, p.display_name, p.email, p.avatar_url
       ORDER BY m.created_at DESC
     `;
 
