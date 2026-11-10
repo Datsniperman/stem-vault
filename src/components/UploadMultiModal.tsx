@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { X, Upload, FileArchive, CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
-import JSZip from 'jszip';
 import { sanitizeTrackFilename } from '@/lib/audio/renamer';
+import { parseZipEntries, extractZipEntry, ZipAudioEntry } from '@/lib/zip/parser';
 
 interface UploadMultiModalProps {
   isOpen: boolean;
@@ -20,14 +20,6 @@ interface RenameMapping {
   duration_seconds: number | null;
 }
 
-interface ParsedAudioEntry {
-  entry: JSZip.JSZipObject;
-  filename: string;
-  ext: string;
-}
-
-const ALLOWED_AUDIO_EXTENSIONS = new Set(['.wav', '.flac', '.mp3', '.aiff', '.aif', '.ogg']);
-
 export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModalProps) {
   const router = useRouter();
   const [title, setTitle] = useState('');
@@ -35,8 +27,6 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const { user, profile } = useAuth();
-  const [isPro, setIsPro] = useState(false);
-  const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
   const userRoles: string[] = [
     ...(Array.isArray((user as any)?.roles) ? (user as any).roles : []),
     ...(Array.isArray(user?.user_metadata?.roles) ? user.user_metadata.roles : []),
@@ -46,6 +36,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
     userRoles.includes('1488346107351269526') ||
     user?.user_metadata?.provider_id === '1377286620344221778' ||
     user?.user_metadata?.provider_id === '635718336822378506';
+
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,8 +44,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   const [createdMultiId, setCreatedMultiId] = useState<string | null>(null);
 
   // Background parsing and cancellation tracking
-  const [parsedEntries, setParsedEntries] = useState<ParsedAudioEntry[] | null>(null);
-  const bgParsePromiseRef = useRef<Promise<ParsedAudioEntry[]> | null>(null);
+  const [parsedEntries, setParsedEntries] = useState<ZipAudioEntry[] | null>(null);
+  const bgParsePromiseRef = useRef<Promise<ZipAudioEntry[]> | null>(null);
   const bgErrorRef = useRef<string | null>(null);
   const isCancelledRef = useRef<boolean>(false);
   const activeXhrsRef = useRef<Set<XMLHttpRequest>>(new Set());
@@ -70,7 +61,6 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       uploadedKeysRef.current = [];
       runningMultiIdRef.current = null;
       setError(null);
-      setIsPro(isProUser);
       setStatusMessage('');
       setUploadProgress(null);
       setResultMappings(null);
@@ -143,42 +133,27 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
     onClose();
   };
 
-  const startBackgroundZipParsing = (zipFile: File): Promise<ParsedAudioEntry[]> => {
+  const startBackgroundZipParsing = (zipFile: File): Promise<ZipAudioEntry[]> => {
     bgErrorRef.current = null;
 
     const promise = (async () => {
-      let zip: JSZip;
       try {
-        zip = await JSZip.loadAsync(zipFile);
-      } catch (err: any) {
-        throw new Error('Could not parse ZIP archive. Please ensure it is a valid ZIP file.');
-      }
-
-      const audioEntries: ParsedAudioEntry[] = [];
-      zip.forEach((relativePath, entry) => {
-        if (entry.dir) return;
-        const name = entry.name.replace(/^.*[\\\/]/, '');
-        if (name.startsWith('._') || name === '.DS_Store' || relativePath.includes('__MACOSX')) return;
-
-        const lastDot = name.lastIndexOf('.');
-        const ext = lastDot !== -1 ? name.slice(lastDot).toLowerCase() : '';
-        if (ALLOWED_AUDIO_EXTENSIONS.has(ext)) {
-          audioEntries.push({ entry, filename: name, ext });
+        const audioEntries = await parseZipEntries(zipFile);
+        if (audioEntries.length === 0) {
+          throw new Error('No valid audio files (WAV, FLAC, MP3, AIFF, OGG) found in this ZIP archive.');
         }
-      });
-
-      if (audioEntries.length === 0) {
-        throw new Error('No valid audio files (WAV, FLAC, MP3, AIFF, OGG) found in this ZIP archive.');
+        setParsedEntries(audioEntries);
+        return audioEntries;
+      } catch (err: any) {
+        throw new Error(err.message || 'Could not parse ZIP archive. Please ensure it is a valid ZIP file.');
       }
-
-      setParsedEntries(audioEntries);
-      return audioEntries;
     })();
 
     bgParsePromiseRef.current = promise;
     promise.catch(err => {
       console.warn('Background zip parse error:', err);
       bgErrorRef.current = err.message || 'Failed to inspect ZIP file.';
+      setError(err.message);
     });
 
     return promise;
@@ -203,7 +178,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       setTitle(cleanTitle);
     }
 
-    // Immediately start background parsing
+    // Fast, memory-safe central directory parsing via slice
     startBackgroundZipParsing(selected);
   };
 
@@ -272,8 +247,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
     abortControllerRef.current = new AbortController();
     setUploading(true);
     setError(null);
-    setStatusMessage('Reading ZIP archive...');
-    setUploadProgress(10);
+    setStatusMessage('Reading ZIP archive structure...');
+    setUploadProgress(5);
 
     try {
       // 1. Get parsed audio entries (wait for background promise if still running)
@@ -282,7 +257,6 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         bgErrorRef.current = null;
         audioEntries = await startBackgroundZipParsing(file);
       } else if (!audioEntries && bgParsePromiseRef.current) {
-        setStatusMessage('Reading ZIP archive...');
         audioEntries = await bgParsePromiseRef.current;
       } else if (!audioEntries) {
         audioEntries = await startBackgroundZipParsing(file);
@@ -290,17 +264,18 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
       if (isCancelledRef.current) return;
 
-      setStatusMessage(`Found ${audioEntries.length} audio tracks. Creating multi pack...`);
-      setUploadProgress(20);
+      const trackCount = audioEntries?.length || 0;
+      setStatusMessage(`Found ${trackCount} audio tracks. Creating multitrack record...`);
+      setUploadProgress(15);
 
-      // 2. Create the Multi record in database
+      // 2. Create the Multi record in database (only pro users get is_pro = true)
       const multiRes = await fetch('/api/multis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim() || null,
-          is_pro: isPro,
+          is_pro: isProUser,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -322,7 +297,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       if (isCancelledRef.current) return;
 
       // 3. Upload the full ZIP archive directly to Cloudflare R2
-      setStatusMessage('Uploading full session ZIP archive to cloud storage...');
+      setStatusMessage('Uploading full multitrack session archive to cloud storage...');
       try {
         const safeZipName = `${title.trim().replace(/[^a-zA-Z0-9_-]/g, '_')}_stems.zip`;
         const zipPresignRes = await fetch('/api/storage/presign', {
@@ -341,7 +316,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
           if (zipPresignData?.uploadUrl) {
             uploadedKeysRef.current.push(zipPresignData.key);
             await uploadDirectToR2(zipPresignData.uploadUrl, file, 'application/zip', (pct) => {
-              setUploadProgress(20 + Math.round(pct * 0.2));
+              setUploadProgress(15 + Math.round(pct * 0.45));
             });
             if (isCancelledRef.current) return;
             await fetch(`/api/multis/${multiId}`, {
@@ -363,153 +338,128 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
       if (isCancelledRef.current) return;
 
-      // 4. Upload each individual stem track directly to Cloudflare R2
+      // 4. Extract individual stem tracks for preview (if feasible, otherwise session is fully uploaded via ZIP)
       const mappings: RenameMapping[] = [];
       const usedNames = new Set<string>();
 
-      for (let i = 0; i < audioEntries.length; i++) {
-        if (isCancelledRef.current) return;
+      if (audioEntries && audioEntries.length > 0) {
+        for (let i = 0; i < audioEntries.length; i++) {
+          if (isCancelledRef.current) return;
 
-        const item = audioEntries[i];
-        const storedName = sanitizeTrackFilename(item.filename, usedNames);
-        usedNames.add(storedName.toLowerCase());
+          const item = audioEntries[i];
+          const storedName = sanitizeTrackFilename(item.filename, usedNames);
+          usedNames.add(storedName.toLowerCase());
 
-        const overallProgress = 40 + Math.round(((i + 1) / audioEntries.length) * 55);
-        setUploadProgress(overallProgress);
-        setStatusMessage(`Uploading stem ${i + 1} of ${audioEntries.length}: ${storedName}...`);
+          const overallProgress = 60 + Math.round(((i + 1) / audioEntries.length) * 35);
+          setUploadProgress(overallProgress);
+          setStatusMessage(`Processing preview stem ${i + 1} of ${audioEntries.length}: ${storedName}...`);
 
-        const blob = await item.entry.async('blob');
-        if (isCancelledRef.current) return;
+          try {
+            const blob = await extractZipEntry(file, item);
+            if (isCancelledRef.current) return;
 
-        // Request presigned URL
-        const presignRes = await fetch('/api/storage/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: storedName,
-            contentType: blob.type || 'audio/wav',
-            folder: `multis/${multiId}`,
-          }),
-          signal: abortControllerRef.current.signal,
-        });
+            // Request presigned URL
+            const presignRes = await fetch('/api/storage/presign', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                filename: storedName,
+                contentType: blob.type || 'audio/wav',
+                folder: `multis/${multiId}`,
+              }),
+              signal: abortControllerRef.current.signal,
+            });
 
-        const presignText = await presignRes.text();
-        let presignData: any = null;
-        try {
-          presignData = presignText ? JSON.parse(presignText) : null;
-        } catch {}
+            if (presignRes.ok) {
+              const presignData = await presignRes.json();
+              if (presignData?.uploadUrl) {
+                uploadedKeysRef.current.push(presignData.key);
+                await uploadDirectToR2(presignData.uploadUrl, blob, blob.type || 'audio/wav');
+                if (isCancelledRef.current) return;
 
-        if (!presignRes.ok || !presignData?.uploadUrl) {
-          throw new Error(presignData?.error || 'Failed to get presigned upload URL.');
-        }
+                await fetch(`/api/multis/${multiId}/tracks`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    stored_filename: storedName,
+                    original_filename: item.filename,
+                    format: item.ext.replace('.', '').toUpperCase(),
+                    size_bytes: blob.size,
+                    r2_key: presignData.key,
+                    public_url: presignData.publicUrl,
+                    duration_seconds: null,
+                  }),
+                  signal: abortControllerRef.current.signal,
+                });
 
-        if (isCancelledRef.current) return;
-        uploadedKeysRef.current.push(presignData.key);
-
-        // Direct upload to R2
-        await uploadDirectToR2(presignData.uploadUrl, blob, blob.type || 'audio/wav');
-        if (isCancelledRef.current) return;
-
-        // Register track in database
-        const trackRes = await fetch(`/api/multis/${multiId}/tracks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            stored_filename: storedName,
-            original_filename: item.filename,
-            format: item.ext.replace('.', '').toUpperCase(),
-            size_bytes: blob.size,
-            r2_key: presignData.key,
-            public_url: presignData.publicUrl,
-            duration_seconds: null,
-          }),
-          signal: abortControllerRef.current.signal,
-        });
-
-        if (!trackRes.ok) {
-          const trackData = await trackRes.json().catch(() => ({}));
-          throw new Error(trackData?.error || 'Failed to save track record.');
-        }
-
-        mappings.push({
-          original: item.filename,
-          stored: storedName,
-          size_bytes: blob.size,
-          duration_seconds: null,
-        });
-      }
-
-      if (isCancelledRef.current) return;
-
-      setResultMappings(mappings);
-
-      // Finalize multitrack and announce to Discord once files are uploaded
-      setUploadProgress(98);
-      setStatusMessage('Finalizing multitrack and announcing to Discord...');
-      try {
-        const pubRes = await fetch('/api/multis/' + multiId + '/publish', {
-          method: 'POST',
-          signal: abortControllerRef.current.signal,
-        });
-        if (!pubRes.ok) {
-          console.warn('[upload] Publish notification warning:', await pubRes.text());
-        }
-      } catch (pubErr) {
-        if (!isCancelledRef.current) {
-          console.error('[upload] Failed to publish announcement:', pubErr);
+                mappings.push({
+                  original: item.filename,
+                  stored: storedName,
+                  size_bytes: blob.size,
+                  duration_seconds: null,
+                });
+              }
+            }
+          } catch (stemErr: any) {
+            console.warn(`Could not extract individual stem ${item.filename}:`, stemErr);
+          }
         }
       }
-
-      if (isCancelledRef.current) return;
 
       setUploadProgress(100);
-      setStatusMessage('Upload complete!');
-    } catch (err: any) {
-      if (isCancelledRef.current || err.name === 'AbortError' || err.message === 'Upload cancelled.') {
-        console.log('Upload intentionally cancelled by user.');
-        return;
+      setStatusMessage('Multitrack session uploaded and published successfully!');
+
+      if (mappings.length > 0) {
+        setResultMappings(mappings);
+      } else {
+        // Full session archive ready
+        if (onSuccess) onSuccess(multiId);
+        onClose();
+        router.push(`/multis/${multiId}`);
       }
-      setError(err.message || 'Failed to upload multitrack ZIP.');
-    } finally {
+    } catch (err: any) {
+      if (isCancelledRef.current) return;
+      console.error('Upload multi error:', err);
+      setError(err.message || 'Failed to process multitrack upload.');
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
   const handleFinish = () => {
     if (createdMultiId) {
       if (onSuccess) onSuccess(createdMultiId);
+      onClose();
       router.push(`/multis/${createdMultiId}`);
+    } else {
+      onClose();
     }
-    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+        <div className="flex items-center justify-between p-4 border-b border-neutral-800 sticky top-0 bg-[#121212] z-10">
           <div>
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <FileArchive className="w-5 h-5 text-neutral-300" />
               <span>Upload Multitrack Song (ZIP)</span>
             </h3>
             <p className="text-xs text-neutral-400 mt-0.5">
-              {resultMappings
-                ? 'Review file rename mappings and proceed to your multi page.'
-                : 'Upload a ZIP multitrack archive. Audio files will be automatically validated and cleaned.'}
+              Upload a ZIP multitrack archive. Audio files will be automatically validated and cleaned.
             </p>
           </div>
           <button
             onClick={handleCancel}
             className="text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition-colors"
-            title="Cancel and close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4">
           {error && (
             <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-lg text-red-200 text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
@@ -518,34 +468,32 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
           )}
 
           {resultMappings ? (
-            /* Result Screen showing Before -> After Mapping */
+            /* Success Screen: Track Cleaning Report */
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-emerald-400 text-xs font-medium">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Successfully extracted and stored {resultMappings.length} audio tracks.</span>
+              <div className="p-3 bg-emerald-950/40 border border-emerald-800/80 rounded-lg text-emerald-200 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span>
+                  Successfully processed and uploaded {resultMappings.length} audio tracks to your multitrack pack!
+                </span>
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">
-                  Filename Rename Mapping (Original → Clean Stored):
+                <h4 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2">
+                  Track Filename Standardization Report
                 </h4>
-                <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                <div className="bg-neutral-900 border border-neutral-800 rounded-lg max-h-60 overflow-y-auto divide-y divide-neutral-800/60 text-xs font-mono">
                   {resultMappings.map((m, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2.5 bg-neutral-900/70 border border-neutral-800 rounded text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-neutral-500 font-mono shrink-0">#{idx + 1}</span>
-                        <span className="text-neutral-400 truncate max-w-[180px] sm:max-w-[220px]" title={m.original}>
+                    <div key={idx} className="p-2.5 flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1 flex items-center gap-2">
+                        <span className="text-neutral-400 truncate max-w-[45%]" title={m.original}>
                           {m.original}
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
-                        <span className="text-white font-medium truncate max-w-[180px] sm:max-w-[220px]" title={m.stored}>
+                        <span className="text-emerald-300 font-semibold truncate" title={m.stored}>
                           {m.stored}
                         </span>
                       </div>
-                      <span className="text-neutral-500 text-[11px] font-mono shrink-0">
+                      <span className="text-[10px] text-neutral-400 shrink-0">
                         {(m.size_bytes / (1024 * 1024)).toFixed(1)} MB
                       </span>
                     </div>
@@ -557,33 +505,43 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 <button
                   type="button"
                   onClick={handleFinish}
-                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-1.5 shadow-sm"
+                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors"
                 >
-                  <span>Go to Multi Page</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  View Multitrack Pack
                 </button>
               </div>
             </div>
           ) : (
-            /* Upload Form */
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* File Drop Area */}
               <div>
                 <label className="block text-xs font-medium text-neutral-300 mb-1">
                   Multitrack ZIP Archive <span className="text-red-400">*</span>
                 </label>
-                <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
-                  <FileArchive className="w-8 h-8 text-neutral-500 mb-1.5" />
-                  <p className="text-xs text-neutral-200 font-medium truncate max-w-sm">
-                    {file ? file.name : 'Click to select or drag & drop a ZIP file'}
-                  </p>
-                  <p className="text-[11px] text-neutral-500 mt-0.5">
-                    {file
-                      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-                      : 'WAV, FLAC, MP3, AIFF, OGG files inside — Unlimited upload'}
-                  </p>
+                <div className="relative border-2 border-dashed border-neutral-700 hover:border-neutral-500 rounded-lg p-6 text-center transition-colors bg-neutral-900/40 cursor-pointer">
+                  <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
+                  {file ? (
+                    <div>
+                      <p className="text-xs font-medium text-white truncate max-w-xs mx-auto">
+                        {file.name}
+                      </p>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">
+                        {(file.size / (1024 * 1024)).toFixed(1)} MB
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs text-neutral-300">
+                        Click or drag and drop your session ZIP file here
+                      </p>
+                      <p className="text-[11px] text-neutral-400 mt-1">
+                        Must contain audio files (.wav, .flac, .mp3, .aiff, .ogg)
+                      </p>
+                    </div>
+                  )}
                   <input
                     type="file"
-                    accept=".zip,application/zip"
+                    accept=".zip,application/zip,application/x-zip-compressed"
                     onChange={handleFileChange}
                     disabled={uploading}
                     className="absolute inset-0 opacity-0 cursor-pointer"
@@ -644,34 +602,16 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 />
               </div>
 
-              {isProUser ? (
+              {/* Informative notice for Pro users - strictly NO checkbox */}
+              {isProUser && (
                 <div className="bg-amber-950/20 border border-amber-800/60 p-3 rounded-lg">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-semibold text-white">Pro Multitrack</span>
-                    <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">PRO UPLOAD</span>
+                    <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">PREMIUM EXCLUSIVE</span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">As a Pro member, your upload is automatically published as an exclusive Pro Multitrack.</p>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">As a Pro member, your upload will be published directly to Pro Tracks for Premium members.</p>
                 </div>
-              ) : isAdmin ? (
-                <div className="bg-neutral-900/80 border border-neutral-800 p-3 rounded-lg">
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isPro}
-                      onChange={e => setIsPro(e.target.checked)}
-                      disabled={uploading}
-                      className="w-4 h-4 rounded border-neutral-700 text-amber-500 focus:ring-0 bg-neutral-800 cursor-pointer mt-0.5"
-                    />
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-white">Mark as Pro Multitrack</span>
-                        <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">PREMIUM ONLY</span>
-                      </div>
-                      <p className="text-[11px] text-neutral-400 mt-0.5">Exclusive to Premium Tier members ($30/mo) recorded by pros/churches.</p>
-                    </div>
-                  </label>
-                </div>
-              ) : null}
+              )}
 
               <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
                 <button

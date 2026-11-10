@@ -140,7 +140,8 @@ export async function POST(request: NextRequest) {
       userMetadata: user.user_metadata,
       roles: user.user_metadata?.roles || (user as any).roles,
     });
-    const isProMulti = userIsPro || (isAdmin && (formData.get('is_pro') === 'true' || formData.get('is_pro') === '1'));
+    // Only people with the pro role '1488346107351269526' can upload to pro tracks
+    const isProMulti = userIsPro;
 
     const pool = getDbPool();
     const multiRes = await pool.query(
