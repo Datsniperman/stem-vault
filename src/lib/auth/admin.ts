@@ -1,14 +1,18 @@
 export const ADMIN_EMAILS = [
   'connorwbrown07@gmail.com',
   'connorwbrown2007@gmail.com',
+  'tyler@mixingvault.com',
+  'tylerkerpsack@gmail.com',
 ];
 
 export const ADMIN_DISCORD_IDS = [
   '725867136232456302', // Connor (datsniperman)
+  '1377286620344221778', // Tyler Kerpsack
 ];
 
 export const ADMIN_USERNAMES = [
   'datsniperman',
+  'tylerkerpsack',
 ];
 
 export const ADMIN_DISCORD_ROLE_IDS = [

@@ -35,18 +35,26 @@ export async function GET(_request: NextRequest) {
         server_display_name,
         avatar_url,
         role,
+        discord_id,
         created_at
        FROM public.profiles
        ORDER BY COALESCE(server_display_name, display_name, email) ASC`
     );
 
-    const users = result.rows.map(row => ({
-      id: row.id,
-      email: row.email,
-      displayName: row.server_display_name || row.display_name || row.email || 'Member',
-      avatarUrl: row.avatar_url,
-      role: row.role,
-    }));
+    const users = result.rows.map(row => {
+      const isTyler = row.discord_id === '1377286620344221778' || row.email?.toLowerCase().includes('tyler');
+      const isJared = row.email?.toLowerCase().includes('jared') || row.display_name?.toLowerCase().includes('jared');
+      const isPro = isTyler || isJared || row.role === 'admin';
+      return {
+        id: row.id,
+        email: row.email,
+        displayName: row.server_display_name || row.display_name || row.email || 'Member',
+        avatarUrl: row.avatar_url,
+        role: row.role,
+        discordId: row.discord_id,
+        isPro,
+      };
+    });
 
     return NextResponse.json({ users });
   } catch (err: any) {

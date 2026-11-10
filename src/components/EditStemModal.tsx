@@ -195,11 +195,20 @@ export function EditStemModal({ isOpen, stem, onClose, onStemUpdated }: EditStem
                       className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-2.5 py-1.5 text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 cursor-pointer"
                     >
                       <option value="">(None / Anonymous)</option>
-                      {users.map(u => (
-                        <option key={u.id} value={u.id}>
-                          {u.displayName} ({u.role}{u.email ? ` · ${u.email}` : ''})
-                        </option>
-                      ))}
+                      {users.map(u => {
+                        const badge = u.isPro && u.role === 'admin'
+                          ? 'Pro / Admin'
+                          : u.isPro
+                          ? 'Pro'
+                          : u.role === 'admin'
+                          ? 'Admin'
+                          : u.role || 'Member';
+                        return (
+                          <option key={u.id} value={u.id}>
+                            {u.displayName} ({badge}{u.email ? ` - ${u.email}` : ''})
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   <div>

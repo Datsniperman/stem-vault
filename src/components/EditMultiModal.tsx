@@ -18,6 +18,7 @@ interface AdminUser {
   displayName: string;
   avatarUrl: string | null;
   role: string;
+  isPro?: boolean;
 }
 
 export function EditMultiModal({
@@ -190,11 +191,20 @@ export function EditMultiModal({
                     disabled={saving || loadingUsers}
                     className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
                   >
-                    {users.map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.displayName} ({u.email || 'No email'}) [{u.role}]
-                      </option>
-                    ))}
+                    {users.map(u => {
+                      const badge = u.isPro && u.role === 'admin'
+                        ? 'Pro / Admin'
+                        : u.isPro
+                        ? 'Pro'
+                        : u.role === 'admin'
+                        ? 'Admin'
+                        : u.role || 'Member';
+                      return (
+                        <option key={u.id} value={u.id}>
+                          {u.displayName} ({badge}{u.email ? ` - ${u.email}` : ''})
+                        </option>
+                      );
+                    })}
                     {!users.some(u => u.id === ownerId) && (
                       <option value={ownerId}>
                         Current Owner ({multi.uploader_name || ownerId})
