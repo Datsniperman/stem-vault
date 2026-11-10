@@ -80,14 +80,16 @@ export async function POST(
     const tracks = tracksRes.rows;
     const trackCount = tracks.length;
 
-    if (trackCount === 0) {
+    if (trackCount === 0 && !multi.zip_r2_key) {
       return NextResponse.json(
-        { error: 'Cannot publish a multitrack with 0 uploaded tracks.' },
+        { error: 'Cannot publish a multitrack with no uploaded tracks or ZIP archive.' },
         { status: 400 }
       );
     }
 
-    const totalSizeBytes = tracks.reduce((acc: number, t: any) => acc + Number(t.size_bytes || 0), 0);
+    const totalSizeBytes = tracks.length > 0
+      ? tracks.reduce((acc: number, t: any) => acc + Number(t.size_bytes || 0), 0)
+      : Number(multi.zip_size_bytes || 0);
     const formattedSize = formatBytes(totalSizeBytes);
 
     // Build preview list of track names (up to first 8 tracks)
@@ -100,15 +102,22 @@ export async function POST(
       tracksPreview += ` +${trackNames.length - 8} more`;
     }
 
+    // Extract BPM and Key from description if available
+    const desc = multi.description || '';
+    const bpmMatch = desc.match(/(\d{2,3})\s*(?:bpm)?/i);
+    const bpm = bpmMatch ? parseInt(bpmMatch[1], 10) : null;
+    const keyMatch = desc.match(/\b([A-G][b#]?(?:m|maj|min|major|minor)?)\b/i);
+    const key = keyMatch ? keyMatch[1] : null;
+
     // 3. Announce to Discord multitracks channel (1565366257996275847)
     const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com').replace(/\/+$/, '');
     const disc = await announceMultitrack({
       stemId: multi.id,
       title: multi.title,
       artist: 'Community Worship',
-      bpm: null,
-      key: null,
-      trackCount,
+      bpm,
+      key,
+      trackCount: trackCount > 0 ? trackCount : null,
       totalSize: formattedSize,
       tracksPreview: tracksPreview || null,
       downloadUrl: `${siteUrl}/multis/${multi.id}`,

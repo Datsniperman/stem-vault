@@ -406,6 +406,17 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         }
       }
 
+      // Announce to Discord automatically
+      try {
+        setStatusMessage('Announcing multitrack to Discord...');
+        await fetch(`/api/multis/${multiId}/publish`, {
+          method: 'POST',
+          signal: abortControllerRef.current.signal,
+        });
+      } catch (pubErr) {
+        console.warn('Could not auto-publish to Discord:', pubErr);
+      }
+
       setUploadProgress(100);
       setStatusMessage('Multitrack session uploaded and published successfully!');
 

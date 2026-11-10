@@ -1,3 +1,5 @@
+import { inflate } from 'fflate';
+
 export interface ZipAudioEntry {
   filename: string;
   ext: string;
@@ -196,15 +198,35 @@ export async function extractZipEntry(file: File, entry: ZipAudioEntry): Promise
   }
 
   if (entry.compressionMethod === 8) {
+    // 1. Try native DecompressionStream if available
     if (typeof DecompressionStream !== 'undefined') {
       try {
         const stream = rawChunk.stream().pipeThrough(new DecompressionStream('deflate-raw'));
-        return await new Response(stream).blob();
+        const blob = await new Response(stream).blob();
+        if (blob && blob.size > 0) return blob;
       } catch (streamErr) {
-        console.warn('DecompressionStream error:', streamErr);
+        console.warn('Native DecompressionStream error, falling back to fflate:', streamErr);
       }
+    }
+
+    // 2. Fall back to fflate inflate
+    try {
+      const arrayBuffer = await rawChunk.arrayBuffer();
+      const uint8 = new Uint8Array(arrayBuffer);
+      return await new Promise<Blob>((resolve, reject) => {
+        inflate(uint8, (err, uncomp) => {
+          if (err) {
+            reject(new Error(`Failed to decompress entry ${entry.filename}: ${err.message}`));
+          } else {
+            resolve(new Blob([uncomp as Uint8Array<ArrayBuffer>], { type: 'audio/wav' }));
+          }
+        });
+      });
+    } catch (fflateErr: any) {
+      console.error(`Decompression failed for ${entry.filename}:`, fflateErr);
+      throw new Error(`Failed to decompress audio track "${entry.filename}": ${fflateErr?.message || 'Decompression error'}`);
     }
   }
 
-  return rawChunk;
+  throw new Error(`Unsupported compression method ${entry.compressionMethod} for "${entry.filename}".`);
 }
