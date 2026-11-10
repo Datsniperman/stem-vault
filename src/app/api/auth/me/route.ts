@@ -61,11 +61,23 @@ export async function GET(request: NextRequest) {
 
       if (result.rows.length > 0) {
         const row = result.rows[0];
+        const dbMeta = row.raw_user_meta_data || {};
+        const tokenMeta = payload.user_metadata || {};
+        const mergedRoles = [
+          ...(Array.isArray(dbMeta.roles) ? dbMeta.roles : []),
+          ...(Array.isArray(tokenMeta.roles) ? tokenMeta.roles : []),
+        ];
+        const uniqueRoles = Array.from(new Set(mergedRoles));
+
         user = {
           id: row.id,
           email: row.email,
           role: row.role || user.role,
-          user_metadata: row.raw_user_meta_data || user.user_metadata,
+          user_metadata: {
+            ...tokenMeta,
+            ...dbMeta,
+            roles: uniqueRoles,
+          },
           created_at: row.created_at,
           confirmed_at: row.confirmed_at,
         };
