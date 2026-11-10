@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
       roles: user.user_metadata?.roles || (user as any).roles,
     });
 
-    // Pro users in role '1488346107351269526' automatically end up as pro multitracks
-    const isProMulti = userIsPro || (isAdmin && Boolean(is_pro));
+    // Only people with the pro role '1488346107351269526' can upload to pro tracks
+    const isProMulti = userIsPro;
 
     // Auto-upsert profile for this user if missing so left joins always show the uploader's name
     let displayName =
