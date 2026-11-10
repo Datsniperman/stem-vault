@@ -40,7 +40,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const pool = getDbPool();
+    let isDbAdmin = false;
+    try {
+      const pRes = await pool.query(`SELECT role FROM public.profiles WHERE id = $1`, [user.id]);
+      if (pRes.rows[0]?.role === 'admin') isDbAdmin = true;
+    } catch {}
+
     const isAdmin =
+      isDbAdmin ||
       user.role === 'admin' ||
       isUserAdmin({
         email: user.email,
@@ -48,6 +56,7 @@ export async function PATCH(
         username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
         role: user.role,
         userMetadata: user.user_metadata,
+        roles: (user as any).roles || user.user_metadata?.roles,
       });
 
     if (!isAdmin) {
@@ -68,7 +77,6 @@ export async function PATCH(
       published,
     } = body;
 
-    const pool = getDbPool();
     const fields: string[] = [];
     const values: any[] = [];
     let idx = 1;

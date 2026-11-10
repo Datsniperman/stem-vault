@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Video, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Video, AlertCircle, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { RecordedSessionListItem } from '@/types/sessions';
 
 interface EditSessionModalProps {
@@ -9,6 +9,7 @@ interface EditSessionModalProps {
   onClose: () => void;
   session: RecordedSessionListItem | null;
   onSuccess?: () => void;
+  onDeleted?: () => void;
 }
 
 export function EditSessionModal({
@@ -16,6 +17,7 @@ export function EditSessionModal({
   onClose,
   session,
   onSuccess,
+  onDeleted,
 }: EditSessionModalProps) {
   const [title, setTitle] = useState('');
   const [presenter, setPresenter] = useState('');
@@ -25,6 +27,7 @@ export function EditSessionModal({
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [published, setPublished] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,6 +44,34 @@ export function EditSessionModal({
   }, [isOpen, session]);
 
   if (!isOpen || !session) return null;
+
+  const handleDelete = async () => {
+    if (!session) return;
+    if (!window.confirm(`Are you sure you want to permanently delete "${session.title}"?`)) {
+      return;
+    }
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/sessions/${session.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete session.');
+      }
+      if (onDeleted) {
+        onDeleted();
+      } else if (onSuccess) {
+        onSuccess();
+      }
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Error deleting session.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,15 +238,30 @@ export function EditSessionModal({
               </label>
             </div>
 
-            <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
+            <div className="pt-2 flex items-center justify-between border-t border-neutral-800">
               <button
                 type="button"
-                onClick={onClose}
-                disabled={saving}
-                className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors"
+                onClick={handleDelete}
+                disabled={saving || deleting}
+                className="px-3 py-1.5 rounded text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-neutral-800 hover:border-red-900/50 transition-colors flex items-center gap-1.5"
               >
-                Cancel
+                {deleting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                <span>{deleting ? 'Deleting...' : 'Delete Session'}</span>
               </button>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={saving || deleting}
+                  className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
               <button
                 type="submit"
                 disabled={saving || !title.trim()}
@@ -233,6 +279,7 @@ export function EditSessionModal({
                   </>
                 )}
               </button>
+              </div>
             </div>
           </form>
         </div>

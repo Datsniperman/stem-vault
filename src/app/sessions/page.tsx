@@ -18,6 +18,8 @@ import {
   ExternalLink,
   ShieldCheck,
   Pencil,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 
 export default function RecordedSessionsPage() {
@@ -27,6 +29,29 @@ export default function RecordedSessionsPage() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<RecordedSessionListItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete "${title}"?`)) {
+      return;
+    }
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to delete session.');
+      } else {
+        await loadSessions();
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete session.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const loadSessions = async () => {
     try {
@@ -225,13 +250,27 @@ export default function RecordedSessionsPage() {
 
                     <div className="flex items-center gap-2">
                       {isAdmin && (
-                        <button
-                          onClick={() => setEditingSession(session)}
-                          className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
-                          title="Edit session details"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setEditingSession(session)}
+                            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                            title="Edit session details"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(session.id, session.title)}
+                            disabled={deletingId === session.id}
+                            className="p-1 rounded text-neutral-400 hover:text-red-400 hover:bg-neutral-800 transition-colors"
+                            title="Delete session"
+                          >
+                            {deletingId === session.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       )}
                       {!session.isLocked && (
                         <Link
