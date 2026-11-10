@@ -32,6 +32,7 @@ export interface Stem {
   daw_template_url?: string | null;
   uploader_handle: string;
   description?: string | null;
+  is_pro?: boolean;
   cover_url?: string | null;
   tags?: string[] | null;
   is_verified: boolean;
@@ -103,6 +104,7 @@ export interface Multi {
   owner_id: string;
   title: string;
   description?: string | null;
+  is_pro?: boolean;
   zip_r2_key?: string | null;
   zip_public_url?: string | null;
   zip_size_bytes?: number | null;
@@ -145,6 +147,7 @@ export interface Mix {
   created_at: string;
   uploader_name?: string;
   multi_title?: string | null;
+  is_sunday_review?: boolean;
 }
 
 export interface PluginChainItem {
@@ -163,6 +166,7 @@ export interface PluginChain {
   name: string;
   daw: string;
   description?: string | null;
+  is_pro?: boolean;
   created_at: string;
   updated_at: string;
   owner_name?: string;

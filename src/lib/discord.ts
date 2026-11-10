@@ -88,7 +88,7 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
         content: 'New Multitracks:',
         embeds: [
           {
-            title: `🎛️ Multitrack Pack: ${payload.title}`,
+            title: `Multitrack Pack: ${payload.title}`,
             description: `Uploaded by: ${engineerMention}`,
             color: 0x00ffaa,
             fields,
@@ -107,7 +107,7 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
     // 2. Start a Public Feedback Thread under that announcement
     const thread = (await rest.post(Routes.threads(channelId, message.id), {
       body: {
-        name: `💬 Mix Feedback: ${payload.title}`,
+        name: `Mix Feedback: ${payload.title}`,
         auto_archive_duration: 10080, // 7 days
       },
     })) as { id: string };
@@ -115,7 +115,7 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
     // 3. Post a Welcome/Instruction message inside the new thread
     await rest.post(Routes.channelMessages(thread.id), {
       body: {
-        content: `Welcome to the feedback thread for **${payload.title}**! 🎧\nWhen members submit a mix on the site, their mix details and audio will drop here. Reply directly to any mix to share feedback and time-stamped tips!`,
+        content: `Welcome to the feedback thread for **${payload.title}**!\nWhen members submit a mix on the site, their mix details and audio will drop here. Reply directly to any mix to share feedback and time-stamped tips!`,
       },
     });
 
@@ -138,6 +138,7 @@ export interface MixAnnouncementPayload {
   discordId?: string | null;
   multiTitle?: string | null;
   threadId?: string | null;
+  isSundayReview?: boolean;
 }
 
 function prepareDiscordAudio(buffer: Buffer, originalExt: string, title: string): { data: Buffer; name: string } | null {
@@ -210,6 +211,13 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
     if (payload.multiTitle) {
       fields.push({ name: 'Multitrack Song', value: payload.multiTitle, inline: true });
     }
+    if (payload.isSundayReview) {
+      fields.push({
+        name: 'Review Status',
+        value: 'Sunday Mix Review (Requested personalized feedback from Jared & pros)',
+        inline: false,
+      });
+    }
 
     // 1. Fetch audio file from R2 so Discord can render its native waveform player
     const files: any[] = [];
@@ -232,18 +240,26 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
     }
 
     // 2. Post the Announcement Embed with the audio file attachment directly attached
+    const embedTitle = payload.isSundayReview
+      ? `[Sunday Mix Review] ${payload.title}`
+      : `Mix: ${payload.title}`;
+
     const message = (await rest.post(Routes.channelMessages(targetChannelOrThread), {
       body: {
-        content: 'New Mix',
+        content: payload.isSundayReview ? 'New Sunday Mix Review Submitted' : 'New Mix',
         embeds: [
           {
-            title: `🎧 ${payload.title}`,
+            title: embedTitle,
             description: payload.multiTitle
               ? `Song: **${payload.multiTitle}**\nUploaded by: ${engineerMention}`
               : `Uploaded by: ${engineerMention}`,
-            color: 0x5865f2,
+            color: payload.isSundayReview ? 0xa855f7 : 0x5865f2,
             fields,
-            footer: { text: 'The Mixing Vault • Listen and leave your critique!' },
+            footer: {
+              text: payload.isSundayReview
+                ? 'The Mixing Vault • Sunday Mix Review Queue'
+                : 'The Mixing Vault • Listen and leave your critique!',
+            },
           },
         ],
         components: [
@@ -291,7 +307,7 @@ export async function postMixToThread(
   try {
     const post = (await rest.post(Routes.channelMessages(threadId), {
       body: {
-        content: `🚨 **New Mix Submitted by ${engineerMention}!**`,
+        content: `**New Mix Submitted by ${engineerMention}!**`,
         embeds: [
           {
             title: `Mix: ${mix.songName}`,

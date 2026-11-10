@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
 import { createDbServerClient } from '@/lib/db/server';
+import { isUserAdmin } from '@/lib/auth/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('q') || '';
+    const proOnly = searchParams.get('pro') === 'true';
 
     const pool = getDbPool();
     let query = `
@@ -16,6 +18,7 @@ export async function GET(request: NextRequest) {
         m.owner_id,
         m.title,
         m.description,
+        m.is_pro,
         m.created_at,
         m.updated_at,
         COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
@@ -27,14 +30,22 @@ export async function GET(request: NextRequest) {
       LEFT JOIN public.multi_tracks mt ON m.id = mt.multi_id
     `;
 
+    const conditions: string[] = [];
     const params: any[] = [];
     if (search.trim()) {
       params.push(`%${search.trim()}%`);
-      query += ` WHERE m.title ILIKE $1 `;
+      conditions.push(`m.title ILIKE $${params.length}`);
+    }
+    if (proOnly) {
+      conditions.push(`m.is_pro = true`);
+    }
+
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(' AND ')} `;
     }
 
     query += `
-      GROUP BY m.id, p.server_display_name, p.display_name, p.email, p.avatar_url
+      GROUP BY m.id, m.is_pro, p.server_display_name, p.display_name, p.email, p.avatar_url
       ORDER BY m.created_at DESC
     `;
 
@@ -62,13 +73,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description } = body;
+    const { title, description, is_pro } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Multi title is required.' }, { status: 400 });
     }
 
     const pool = getDbPool();
+
+    // Check admin status for is_pro flag
+    const isAdmin = isUserAdmin({
+      email: user.email,
+      discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
+      username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+      role: user.role,
+      userMetadata: user.user_metadata,
+    });
+
+    const isProMulti = isAdmin && Boolean(is_pro);
 
     // Auto-upsert profile for this user if missing so left joins always show the uploader's name
     let displayName =
@@ -104,15 +126,15 @@ export async function POST(request: NextRequest) {
         displayName,
         avatarUrl,
         discordId,
-        user.role === 'admin' ? 'admin' : 'user',
+        isAdmin ? 'admin' : (user.role === 'admin' ? 'admin' : 'user'),
       ]
     ).catch(e => console.warn('Could not auto-upsert profile in multis POST:', e.message));
 
     const result = await pool.query(
-      `INSERT INTO public.multis (owner_id, title, description, created_at, updated_at)
-       VALUES ($1, $2, $3, now(), now())
+      `INSERT INTO public.multis (owner_id, title, description, is_pro, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, now(), now())
        RETURNING *`,
-      [user.id, title.trim(), description ? description.trim() : null]
+      [user.id, title.trim(), description ? description.trim() : null, isProMulti]
     );
 
     const createdMulti = result.rows[0];

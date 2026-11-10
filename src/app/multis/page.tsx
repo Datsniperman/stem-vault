@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Layers, Search, Plus, Calendar, HardDrive, Music, User as UserIcon, X } from 'lucide-react';
+import { Layers, Search, Plus, Calendar, HardDrive, Music, User as UserIcon, X, Sparkles } from 'lucide-react';
 import { Multi } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { UploadMultiModal } from '@/components/UploadMultiModal';
@@ -12,13 +12,17 @@ export default function MultisPage() {
   const { user } = useAuth();
   const [multis, setMultis] = useState<Multi[]>([]);
   const [search, setSearch] = useState('');
+  const [proFilter, setProFilter] = useState<'all' | 'pro'>('all');
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  const fetchMultis = async (query: string = '') => {
+  const fetchMultis = async (query: string = '', proOnly: boolean = false) => {
     try {
       setLoading(true);
-      const url = query ? `/api/multis?q=${encodeURIComponent(query)}` : '/api/multis';
+      const params = new URLSearchParams();
+      if (query.trim()) params.set('q', query.trim());
+      if (proOnly) params.set('pro', 'true');
+      const url = params.toString() ? `/api/multis?${params.toString()}` : '/api/multis';
       const res = await fetch(url);
       const data = await res.json();
       setMultis(data.multis || []);
@@ -30,8 +34,8 @@ export default function MultisPage() {
   };
 
   useEffect(() => {
-    fetchMultis(search);
-  }, [search]);
+    fetchMultis(search, proFilter === 'pro');
+  }, [search, proFilter]);
 
   const formatSize = (bytes?: number) => {
     if (!bytes) return '0 MB';
@@ -55,7 +59,7 @@ export default function MultisPage() {
               <span>Multitrack Song Archive</span>
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl">
-              Download clean stem packs or preview individual isolated tracks directly in your browser. Upload full multitrack ZIP archives without size restrictions.
+              Download clean stem packs or preview individual isolated tracks directly in your browser. Plus members have access to the full community vault; Premium members unlock Pro Multitracks recorded by industry pros.
             </p>
           </div>
 
@@ -79,31 +83,64 @@ export default function MultisPage() {
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-        {/* Full-width Search Bar across top of the multis list */}
-        <div className="mb-6 space-y-2">
-          <div className="relative w-full">
-            <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by song name..."
-              className="w-full bg-[#121212] border border-neutral-800 hover:border-neutral-700 rounded-lg pl-10 pr-10 py-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors shadow-xs"
-            />
-            {search && (
+        {/* Search Bar & Tier Filter */}
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search by song name..."
+                className="w-full bg-[#121212] border border-neutral-800 hover:border-neutral-700 rounded-lg pl-10 pr-10 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors shadow-xs"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 bg-neutral-900 p-1 rounded-lg border border-neutral-800 shrink-0">
               <button
-                onClick={() => setSearch('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
-                aria-label="Clear search"
+                onClick={() => setProFilter('all')}
+                className={`text-xs px-3 py-1.5 rounded font-medium transition-colors ${
+                  proFilter === 'all'
+                    ? 'bg-neutral-800 text-white shadow-xs'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
               >
-                <X className="w-4 h-4" />
+                All Multitracks
               </button>
-            )}
+              <button
+                onClick={() => setProFilter('pro')}
+                className={`text-xs px-3 py-1.5 rounded font-medium transition-colors flex items-center gap-1.5 ${
+                  proFilter === 'pro'
+                    ? 'bg-amber-950/60 text-amber-300 border border-amber-600/40 shadow-xs'
+                    : 'text-neutral-400 hover:text-amber-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Pro Only (Premium)</span>
+              </button>
+            </div>
           </div>
+
           <div className="flex items-center justify-between text-xs text-neutral-400 font-mono">
             <span>
               {multis.length} {multis.length === 1 ? 'song pack found' : 'song packs found'}
             </span>
+            {proFilter === 'pro' && (
+              <span className="text-amber-400/90 text-[11px]">
+                Showing exclusive Pro Multitracks recorded by industry engineers & churches
+              </span>
+            )}
           </div>
         </div>
 
@@ -119,9 +156,13 @@ export default function MultisPage() {
             <Layers className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
             <h3 className="text-sm font-semibold text-neutral-300">No Multitracks Found</h3>
             <p className="text-xs text-neutral-500 mt-1 max-w-md mx-auto">
-              {search ? `Could not find any multitracks matching "${search}".` : 'Be the first to upload a multitrack stem pack ZIP archive!'}
+              {search
+                ? `Could not find any multitracks matching "${search}".`
+                : proFilter === 'pro'
+                ? 'No Pro Multitracks published yet. Check back soon for sessions recorded by pros.'
+                : 'Be the first to upload a multitrack stem pack ZIP archive!'}
             </p>
-            {user && (
+            {user && proFilter !== 'pro' && (
               <button
                 onClick={() => setUploadOpen(true)}
                 className="mt-4 bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-3.5 py-1.5 rounded transition-colors inline-flex items-center gap-1.5"
@@ -144,10 +185,17 @@ export default function MultisPage() {
                     <h3 className="text-sm font-semibold text-white group-hover:text-neutral-200 transition-colors line-clamp-1">
                       {m.title}
                     </h3>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 shrink-0 flex items-center gap-1">
-                      <Music className="w-3 h-3 text-neutral-400" />
-                      <span>{m.track_count || 0} stems</span>
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {m.is_pro && (
+                        <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-amber-950/40 text-amber-300 border border-amber-600/40">
+                          PRO MULTI
+                        </span>
+                      )}
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 shrink-0 flex items-center gap-1">
+                        <Music className="w-3 h-3 text-neutral-400" />
+                        <span>{m.track_count || 0} stems</span>
+                      </span>
+                    </div>
                   </div>
 
                   {m.description && (
@@ -182,7 +230,7 @@ export default function MultisPage() {
       <UploadMultiModal
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        onSuccess={() => fetchMultis(search)}
+        onSuccess={() => fetchMultis(search, proFilter === 'pro')}
       />
     </div>
   );

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
 import { uploadBlob } from '@/lib/storage';
+import { createDbServerClient } from '@/lib/db/server';
+import { canAccessProMultitracks } from '@/lib/auth/tiers';
 import JSZip from 'jszip';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +16,7 @@ export async function GET(
     const pool = getDbPool();
 
     const multiRes = await pool.query(
-      `SELECT id, title, zip_public_url, zip_r2_key, zip_size_bytes, zip_last_downloaded_at, zip_status
+      `SELECT id, title, is_pro, zip_public_url, zip_r2_key, zip_size_bytes, zip_last_downloaded_at, zip_status
        FROM public.multis
        WHERE id = $1`,
       [id]
@@ -25,6 +27,24 @@ export async function GET(
     }
 
     const multi = multiRes.rows[0];
+
+    // Gating check for Pro Multitracks
+    if (multi.is_pro) {
+      const db = await createDbServerClient();
+      const { data: { user } } = await db.auth.getUser();
+
+      if (!user || !canAccessProMultitracks(user)) {
+        return NextResponse.json(
+          {
+            error: 'Pro Multitracks are exclusive to Premium Tier members.',
+            requiredTier: 'PREMIUM',
+            upgradeUrl: '/membership',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const safeTitle = (multi.title || 'multitrack').replace(/[^a-zA-Z0-9_-]/g, '_');
 
     // 1. If full pre-compressed ZIP archive is cached in Cloudflare R2 and not marked expired:

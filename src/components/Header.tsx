@@ -4,7 +4,7 @@ import { isUserAdmin } from '@/lib/auth/admin';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, LogOut, User, Shield, Settings, Plus, Music2, Layers, Sliders, FileArchive, Video } from 'lucide-react';
+import { ChevronDown, LogOut, User, Shield, Settings, Plus, Music2, Layers, Sliders, FileArchive, Video, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
@@ -140,6 +140,13 @@ export function Header({ onStemAdded }: HeaderProps) {
                 <FileArchive className="w-3.5 h-3.5 text-neutral-400" />
                 <span>DAW Converter</span>
               </Link>
+              <Link
+                href="/membership"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Membership</span>
+              </Link>
             </nav>
           </div>
 
@@ -214,6 +221,12 @@ export function Header({ onStemAdded }: HeaderProps) {
                           icon={<User className="w-3.5 h-3.5 text-neutral-400" />}
                           label="My Uploads"
                           onClick={handleMySubmissionsClick}
+                        />
+
+                        <DropdownItem
+                          icon={<Sparkles className="w-3.5 h-3.5 text-amber-400" />}
+                          label="Membership Tiers"
+                          onClick={() => { setDropdownOpen(false); router.push('/membership'); }}
                         />
 
                         {(profile?.role === 'admin' || isAdminUser) && (

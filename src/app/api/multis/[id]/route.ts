@@ -18,6 +18,7 @@ export async function GET(
         m.owner_id,
         m.title,
         m.description,
+        m.is_pro,
         m.zip_r2_key,
         m.zip_public_url,
         m.zip_size_bytes,
@@ -70,6 +71,7 @@ export async function GET(
         mx.r2_key,
         mx.public_url,
         mx.duration_seconds,
+        mx.is_sunday_review,
         mx.created_at,
         COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
         p.avatar_url
@@ -138,7 +140,8 @@ export async function PATCH(
     }
 
     const item = checkRes.rows[0];
-    if (item.owner_id !== user.id && item.role !== 'admin') {
+    const isAdmin = item.role === 'admin' || user.role === 'admin';
+    if (item.owner_id !== user.id && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -146,6 +149,7 @@ export async function PATCH(
     const {
       title,
       description,
+      is_pro,
       zip_r2_key,
       zip_public_url,
       zip_size_bytes,
@@ -164,6 +168,10 @@ export async function PATCH(
     if (description !== undefined) {
       fields.push(`description = $${idx++}`);
       values.push(description ? description.trim() : null);
+    }
+    if (is_pro !== undefined && isAdmin) {
+      fields.push(`is_pro = $${idx++}`);
+      values.push(Boolean(is_pro));
     }
     if (zip_r2_key !== undefined) {
       fields.push(`zip_r2_key = $${idx++}`);

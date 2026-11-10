@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
+import { createDbServerClient } from '@/lib/db/server';
+import { canAccessProMultitracks } from '@/lib/auth/tiers';
 import {
   generateReaperProject,
   generateAbletonProject,
@@ -22,7 +24,7 @@ export async function GET(
 
     // 1. Fetch Multi
     const multiRes = await pool.query(
-      `SELECT id, title FROM public.multis WHERE id = $1`,
+      `SELECT id, title, is_pro FROM public.multis WHERE id = $1`,
       [id]
     );
 
@@ -31,6 +33,24 @@ export async function GET(
     }
 
     const multi = multiRes.rows[0];
+
+    // Gating check for Pro Multitracks
+    if (multi.is_pro) {
+      const db = await createDbServerClient();
+      const { data: { user } } = await db.auth.getUser();
+
+      if (!user || !canAccessProMultitracks(user)) {
+        return NextResponse.json(
+          {
+            error: 'DAW templates for Pro Multitracks are exclusive to Premium Tier members.',
+            requiredTier: 'PREMIUM',
+            upgradeUrl: '/membership',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const safeTitle = (multi.title || 'multitrack').replace(/[^a-zA-Z0-9_-]/g, '_');
 
     // 2. Fetch Tracks
