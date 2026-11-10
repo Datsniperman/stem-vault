@@ -3,9 +3,11 @@ import { isUserAdmin } from './admin';
 export type MembershipTier = 'FREE' | 'PLUS' | 'PREMIUM';
 
 export const PLUS_ROLE_ID = (process.env.DISCORD_PLUS_ROLE_ID || process.env.DISCORD_REQUIRED_ROLE_ID || '1569410882822475837').trim();
-export const PLUS_ROLE_IDS = ['1569410882822475837', '1488271670119633047'];
+export const PLUS_ROLE_IDS = [PLUS_ROLE_ID, '1569410882822475837'];
 export const PREMIUM_ROLE_ID = (process.env.DISCORD_PREMIUM_ROLE_ID || '1488346107351269526').trim();
+export const PREMIUM_ROLE_IDS = [PREMIUM_ROLE_ID, '1488346107351269526', '1488271670119633047'];
 export const PRO_ROLE_ID = '1488346107351269526';
+export const PRO_ROLE_IDS = [PRO_ROLE_ID, '1488346107351269526', '1488271670119633047'];
 export const STAFF_ADMIN_ROLE_ID = (process.env.DISCORD_ADMIN_ROLE_ID || '1553858763474214912').trim();
 
 /**
@@ -38,7 +40,13 @@ export function hasMemberAccess(user: any): boolean {
 
   if (isAdmin) return true;
 
-  if (PLUS_ROLE_IDS.some(id => roles.includes(id)) || roles.includes(PREMIUM_ROLE_ID)) {
+  if (
+    PREMIUM_ROLE_IDS.some(id => roles.includes(id)) ||
+    PLUS_ROLE_IDS.some(id => roles.includes(id)) ||
+    roles.includes(PREMIUM_ROLE_ID) ||
+    roles.includes(PRO_ROLE_ID) ||
+    roles.includes(PLUS_ROLE_ID)
+  ) {
     return true;
   }
 
@@ -79,11 +87,23 @@ export function getMembershipTier(user: any): MembershipTier {
 
   if (isAdmin) return 'PREMIUM';
 
-  if (roles.includes(PREMIUM_ROLE_ID) || roles.includes(PRO_ROLE_ID)) {
+  if (
+    PREMIUM_ROLE_IDS.some(id => roles.includes(id)) ||
+    PRO_ROLE_IDS.some(id => roles.includes(id)) ||
+    roles.includes(PREMIUM_ROLE_ID) ||
+    roles.includes(PRO_ROLE_ID) ||
+    roles.includes('1488271670119633047') ||
+    roles.includes('1488346107351269526')
+  ) {
     return 'PREMIUM';
   }
 
-  if (PLUS_ROLE_IDS.some(id => roles.includes(id)) || user.has_membership || user.user_metadata?.has_membership) {
+  if (
+    PLUS_ROLE_IDS.some(id => roles.includes(id)) ||
+    roles.includes(PLUS_ROLE_ID) ||
+    user.has_membership ||
+    user.user_metadata?.has_membership
+  ) {
     return 'PLUS';
   }
 
@@ -94,18 +114,33 @@ export function getMembershipTier(user: any): MembershipTier {
  * Check whether a user can access Pro Multitracks (Premium Tier and Admin only).
  */
 export function canAccessProMultitracks(user: any): boolean {
-  return getMembershipTier(user) === 'PREMIUM';
+  if (!user) return false;
+  if (getMembershipTier(user) === 'PREMIUM') return true;
+
+  const roles: string[] = [
+    ...(Array.isArray(user.roles) ? user.roles : []),
+    ...(Array.isArray(user.user_metadata?.roles) ? user.user_metadata.roles : []),
+    ...(Array.isArray(user.user_metadata?.custom_claims?.roles) ? user.user_metadata.custom_claims.roles : []),
+  ];
+
+  return (
+    PREMIUM_ROLE_IDS.some(id => roles.includes(id)) ||
+    PRO_ROLE_IDS.some(id => roles.includes(id)) ||
+    roles.includes('1488271670119633047') ||
+    roles.includes('1488346107351269526') ||
+    roles.includes(STAFF_ADMIN_ROLE_ID)
+  );
 }
 
 /**
  * Check whether a user can submit for Sunday Mix Review (Premium Tier and Admin only).
  */
 export function canSubmitSundayReview(user: any): boolean {
-  return getMembershipTier(user) === 'PREMIUM';
+  return canAccessProMultitracks(user);
 }
 
 /**
- * Check whether an uploader is a pro user with Discord role '1488346107351269526'
+ * Check whether an uploader is a pro user with Discord role '1488346107351269526' or '1488271670119633047'
  * (uploads automatically become Pro Multitracks).
  */
 export async function isProUserUploader(user: any): Promise<boolean> {
@@ -117,7 +152,14 @@ export async function isProUserUploader(user: any): Promise<boolean> {
     ...(Array.isArray(user.user_metadata?.custom_claims?.roles) ? user.user_metadata.custom_claims.roles : []),
   ];
 
-  if (roles.includes(PRO_ROLE_ID) || roles.includes(PREMIUM_ROLE_ID)) {
+  if (
+    PREMIUM_ROLE_IDS.some(id => roles.includes(id)) ||
+    PRO_ROLE_IDS.some(id => roles.includes(id)) ||
+    roles.includes(PRO_ROLE_ID) ||
+    roles.includes(PREMIUM_ROLE_ID) ||
+    roles.includes('1488271670119633047') ||
+    roles.includes('1488346107351269526')
+  ) {
     return true;
   }
 
@@ -144,7 +186,14 @@ export async function isProUserUploader(user: any): Promise<boolean> {
       if (res.ok) {
         const memberData = await res.json();
         const liveRoles: string[] = Array.isArray(memberData.roles) ? memberData.roles : [];
-        if (liveRoles.includes(PRO_ROLE_ID) || liveRoles.includes(PREMIUM_ROLE_ID)) {
+        if (
+          PREMIUM_ROLE_IDS.some(id => liveRoles.includes(id)) ||
+          PRO_ROLE_IDS.some(id => liveRoles.includes(id)) ||
+          liveRoles.includes(PRO_ROLE_ID) ||
+          liveRoles.includes(PREMIUM_ROLE_ID) ||
+          liveRoles.includes('1488271670119633047') ||
+          liveRoles.includes('1488346107351269526')
+        ) {
           return true;
         }
       }

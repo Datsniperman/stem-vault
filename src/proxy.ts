@@ -14,10 +14,11 @@ const DISCORD_GUILD_ID =
 
 const REQUIRED_MEMBERSHIP_ROLE_ID =
   (process.env.DISCORD_REQUIRED_ROLE_ID || '1569410882822475837').trim();
-const PLUS_ROLE_IDS = [REQUIRED_MEMBERSHIP_ROLE_ID, '1569410882822475837', '1488271670119633047'];
+const PLUS_ROLE_IDS = [REQUIRED_MEMBERSHIP_ROLE_ID, '1569410882822475837'];
 
 const PRO_MEMBER_ROLE_ID =
   (process.env.DISCORD_PREMIUM_ROLE_ID || '1488346107351269526').trim();
+const PREMIUM_ROLE_IDS = [PRO_MEMBER_ROLE_ID, '1488346107351269526', '1488271670119633047'];
 
 const ADMIN_ROLE_ID =
   (process.env.DISCORD_ADMIN_ROLE_ID || '1553858763474214912').trim();
@@ -73,7 +74,13 @@ async function verifyLiveDiscordRole(discordId: string): Promise<boolean> {
 
     const data = await res.json();
     const roles: string[] = Array.isArray(data.roles) ? data.roles : [];
-    const hasRole = PLUS_ROLE_IDS.some(id => roles.includes(id)) || roles.includes(PRO_MEMBER_ROLE_ID) || roles.includes(ADMIN_ROLE_ID);
+    const hasRole =
+      PLUS_ROLE_IDS.some(id => roles.includes(id)) ||
+      PREMIUM_ROLE_IDS.some(id => roles.includes(id)) ||
+      roles.includes(PRO_MEMBER_ROLE_ID) ||
+      roles.includes('1488271670119633047') ||
+      roles.includes('1488346107351269526') ||
+      roles.includes(ADMIN_ROLE_ID);
 
     roleCache.set(discordId, { hasRole, checkedAt: now });
     return hasRole;

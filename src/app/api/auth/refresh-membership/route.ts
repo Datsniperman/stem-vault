@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyJwt, createUserToken, signJwt } from '@/lib/db/jwt';
+import { verifyJwt, createUserToken } from '@/lib/db/jwt';
 import { invalidateDiscordRoleCache } from '@/proxy';
 import { isUserAdmin } from '@/lib/auth/admin';
 import { getDbPool } from '@/lib/db/pool';
@@ -11,9 +11,14 @@ const DISCORD_GUILD_ID =
   (process.env.DISCORD_GUILD_ID || '').trim().replace(/^["']|["']$/g, '') ||
   '1488266305743360252';
 
+const STAFF_ADMIN_ROLE_ID =
+  (process.env.DISCORD_ADMIN_ROLE_ID || '1553858763474214912').trim();
+
 const REQUIRED_MEMBERSHIP_ROLE_ID =
   (process.env.DISCORD_REQUIRED_ROLE_ID || '1569410882822475837').trim();
-const PLUS_ROLE_IDS = [REQUIRED_MEMBERSHIP_ROLE_ID, '1569410882822475837', '1488271670119633047'];
+
+const PLUS_ROLE_IDS = [REQUIRED_MEMBERSHIP_ROLE_ID, '1569410882822475837'];
+const PREMIUM_ROLE_IDS = ['1488346107351269526', '1488271670119633047'];
 
 export async function POST(request: NextRequest) {
   const sessionToken =
@@ -29,11 +34,44 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: 'Invalid session' }, { status: 401 });
   }
 
+  const pool = getDbPool();
   const userMetadata = payload.user_metadata || {};
-  const discordId =
+
+  let discordId =
     payload.discord_id ||
     userMetadata.discord_id ||
-    userMetadata.provider_id;
+    userMetadata.provider_id ||
+    (payload.identities && payload.identities[0]?.id);
+
+  // Fallback 1: Query public.profiles
+  if (!discordId || String(discordId).length < 15) {
+    try {
+      const profRes = await pool.query(
+        'SELECT discord_id FROM public.profiles WHERE id = $1 LIMIT 1',
+        [payload.sub]
+      );
+      if (profRes.rows[0]?.discord_id) {
+        discordId = profRes.rows[0].discord_id;
+      }
+    } catch (e: any) {
+      console.warn('[refresh-membership] Failed to query profiles for discord_id:', e?.message);
+    }
+  }
+
+  // Fallback 2: Query auth.identities
+  if (!discordId || String(discordId).length < 15) {
+    try {
+      const idRes = await pool.query(
+        "SELECT provider_id FROM auth.identities WHERE user_id = $1 AND provider = 'discord' LIMIT 1",
+        [payload.sub]
+      );
+      if (idRes.rows[0]?.provider_id) {
+        discordId = idRes.rows[0].provider_id;
+      }
+    } catch (e: any) {
+      console.warn('[refresh-membership] Failed to query identities for discord_id:', e?.message);
+    }
+  }
 
   const isAdmin = isUserAdmin({
     email: payload.email,
@@ -43,11 +81,15 @@ export async function POST(request: NextRequest) {
     userMetadata,
   });
 
-  if (isAdmin) {
-    return NextResponse.json({ success: true, hasMembership: true });
-  }
-
   if (!discordId) {
+    if (isAdmin) {
+      return NextResponse.json({
+        success: true,
+        hasMembership: true,
+        tier: 'PREMIUM',
+        roles: [],
+      });
+    }
     return NextResponse.json({
       success: false,
       hasMembership: false,
@@ -68,6 +110,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (res.status === 404) {
+      if (isAdmin) {
+        return NextResponse.json({
+          success: true,
+          hasMembership: true,
+          tier: 'PREMIUM',
+          roles: [],
+        });
+      }
       return NextResponse.json({
         success: false,
         hasMembership: false,
@@ -76,6 +126,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!res.ok) {
+      if (isAdmin) {
+        return NextResponse.json({
+          success: true,
+          hasMembership: true,
+          tier: 'PREMIUM',
+          roles: [],
+        });
+      }
       return NextResponse.json({
         success: false,
         hasMembership: false,
@@ -85,8 +143,10 @@ export async function POST(request: NextRequest) {
 
     const memberData = await res.json();
     const roles: string[] = Array.isArray(memberData.roles) ? memberData.roles : [];
-    const hasAdminRole = roles.includes('1553858763474214912');
-    const hasRole = hasAdminRole || PLUS_ROLE_IDS.some(id => roles.includes(id)) || roles.includes('1488346107351269526');
+    const hasAdminRole = roles.includes(STAFF_ADMIN_ROLE_ID);
+    const hasPremiumRole = PREMIUM_ROLE_IDS.some((id) => roles.includes(id));
+    const hasPlusRole = PLUS_ROLE_IDS.some((id) => roles.includes(id));
+    const hasRole = hasAdminRole || hasPremiumRole || hasPlusRole || isAdmin;
 
     if (!hasRole) {
       return NextResponse.json({
@@ -96,30 +156,51 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const calculatedRole = (hasAdminRole || payload.role === 'admin') ? 'admin' : (payload.role || 'authenticated');
+    const isUserEffectivelyAdmin = hasAdminRole || payload.role === 'admin' || isAdmin;
+    const calculatedRole = isUserEffectivelyAdmin ? 'admin' : (payload.role || 'authenticated');
+    const tier = isUserEffectivelyAdmin || hasPremiumRole ? 'PREMIUM' : (hasPlusRole ? 'PLUS' : 'FREE');
 
-    if (hasAdminRole) {
-      try {
-        const pool = getDbPool();
-        await pool.query("UPDATE public.profiles SET role = 'admin' WHERE id = $1", [payload.sub]);
-      } catch (err: any) {
-        console.warn('[refresh-membership] Failed to update profile to admin:', err.message);
-      }
+    const newMetadata = {
+      ...userMetadata,
+      discord_id: discordId,
+      provider_id: discordId,
+      has_membership: true,
+      role: calculatedRole,
+      roles,
+    };
+
+    // Update auth.users in Postgres so sessions and /api/auth/me remain synchronized
+    try {
+      await pool.query(
+        `UPDATE auth.users
+         SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || $1::jsonb,
+             role = $2
+         WHERE id = $3`,
+        [JSON.stringify(newMetadata), calculatedRole, payload.sub]
+      );
+    } catch (err: any) {
+      console.warn('[refresh-membership] Failed to update auth.users:', err?.message);
     }
 
-    // Role verified! Generate updated token and return success
+    // Update public.profiles in Postgres
+    try {
+      await pool.query(
+        `UPDATE public.profiles
+         SET discord_id = COALESCE(discord_id, $1),
+             role = $2
+         WHERE id = $3`,
+        [discordId, calculatedRole, payload.sub]
+      );
+    } catch (err: any) {
+      console.warn('[refresh-membership] Failed to update public.profiles:', err?.message);
+    }
+
+    // Generate updated token and session
     const updatedUser: any = {
       id: payload.sub,
       email: payload.email,
       role: calculatedRole,
-      user_metadata: {
-        ...userMetadata,
-        discord_id: discordId,
-        provider_id: discordId,
-        has_membership: true,
-        role: calculatedRole,
-        roles,
-      },
+      user_metadata: newMetadata,
     };
 
     const newToken = createUserToken(updatedUser);
@@ -138,7 +219,21 @@ export async function POST(request: NextRequest) {
       cookieOptions.domain = cookieDomain;
     }
 
-    const response = NextResponse.json({ success: true, hasMembership: true });
+    const session = {
+      access_token: newToken,
+      token_type: 'bearer',
+      user: updatedUser,
+    };
+
+    const response = NextResponse.json({
+      success: true,
+      hasMembership: true,
+      tier,
+      roles,
+      session,
+      user: updatedUser,
+    });
+
     response.cookies.set('mv_session_token', newToken, cookieOptions);
     response.cookies.set('sb-access-token', newToken, cookieOptions);
     return response;

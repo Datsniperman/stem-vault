@@ -70,6 +70,11 @@ function MembershipContent() {
       const res = await fetch('/api/auth/refresh-membership', { method: 'POST' });
       const data = await res.json();
       if (data.hasMembership) {
+        if (data.session) {
+          try {
+            localStorage.setItem('mixingvault_session', JSON.stringify(data.session));
+          } catch {}
+        }
         const destination = returnTo.startsWith('/membership') ? '/' : returnTo;
         window.location.href = destination;
         return;
@@ -144,7 +149,16 @@ function MembershipContent() {
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            {userTier !== 'FREE' ? (
+            <button
+              onClick={handleRefreshRoles}
+              disabled={refreshing}
+              className="flex-1 sm:flex-none bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-xs py-2 px-3.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <span>{refreshing ? 'Refreshing...' : 'Refresh Roles'}</span>
+            </button>
+
+            {userTier !== 'FREE' && (
               <a
                 href={returnTo.startsWith('/membership') ? '/' : returnTo}
                 className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-1.5"
@@ -152,15 +166,6 @@ function MembershipContent() {
                 <span>Enter Vault</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
-            ) : (
-              <button
-                onClick={handleRefreshRoles}
-                disabled={refreshing}
-                className="flex-1 sm:flex-none bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-xs py-2 px-3.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-                <span>{refreshing ? 'Checking...' : 'Refresh Roles'}</span>
-              </button>
             )}
 
             <button

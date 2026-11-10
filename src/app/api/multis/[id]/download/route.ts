@@ -33,7 +33,64 @@ export async function GET(
       const db = await createDbServerClient();
       const { data: { user } } = await db.auth.getUser();
 
-      if (!user || !canAccessProMultitracks(user)) {
+      let allowed = Boolean(user && canAccessProMultitracks(user));
+
+      // Fallback: If not recognized from JWT metadata, check Discord live
+      if (!allowed && user) {
+        const anyUser = user as any;
+        const discordId =
+          anyUser.discord_id ||
+          anyUser.user_metadata?.discord_id ||
+          anyUser.user_metadata?.provider_id ||
+          anyUser.sub;
+
+        let effectiveDiscordId = discordId;
+        if (!effectiveDiscordId || String(effectiveDiscordId).length < 15) {
+          try {
+            const prof = await pool.query(
+              'SELECT discord_id FROM public.profiles WHERE id = $1 LIMIT 1',
+              [user.id]
+            );
+            if (prof.rows[0]?.discord_id) {
+              effectiveDiscordId = prof.rows[0].discord_id;
+            }
+          } catch {}
+        }
+
+        if (effectiveDiscordId && process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_GUILD_ID) {
+          try {
+            const discordRes = await fetch(
+              `https://discord.com/api/v10/guilds/${process.env.DISCORD_GUILD_ID}/members/${effectiveDiscordId}`,
+              {
+                headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+                cache: 'no-store',
+              }
+            );
+            if (discordRes.ok) {
+              const member = await discordRes.json();
+              const liveRoles: string[] = Array.isArray(member.roles) ? member.roles : [];
+              if (
+                liveRoles.includes('1488271670119633047') ||
+                liveRoles.includes('1488346107351269526') ||
+                liveRoles.includes('1553858763474214912')
+              ) {
+                allowed = true;
+                // Asynchronously persist to Postgres so future downloads don't need live check
+                pool.query(
+                  `UPDATE auth.users
+                   SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || $1::jsonb
+                   WHERE id = $2`,
+                  [JSON.stringify({ roles: liveRoles, has_membership: true }), user.id]
+                ).catch(() => null);
+              }
+            }
+          } catch (e: any) {
+            console.warn('[multis/download] Discord live check error:', e?.message);
+          }
+        }
+      }
+
+      if (!allowed) {
         return NextResponse.json(
           {
             error: 'Pro Multitracks are exclusive to Premium Tier members.',
