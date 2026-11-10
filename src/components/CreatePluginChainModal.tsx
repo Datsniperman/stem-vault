@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Sliders, Plus, Trash2, ArrowUp, ArrowDown, Loader2, AlertCircle } from 'lucide-react';
+import { X, Sliders, Plus, Trash2, ArrowUp, ArrowDown, Loader2, AlertCircle, User as UserIcon } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { PluginChain, PluginChainItem } from '@/types';
 
 interface CreatePluginChainModalProps {
@@ -56,6 +57,11 @@ export function CreatePluginChainModal({
   ]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user, profile } = useAuth();
+  const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
+  const [ownerId, setOwnerId] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -64,6 +70,7 @@ export function CreatePluginChainModal({
         setName(chainToEdit.name);
         setDaw(chainToEdit.daw);
         setDescription(chainToEdit.description || '');
+        setOwnerId(chainToEdit.owner_id || '');
         setItems(
           chainToEdit.items && chainToEdit.items.length > 0
             ? chainToEdit.items.map((it, idx) => ({ ...it, position: idx + 1 }))
@@ -73,12 +80,24 @@ export function CreatePluginChainModal({
         setName('');
         setDaw('');
         setDescription('');
+        setOwnerId(user?.id || '');
         setItems([
           { position: 1, plugin_name: '', vendor: '', category: '', notes: '' },
         ]);
       }
+
+      if (isAdmin) {
+        setLoadingUsers(true);
+        fetch('/api/admin/users')
+          .then(res => res.json())
+          .then(data => {
+            if (data.users) setUsers(data.users);
+          })
+          .catch(err => console.warn('Could not load users for owner reassignment:', err))
+          .finally(() => setLoadingUsers(false));
+      }
     }
-  }, [isOpen, chainToEdit]);
+  }, [isOpen, chainToEdit, isAdmin, user?.id]);
 
   if (!isOpen) return null;
 
@@ -135,12 +154,16 @@ export function CreatePluginChainModal({
     setError(null);
 
     try {
-      const payload = {
+      const payload: Record<string, any> = {
         name: name.trim(),
         daw: daw.trim(),
         description: description.trim() || null,
         items: validPlugins.map((it, idx) => ({ ...it, position: idx + 1 })),
       };
+
+      if (isAdmin && ownerId) {
+        payload.owner_id = ownerId;
+      }
 
       const url = chainToEdit ? `/api/plugin-chains/${chainToEdit.id}` : '/api/plugin-chains';
       const method = chainToEdit ? 'PUT' : 'POST';
@@ -232,6 +255,38 @@ export function CreatePluginChainModal({
                 </datalist>
               </div>
             </div>
+
+            {isAdmin && (
+              <div className="p-3 bg-neutral-900/90 border border-neutral-800 rounded-lg space-y-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-neutral-300">
+                  <UserIcon className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>Uploader / Owner (Admin Only)</span>
+                </label>
+                {loadingUsers ? (
+                  <div className="flex items-center gap-2 text-xs text-neutral-400 py-1">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Loading users...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={ownerId}
+                    onChange={e => setOwnerId(e.target.value)}
+                    disabled={saving}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
+                  >
+                    <option value="">Current Owner ({chainToEdit?.owner_name || 'Keep current'})</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.displayName} ({u.role}{u.email ? ` · ${u.email}` : ''})
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-[10px] text-neutral-500">
+                  As an admin, you can reassign ownership of this plugin chain to any registered member.
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-medium text-neutral-300 mb-1">

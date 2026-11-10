@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createDbServerClient } from '@/lib/db/server';
 import { getDbPool } from '@/lib/db/pool';
 import { deleteBlob } from '@/lib/storage';
+import { isUserAdmin } from '@/lib/auth/admin';
 
 export async function GET(
   _request: NextRequest,
@@ -18,6 +19,7 @@ export async function GET(
         m.owner_id,
         m.title,
         m.description,
+        m.is_pro,
         m.zip_r2_key,
         m.zip_public_url,
         m.zip_size_bytes,
@@ -70,6 +72,7 @@ export async function GET(
         mx.r2_key,
         mx.public_url,
         mx.duration_seconds,
+        mx.is_sunday_review,
         mx.created_at,
         COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
         p.avatar_url
@@ -138,7 +141,18 @@ export async function PATCH(
     }
 
     const item = checkRes.rows[0];
-    if (item.owner_id !== user.id && item.role !== 'admin') {
+    const isAdmin =
+      item.role === 'admin' ||
+      user.role === 'admin' ||
+      isUserAdmin({
+        email: user.email,
+        discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
+        username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+        role: user.role,
+        userMetadata: user.user_metadata,
+      });
+
+    if (item.owner_id !== user.id && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -146,6 +160,8 @@ export async function PATCH(
     const {
       title,
       description,
+      owner_id,
+      is_pro,
       zip_r2_key,
       zip_public_url,
       zip_size_bytes,
@@ -164,6 +180,14 @@ export async function PATCH(
     if (description !== undefined) {
       fields.push(`description = $${idx++}`);
       values.push(description ? description.trim() : null);
+    }
+    if (owner_id !== undefined && isAdmin) {
+      fields.push(`owner_id = $${idx++}`);
+      values.push(owner_id);
+    }
+    if (is_pro !== undefined && isAdmin) {
+      fields.push(`is_pro = $${idx++}`);
+      values.push(Boolean(is_pro));
     }
     if (zip_r2_key !== undefined) {
       fields.push(`zip_r2_key = $${idx++}`);
@@ -193,10 +217,33 @@ export async function PATCH(
     fields.push(`updated_at = now()`);
     values.push(id);
 
-    const updateQuery = `UPDATE public.multis SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
-    const result = await pool.query(updateQuery, values);
+    const updateQuery = `UPDATE public.multis SET ${fields.join(', ')} WHERE id = $${idx}`;
+    await pool.query(updateQuery, values);
 
-    return NextResponse.json({ multi: result.rows[0] });
+    // Fetch refreshed multi with updated uploader details
+    const refreshed = await pool.query(
+      `SELECT
+        m.id,
+        m.owner_id,
+        m.title,
+        m.description,
+        m.is_pro,
+        m.zip_r2_key,
+        m.zip_public_url,
+        m.zip_size_bytes,
+        m.zip_last_downloaded_at,
+        m.zip_status,
+        m.created_at,
+        m.updated_at,
+        COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
+        p.avatar_url
+       FROM public.multis m
+       LEFT JOIN public.profiles p ON m.owner_id = p.id
+       WHERE m.id = $1`,
+      [id]
+    );
+
+    return NextResponse.json({ multi: refreshed.rows[0] });
   } catch (err: any) {
     console.error('[multis/update] Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -232,7 +279,18 @@ export async function DELETE(
     }
 
     const item = checkRes.rows[0];
-    if (item.owner_id !== user.id && item.role !== 'admin') {
+    const isAdmin =
+      item.role === 'admin' ||
+      user.role === 'admin' ||
+      isUserAdmin({
+        email: user.email,
+        discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
+        username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+        role: user.role,
+        userMetadata: user.user_metadata,
+      });
+
+    if (item.owner_id !== user.id && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

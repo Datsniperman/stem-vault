@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
 import { createDbServerClient } from '@/lib/db/server';
+import { canSubmitSundayReview } from '@/lib/auth/tiers';
 import { announceMix } from '@/lib/discord';
 
 export const dynamic = 'force-dynamic';
@@ -10,6 +11,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const multiId = searchParams.get('multi_id');
     const search = searchParams.get('q') || '';
+    const sundayReviewOnly = searchParams.get('sunday_review') === 'true';
 
     const pool = getDbPool();
     let query = `
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest) {
         mx.r2_key,
         mx.public_url,
         mx.duration_seconds,
+        mx.is_sunday_review,
         mx.created_at,
         COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
         p.avatar_url,
@@ -43,6 +46,10 @@ export async function GET(request: NextRequest) {
     if (search.trim()) {
       params.push(`%${search.trim()}%`);
       conditions.push(`(mx.title ILIKE $${params.length} OR m.title ILIKE $${params.length})`);
+    }
+
+    if (sundayReviewOnly) {
+      conditions.push(`mx.is_sunday_review = true`);
     }
 
     if (conditions.length > 0) {
@@ -76,13 +83,34 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, multi_id, r2_key, public_url, format, size_bytes, duration_seconds } = body;
+    const {
+      title,
+      multi_id,
+      r2_key,
+      public_url,
+      format,
+      size_bytes,
+      duration_seconds,
+      is_sunday_review,
+    } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Mix title is required.' }, { status: 400 });
     }
     if (!r2_key || !public_url) {
       return NextResponse.json({ error: 'Storage references (r2_key, public_url) are required.' }, { status: 400 });
+    }
+
+    const wantsSundayReview = Boolean(is_sunday_review);
+    if (wantsSundayReview && !canSubmitSundayReview(user)) {
+      return NextResponse.json(
+        {
+          error: 'Sunday Mix Reviews are exclusive to Premium Tier members.',
+          requiredTier: 'PREMIUM',
+          upgradeUrl: '/membership',
+        },
+        { status: 403 }
+      );
     }
 
     const pool = getDbPool();
@@ -126,8 +154,8 @@ export async function POST(request: NextRequest) {
     ).catch(e => console.warn('Could not auto-upsert profile in mixes POST:', e.message));
 
     const result = await pool.query(
-      `INSERT INTO public.mixes (owner_id, multi_id, title, format, size_bytes, r2_key, public_url, duration_seconds, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+      `INSERT INTO public.mixes (owner_id, multi_id, title, format, size_bytes, r2_key, public_url, duration_seconds, is_sunday_review, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
        RETURNING *`,
       [
         user.id,
@@ -138,6 +166,7 @@ export async function POST(request: NextRequest) {
         r2_key,
         public_url,
         duration_seconds || null,
+        wantsSundayReview,
       ]
     );
 
@@ -168,6 +197,7 @@ export async function POST(request: NextRequest) {
         discordId,
         multiTitle,
         threadId,
+        isSundayReview: wantsSundayReview,
       });
 
       if (discordPostId) {

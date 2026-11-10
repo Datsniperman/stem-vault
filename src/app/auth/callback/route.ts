@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const proto = request.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https');
   let origin = host ? `${proto}://${host}` : request.nextUrl.origin;
   if (!isLocal && host.includes('mixingvault.com')) {
-    origin = 'https://www.mixingvault.com';
+    origin = host.includes('beta.') ? 'https://beta.mixingvault.com' : 'https://www.mixingvault.com';
   }
 
   const searchParams = new URL(request.url).searchParams;
@@ -167,12 +167,14 @@ export async function GET(request: NextRequest) {
   }
 
   // Calculate admin privilege universally
-  const isAdmin = isGuildAdmin || isUserAdmin({
+  const hasAdminRole = memberRoles.includes('1553858763474214912');
+  const isAdmin = isGuildAdmin || hasAdminRole || isUserAdmin({
     email: user.email,
     discordId: discordUserId,
     username: resolvedServerName,
     role: user.role,
     userMetadata: user.user_metadata,
+    roles: memberRoles,
   });
 
   // Check required membership role "1488271670119633047"

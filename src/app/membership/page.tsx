@@ -3,17 +3,39 @@
 import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { getMembershipTier } from '@/lib/auth/tiers';
 import {
   ExternalLink,
-  Disc3,
-  Sliders,
-  Layers,
-  Sparkles,
+  Check,
   RefreshCw,
   LogOut,
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 
-const LAUNCHPASS_URL = 'https://www.launchpass.com/all-access-by-tyler/membership';
+const LAUNCHPASS_PLUS_URL = 'https://www.launchpass.com/all-access-by-tyler/plus';
+const LAUNCHPASS_PREMIUM_URL = 'https://www.launchpass.com/all-access-by-tyler/membership';
+
+const PLUS_PERKS = [
+  'Full Access to The Mixing Vault (multitracks, stems, mixes)',
+  'Stream library of walkthroughs and archived video sessions',
+  'Monthly Featured Track Competitions with live review chances',
+  'Free Premium Plugin Chain Presets for major DAWs',
+  'Exclusive audio mixing lessons made by Tyler',
+  'Discord channels dedicated to your console brand',
+  '25% discount on the official Shopify store',
+];
+
+const PREMIUM_PERKS = [
+  'Everything included in the Plus Tier',
+  'Pro Multitracks: high-quality sessions from pros & well-known churches',
+  'Sunday Mix Reviews: direct, personalized feedback from Jared & pros',
+  'Exclusive access to Live Monthly Streaming Sessions',
+  'Priority access to emergency troubleshooting channel',
+  'Connections & Opportunities: job postings, conference meetups, networking',
+  '100% discount on the official Shopify store',
+];
 
 function MembershipContent() {
   const searchParams = useSearchParams();
@@ -36,6 +58,11 @@ function MembershipContent() {
     user?.user_metadata?.avatar_url ||
     null;
 
+  // Derive active tier using canonical tier resolver
+  const userTier = getMembershipTier(user);
+  const isPremium = userTier === 'PREMIUM';
+  const isPlus = userTier === 'PLUS';
+
   const handleRefreshRoles = async () => {
     setRefreshing(true);
     setRefreshMessage(null);
@@ -47,7 +74,9 @@ function MembershipContent() {
         window.location.href = destination;
         return;
       }
-      setRefreshMessage(data.message || 'Members role not detected in Discord. Please ensure you have completed checkout.');
+      setRefreshMessage(
+        data.message || 'Membership role not detected in Discord. Please ensure checkout is completed.'
+      );
     } catch {
       const destination = returnTo.startsWith('/membership') ? '/' : returnTo;
       window.location.href = `/api/auth/discord?redirectTo=${encodeURIComponent(destination)}`;
@@ -62,250 +91,261 @@ function MembershipContent() {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto text-center space-y-8">
+    <div className="w-full max-w-5xl mx-auto space-y-10 py-6">
       {/* Title & Explainer */}
-      <div className="space-y-3">
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+      <div className="text-center space-y-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-mono uppercase tracking-wider text-emerald-400">
+          <span>Tiered Memberships</span>
+        </div>
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
           Tyler Kerpsack All Access
         </h1>
-        <p className="text-neutral-400 text-sm max-w-md mx-auto leading-relaxed">
-          The Mixing Vault is private and exclusive to active members of the{' '}
-          <strong className="text-white font-medium">Tyler Kerpsack All Access</strong> Discord server.
+        <p className="text-neutral-400 text-sm max-w-xl mx-auto leading-relaxed">
+          Unlock multitracks, video lessons, plugin chains, and direct feedback from pros on The Mixing Vault.
         </p>
       </div>
 
-      {/* Interactive Card */}
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl p-6 sm:p-8 shadow-2xl text-left space-y-6">
-        {user ? (
-          /* User IS Logged In with Alt / Account Missing Role */
-          <div className="space-y-5">
-            <div className="flex items-center gap-3.5 p-3.5 rounded-lg bg-neutral-900/80 border border-neutral-800">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  className="w-10 h-10 rounded-full border border-neutral-700 object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center text-sm font-bold text-white shrink-0">
-                  {displayName.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white truncate">
-                    {displayName}
-                  </span>
-                </div>
-                <p className="text-[11px] text-neutral-400 truncate mt-0.5">
-                  {user.email || 'Discord Connected'}
-                </p>
+      {/* Account Status Strip (If Logged In) */}
+      {user && (
+        <div className="bg-[#121212] border border-neutral-800 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="w-11 h-11 rounded-full border border-neutral-700 object-cover shrink-0"
+              />
+            ) : (
+              <div className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                {displayName.slice(0, 2).toUpperCase()}
               </div>
-            </div>
-
-            <div className="bg-[#181818] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-300">
-              <p className="leading-relaxed">
-                You must have the <strong className="text-white font-medium">Members</strong> role to access the website. You can activate your membership here at this link:{' '}
-                <a
-                  href={LAUNCHPASS_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white underline underline-offset-2 hover:text-neutral-300 break-all font-medium"
+            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-white">{displayName}</span>
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                    userTier === 'PREMIUM'
+                      ? 'bg-amber-950/60 text-amber-400 border-amber-800'
+                      : userTier === 'PLUS'
+                      ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800'
+                      : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                  }`}
                 >
-                  {LAUNCHPASS_URL}
-                </a>
+                  {userTier === 'PREMIUM' ? 'Premium Member' : userTier === 'PLUS' ? 'Plus Member' : 'Free Tier'}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                {userTier === 'FREE'
+                  ? 'Link your paid membership tier below to unlock access.'
+                  : 'Membership active. You have full access to The Mixing Vault.'}
               </p>
             </div>
+          </div>
 
-            {/* Primary CTA: LaunchPass */}
-            <div className="space-y-2.5 pt-1">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            {userTier !== 'FREE' ? (
               <a
-                href={LAUNCHPASS_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-white hover:bg-neutral-200 text-black font-semibold text-xs py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                href={returnTo.startsWith('/membership') ? '/' : returnTo}
+                className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
-                <span>Activate Membership on LaunchPass</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Enter Vault</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </a>
-
-              {/* Refresh Roles Button */}
+            ) : (
               <button
                 onClick={handleRefreshRoles}
                 disabled={refreshing}
-                className="w-full bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-neutral-200 border border-neutral-700/80 font-medium text-xs py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 sm:flex-none bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-xs py-2 px-3.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-                <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                <span>{refreshing ? 'Checking...' : 'Refresh Roles'}</span>
               </button>
-              {refreshMessage && (
-                <p className="text-[11px] text-amber-300 text-center px-2.5 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
-                  {refreshMessage}
-                </p>
-              )}
+            )}
 
-              {/* Disconnect / Switch Account */}
-              <button
-                onClick={() => signOut()}
-                className="w-full text-center text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors pt-1 flex items-center justify-center gap-1.5"
-              >
-                <LogOut className="w-3 h-3" />
-                <span>Switch Discord Account</span>
-              </button>
-            </div>
+            <button
+              onClick={() => signOut()}
+              className="p-2 text-neutral-500 hover:text-neutral-300 transition-colors rounded-lg hover:bg-neutral-800"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-        ) : (
-          /* User NOT Logged In - Act as Login / Signup Gateway */
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-base font-semibold text-white">
-                Sign In or Join All Access
-              </h2>
-              <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                If you are already an All Access member, sign in with your Discord account to verify your role and enter.
-              </p>
-            </div>
+        </div>
+      )}
 
-            <div className="space-y-3">
-              {/* Connect with Discord Button */}
-              <button
-                onClick={handleDiscordSignIn}
-                className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium text-xs py-3.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer"
-              >
-                <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-                </svg>
-                <span>Log In with Discord</span>
-              </button>
+      {refreshMessage && (
+        <p className="text-xs text-amber-300 text-center px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg max-w-lg mx-auto">
+          {refreshMessage}
+        </p>
+      )}
 
-              <div className="relative py-2 flex items-center justify-center">
-                <div className="border-t border-neutral-800 w-full" />
-                <span className="bg-[#121212] px-3 text-[10px] uppercase tracking-wider text-neutral-500 font-mono absolute">
-                  New Member?
-                </span>
+      {/* Pricing Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        {/* Plus Tier Card */}
+        <div
+          className={`relative bg-[#121212] border rounded-2xl p-6 sm:p-8 flex flex-col justify-between transition-all shadow-xl ${
+            userTier === 'PLUS' ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-neutral-800 hover:border-neutral-700'
+          }`}
+        >
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/80">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Plus Tier</span>
               </div>
-
-              {/* Purchase Link */}
-              <a
-                href={LAUNCHPASS_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-white hover:bg-neutral-200 text-black font-semibold text-xs py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-              >
-                <span>Get All Access on LaunchPass</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+              {userTier === 'PLUS' && (
+                <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">
+                  Your Current Plan
+                </span>
+              )}
             </div>
+
+            <h3 className="text-2xl font-bold text-white mb-1">Plus Member</h3>
+            <p className="text-xs text-neutral-400 mb-6">
+              Designed for those ready to actively level up their live mixing skills.
+            </p>
+
+            <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-neutral-800">
+              <span className="text-4xl font-extrabold text-white">$15</span>
+              <span className="text-xs text-neutral-400 font-medium">/ month</span>
+            </div>
+
+            {/* Perks List */}
+            <ul className="space-y-3 mb-8">
+              {PLUS_PERKS.map((perk, idx) => (
+                <li key={idx} className="flex items-start gap-2.5 text-xs text-neutral-300 leading-relaxed">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>{perk}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
+
+          <div>
+            <a
+              href={LAUNCHPASS_PLUS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`w-full font-semibold text-xs py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                userTier === 'PLUS'
+                  ? 'bg-neutral-800 hover:bg-neutral-700 text-white'
+                  : 'bg-emerald-500 hover:bg-emerald-400 text-black'
+              }`}
+            >
+              <span>{userTier === 'PLUS' ? 'Manage Plus Subscription' : 'Join Plus Tier ($15/mo)'}</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+
+        {/* Premium Tier Card */}
+        <div
+          className={`relative bg-[#121212] border rounded-2xl p-6 sm:p-8 flex flex-col justify-between transition-all shadow-2xl ${
+            userTier === 'PREMIUM'
+              ? 'border-amber-500 ring-1 ring-amber-500'
+              : 'border-neutral-700/80 hover:border-amber-500/60'
+          }`}
+        >
+          {/* Top highlight ribbon */}
+          <div className="absolute -top-3 right-6 bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-extrabold text-[10px] tracking-wider uppercase px-3 py-1 rounded-full shadow-md">
+            Ultimate All-Access
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-400 border border-amber-800/80">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Premium Tier</span>
+              </div>
+              {userTier === 'PREMIUM' && (
+                <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
+                  Your Current Plan
+                </span>
+              )}
+            </div>
+
+            <h3 className="text-2xl font-bold text-white mb-1">Premium Member</h3>
+            <p className="text-xs text-neutral-400 mb-6">
+              The ultimate pass for hands-on professional feedback, direct reviews, and pro multitracks.
+            </p>
+
+            <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-neutral-800">
+              <span className="text-4xl font-extrabold text-white">$30</span>
+              <span className="text-xs text-neutral-400 font-medium">/ month</span>
+            </div>
+
+            {/* Perks List */}
+            <ul className="space-y-3 mb-8">
+              {PREMIUM_PERKS.map((perk, idx) => (
+                <li key={idx} className="flex items-start gap-2.5 text-xs text-neutral-300 leading-relaxed">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>{perk}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <a
+              href={LAUNCHPASS_PREMIUM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+            >
+              <span>{userTier === 'PREMIUM' ? 'Manage Premium Subscription' : 'Join Premium Tier ($30/mo)'}</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left pt-4">
-        <FeatureCard
-          icon={<Disc3 className="w-4 h-4 text-white" />}
-          title="Full Multitrack Archive"
-          description="Direct high-speed downloads of complete raw production sessions, stem packages, and mixes."
-        />
-        <FeatureCard
-          icon={<Layers className="w-4 h-4 text-white" />}
-          title="Weekly Mix Challenges"
-          description="Download featured stems each week, submit your mix, and get critiques from the community."
-        />
-        <FeatureCard
-          icon={<Sliders className="w-4 h-4 text-white" />}
-          title="DAW Chains & Presets"
-          description="Access curated vocal, drum, and mix-bus plugin chains for Pro Tools, Logic, and Studio One."
-        />
-        <FeatureCard
-          icon={<Sparkles className="w-4 h-4 text-white" />}
-          title="VIP Discord Community"
-          description="Direct community engagement, Q&A, and technical mix discussions with Tyler and peers."
-        />
-      </div>
+      {/* Discord Connect Callout if Not Logged In */}
+      {!user && (
+        <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 text-center space-y-3">
+          <h3 className="text-base font-semibold text-white">Already a member?</h3>
+          <p className="text-xs text-neutral-400 max-w-md mx-auto">
+            Log in with your Discord account to verify your active role and immediately access your unlocked vault.
+          </p>
+          <button
+            onClick={handleDiscordSignIn}
+            className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium text-xs py-2.5 px-6 rounded-lg transition-colors inline-flex items-center gap-2 shadow-md cursor-pointer"
+          >
+            <span>Log In with Discord</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function MembershipPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col justify-between selection:bg-neutral-800 selection:text-white">
-      {/* Top Minimal Navigation Bar */}
+    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col justify-between selection:bg-neutral-800 selection:text-white font-sans">
       <header className="border-b border-neutral-800/80 bg-[#0a0a0a]/90 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <a href="/" className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider shadow-xs">
               MV
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm font-semibold tracking-tight text-white">
-                THE MIXING VAULT
-              </span>
-              <span className="hidden sm:inline text-[11px] text-neutral-500 font-normal">
-                All Access Portal
-              </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-sm font-semibold tracking-tight text-white">THE MIXING VAULT</span>
+              <span className="text-[11px] text-neutral-500 font-normal">/ Beta</span>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <a
-              href={LAUNCHPASS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-semibold px-3 py-1.5 rounded bg-white hover:bg-neutral-200 text-black transition-colors flex items-center gap-1.5 shadow-xs"
-            >
-              <span>Get Membership</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
+          </a>
         </div>
       </header>
 
-      {/* Main Content wrapped in Suspense for useSearchParams */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 sm:py-16">
-        <Suspense
-          fallback={
-            <div className="w-full max-w-xl mx-auto text-center py-20 text-neutral-500 text-xs">
-              Loading membership portal...
-            </div>
-          }
-        >
+      <main className="max-w-6xl mx-auto px-4 py-8 flex-1 w-full">
+        <Suspense fallback={<div className="text-center py-20 text-xs text-neutral-500">Loading...</div>}>
           <MembershipContent />
         </Suspense>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-800/80 py-6 text-center text-xs text-neutral-500">
-        <p>© {new Date().getFullYear()} The Mixing Vault. Powered by KerpBot.</p>
-        <p className="mt-1 text-[11px] text-neutral-600">
-          Exclusive to Tyler Kerpsack All Access members.
-        </p>
+      <footer className="border-t border-neutral-800/60 py-6 text-center text-xs text-neutral-500">
+        <p>&copy; {new Date().getFullYear()} The Mixing Vault. Powered by KerpBot.</p>
       </footer>
-    </div>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="p-4 rounded-lg bg-[#121212]/60 border border-neutral-800/80 space-y-1.5 hover:border-neutral-700 transition-colors">
-      <div className="flex items-center gap-2 text-white text-xs font-semibold">
-        <div className="p-1 rounded bg-neutral-900 border border-neutral-800">
-          {icon}
-        </div>
-        <span>{title}</span>
-      </div>
-      <p className="text-[11px] text-neutral-400 leading-relaxed pl-7">
-        {description}
-      </p>
     </div>
   );
 }

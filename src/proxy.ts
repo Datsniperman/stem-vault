@@ -15,6 +15,12 @@ const DISCORD_GUILD_ID =
 const REQUIRED_MEMBERSHIP_ROLE_ID =
   (process.env.DISCORD_REQUIRED_ROLE_ID || '1488271670119633047').trim();
 
+const PRO_MEMBER_ROLE_ID =
+  (process.env.DISCORD_PREMIUM_ROLE_ID || '1488346107351269526').trim();
+
+const ADMIN_ROLE_ID =
+  (process.env.DISCORD_ADMIN_ROLE_ID || '1553858763474214912').trim();
+
 // In-memory cache for live Discord role checks
 // 10-second TTL prevents Discord 429 rate-limiting during rapid page navigation while guaranteeing instant revocation upon subscription loss
 interface CachedRole {
@@ -66,7 +72,7 @@ async function verifyLiveDiscordRole(discordId: string): Promise<boolean> {
 
     const data = await res.json();
     const roles: string[] = Array.isArray(data.roles) ? data.roles : [];
-    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
+    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID) || roles.includes(PRO_MEMBER_ROLE_ID) || roles.includes(ADMIN_ROLE_ID);
 
     roleCache.set(discordId, { hasRole, checkedAt: now });
     return hasRole;
@@ -129,6 +135,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/cron') ||
+    pathname.startsWith('/api/sessions/') ||
     pathname.startsWith('/auth') ||
     pathname === '/membership' ||
     pathname === '/unauthorized' ||
@@ -181,16 +188,19 @@ export async function proxy(request: NextRequest) {
     null;
 
   // Master admin check: admins always have full access across the entire app
+  const hasAdminRoleId = Array.isArray(userMetadata?.roles) && userMetadata.roles.includes('1553858763474214912');
   const isAdmin =
     payload.role === 'admin' ||
     userMetadata.role === 'admin' ||
     userMetadata.custom_claims?.role === 'admin' ||
+    hasAdminRoleId ||
     isUserAdmin({
       email: payload.email,
       discordId: discordId || payload.sub,
       username: userMetadata.display_name || userMetadata.server_display_name,
       role: payload.role,
       userMetadata,
+      roles: userMetadata?.roles,
     });
 
   if (isAdmin) {
@@ -212,7 +222,7 @@ export async function proxy(request: NextRequest) {
         {
           error: 'Forbidden: Members Discord role required (Role ID: 1488271670119633047).',
           code: 'MEMBERSHIP_REQUIRED',
-          membershipUrl: 'https://www.launchpass.com/all-access-by-tyler/membership',
+          membershipUrl: 'https://www.launchpass.com/all-access-by-tyler/plus',
         },
         { status: 403 }
       );

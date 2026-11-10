@@ -26,25 +26,25 @@ export function Hero({ totalSessions, totalTracks, activeEngineers }: HeroProps)
               Download studio multitracks, share session templates, and submit finished mixes for feedback in the Discord community.
             </p>
 
-            {/* Quick Access Badges for Beta Features */}
+            {/* Quick Access Navigation */}
             <div className="flex flex-wrap items-center gap-2 pt-3">
               <Link
                 href="/multis"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
               >
-                <span>📦 Multitrack Packs</span>
+                <span>Multitrack Packs</span>
               </Link>
               <Link
                 href="/mixes"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
               >
-                <span>🎧 Finished Mixes</span>
+                <span>Finished Mixes</span>
               </Link>
               <Link
-                href="/plugin-chains"
+                href="/sessions"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-200 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-3 py-1.5 rounded transition-colors"
               >
-                <span>🎛️ Plugin Chains</span>
+                <span>Recorded Sessions</span>
               </Link>
             </div>
           </div>

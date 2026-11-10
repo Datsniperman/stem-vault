@@ -4,7 +4,7 @@ import { isUserAdmin } from '@/lib/auth/admin';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, LogOut, User, Shield, Settings, Plus, Music2, Layers, Sliders, FileArchive } from 'lucide-react';
+import { ChevronDown, LogOut, User, Shield, Settings, Plus, Music2, Layers, Sliders, Video, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AuthModal } from './AuthModal';
@@ -97,9 +97,7 @@ export function Header({ onStemAdded }: HeaderProps) {
                 <span className="text-sm font-semibold tracking-tight text-white group-hover:text-neutral-300 transition-colors">
                   THE MIXING VAULT
                 </span>
-                <span className="hidden sm:inline text-[11px] text-neutral-500 font-normal">
-                  / Beta
-                </span>
+
               </div>
             </Link>
 
@@ -120,11 +118,18 @@ export function Header({ onStemAdded }: HeaderProps) {
                 <span>Mixes</span>
               </Link>
               <Link
-                href="/plugin-chains"
+                href="/sessions"
                 className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
               >
-                <Sliders className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Plugin Chains</span>
+                <Video className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Sessions</span>
+              </Link>
+              <Link
+                href="/membership"
+                className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Membership</span>
               </Link>
             </nav>
           </div>
@@ -191,15 +196,15 @@ export function Header({ onStemAdded }: HeaderProps) {
                         />
 
                         <DropdownItem
-                          icon={<Sliders className="w-3.5 h-3.5 text-neutral-400" />}
-                          label="Plugin Chains"
-                          onClick={() => { setDropdownOpen(false); router.push('/plugin-chains'); }}
-                        />
-
-                        <DropdownItem
                           icon={<User className="w-3.5 h-3.5 text-neutral-400" />}
                           label="My Uploads"
                           onClick={handleMySubmissionsClick}
+                        />
+
+                        <DropdownItem
+                          icon={<Sparkles className="w-3.5 h-3.5 text-amber-400" />}
+                          label="Membership Tiers"
+                          onClick={() => { setDropdownOpen(false); router.push('/membership'); }}
                         />
 
                         {(profile?.role === 'admin' || isAdminUser) && (

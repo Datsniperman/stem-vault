@@ -2,25 +2,31 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Music2, Search, X, Plus, Calendar, HardDrive, User, Trash2, Loader2, Layers } from 'lucide-react';
+import { Music2, Search, X, Plus, Calendar, HardDrive, User, Trash2, Loader2, Layers, Sparkles, Pencil } from 'lucide-react';
 import { Mix } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { UploadMixModal } from '@/components/UploadMixModal';
+import { EditMixModal } from '@/components/EditMixModal';
 import { Header } from '@/components/Header';
 
 export default function MixesPage() {
   const { user, profile } = useAuth();
   const [mixes, setMixes] = useState<Mix[]>([]);
   const [search, setSearch] = useState('');
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'sunday'>('all');
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [editingMix, setEditingMix] = useState<Mix | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const fetchMixes = async (q: string = '') => {
+  const fetchMixes = async (q: string = '', sundayOnly: boolean = false) => {
     try {
       setLoading(true);
-      const url = q ? `/api/mixes?q=${encodeURIComponent(q)}` : '/api/mixes';
+      const params = new URLSearchParams();
+      if (q.trim()) params.set('q', q.trim());
+      if (sundayOnly) params.set('sunday_review', 'true');
+      const url = params.toString() ? `/api/mixes?${params.toString()}` : '/api/mixes';
       const res = await fetch(url);
       const data = await res.json();
       setMixes(data.mixes || []);
@@ -32,8 +38,8 @@ export default function MixesPage() {
   };
 
   useEffect(() => {
-    fetchMixes(search);
-  }, [search]);
+    fetchMixes(search, reviewFilter === 'sunday');
+  }, [search, reviewFilter]);
 
   const handleDeleteMix = async (mixId: string, title: string) => {
     if (!confirm(`Delete mix "${title}"?`)) return;
@@ -45,7 +51,7 @@ export default function MixesPage() {
         const data = await res.json();
         throw new Error(data.error || 'Failed to delete mix');
       }
-      fetchMixes(search);
+      fetchMixes(search, reviewFilter === 'sunday');
     } catch (err: any) {
       alert(err.message || 'Error deleting mix.');
     } finally {
@@ -82,7 +88,7 @@ export default function MixesPage() {
               <span>Listen to Finished Mixes</span>
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl">
-              Listen to community mixes natively in your browser with instant streaming support. Download full-quality untranscoded WAV, FLAC, or MP3 files.
+              Listen to community mixes natively in your browser with instant streaming support. Premium members can submit Sunday mixes for direct, personalized feedback from Jared and the pro engineers.
             </p>
           </div>
 
@@ -106,31 +112,64 @@ export default function MixesPage() {
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-        {/* Full-width Search Bar across top */}
-        <div className="mb-6 space-y-2">
-          <div className="relative w-full">
-            <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by song name..."
-              className="w-full bg-[#121212] border border-neutral-800 hover:border-neutral-700 rounded-lg pl-10 pr-10 py-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors shadow-xs"
-            />
-            {search && (
+        {/* Search Bar & Review Filter */}
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search by mix or song name..."
+                className="w-full bg-[#121212] border border-neutral-800 hover:border-neutral-700 rounded-lg pl-10 pr-10 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors shadow-xs"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 bg-neutral-900 p-1 rounded-lg border border-neutral-800 shrink-0">
               <button
-                onClick={() => setSearch('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
-                aria-label="Clear search"
+                onClick={() => setReviewFilter('all')}
+                className={`text-xs px-3 py-1.5 rounded font-medium transition-colors ${
+                  reviewFilter === 'all'
+                    ? 'bg-neutral-800 text-white shadow-xs'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
               >
-                <X className="w-4 h-4" />
+                All Mixes
               </button>
-            )}
+              <button
+                onClick={() => setReviewFilter('sunday')}
+                className={`text-xs px-3 py-1.5 rounded font-medium transition-colors flex items-center gap-1.5 ${
+                  reviewFilter === 'sunday'
+                    ? 'bg-purple-950/60 text-purple-300 border border-purple-700/50 shadow-xs'
+                    : 'text-neutral-400 hover:text-purple-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>Sunday Mix Reviews</span>
+              </button>
+            </div>
           </div>
+
           <div className="flex items-center justify-between text-xs text-neutral-400 font-mono">
             <span>
               {mixes.length} {mixes.length === 1 ? 'mix found' : 'mixes found'}
             </span>
+            {reviewFilter === 'sunday' && (
+              <span className="text-purple-400/90 text-[11px]">
+                Showing Sunday mixes queued for review by Jared and pros
+              </span>
+            )}
           </div>
         </div>
 
@@ -146,7 +185,11 @@ export default function MixesPage() {
             <Music2 className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
             <h3 className="text-sm font-semibold text-neutral-300">No Mixes Found</h3>
             <p className="text-xs text-neutral-500 mt-1 max-w-md mx-auto">
-              {search ? 'Try adjusting your search criteria.' : 'Be the first to share a mix!'}
+              {search
+                ? 'Try adjusting your search criteria.'
+                : reviewFilter === 'sunday'
+                ? 'No Sunday Mix Reviews submitted yet. Premium members can flag mixes for pro review.'
+                : 'Be the first to share a mix!'}
             </p>
             {user && (
               <button
@@ -176,6 +219,11 @@ export default function MixesPage() {
                       <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
                         {mix.format}
                       </span>
+                      {mix.is_sunday_review && (
+                        <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-purple-950/50 text-purple-300 border border-purple-700/50">
+                          SUNDAY REVIEW
+                        </span>
+                      )}
                       {mix.multi_id && (
                         <Link
                           href={`/multis/${mix.multi_id}`}
@@ -200,18 +248,27 @@ export default function MixesPage() {
                       <span>{new Date(mix.created_at).toLocaleDateString()}</span>
 
                       {canDelete && (
-                        <button
-                          onClick={() => handleDeleteMix(mix.id, mix.title)}
-                          disabled={deletingId === mix.id}
-                          className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-neutral-800 transition-colors ml-1"
-                          title="Delete this mix"
-                        >
-                          {deletingId === mix.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1 ml-1">
+                          <button
+                            onClick={() => setEditingMix(mix)}
+                            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                            title="Edit mix details or reassign uploader"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMix(mix.id, mix.title)}
+                            disabled={deletingId === mix.id}
+                            className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-neutral-800 transition-colors"
+                            title="Delete this mix"
+                          >
+                            {deletingId === mix.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -233,7 +290,14 @@ export default function MixesPage() {
       <UploadMixModal
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        onSuccess={() => fetchMixes(search)}
+        onSuccess={() => fetchMixes(search, reviewFilter === 'sunday')}
+      />
+
+      <EditMixModal
+        isOpen={Boolean(editingMix)}
+        onClose={() => setEditingMix(null)}
+        mix={editingMix}
+        onSuccess={() => fetchMixes(search, reviewFilter === 'sunday')}
       />
     </div>
   );

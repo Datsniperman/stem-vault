@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, Music2, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Upload, Music2, AlertCircle, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { Multi } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import { canSubmitSundayReview } from '@/lib/auth/tiers';
 
 interface UploadMixModalProps {
   isOpen: boolean;
@@ -24,8 +26,10 @@ export function UploadMixModal({
   defaultMultiId,
   onSuccess,
 }: UploadMixModalProps) {
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [selectedMultiId, setSelectedMultiId] = useState(defaultMultiId || '');
+  const [isSundayReview, setIsSundayReview] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [multis, setMultis] = useState<Multi[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -39,12 +43,15 @@ export function UploadMixModal({
   const bgErrorRef = useRef<string | null>(null);
   const activeXhrRef = useRef<XMLHttpRequest | null>(null);
 
+  const canReview = canSubmitSundayReview(user);
+
   useEffect(() => {
     if (isOpen) {
       setError(null);
       setUploadProgress(null);
       setStatusMessage('');
       setStagedUpload(null);
+      setIsSundayReview(false);
       bgUploadPromiseRef.current = null;
       bgErrorRef.current = null;
       activeXhrRef.current = null;
@@ -80,6 +87,7 @@ export function UploadMixModal({
     // 3. Reset all state and close modal
     setFile(null);
     setTitle('');
+    setIsSundayReview(false);
     setUploading(false);
     setUploadProgress(null);
     setStatusMessage('');
@@ -248,6 +256,7 @@ export function UploadMixModal({
           public_url: uploadInfo.publicUrl,
           format: uploadInfo.format,
           size_bytes: uploadInfo.sizeBytes,
+          is_sunday_review: isSundayReview && canReview,
         }),
       });
 
@@ -325,7 +334,7 @@ export function UploadMixModal({
               </div>
             </div>
 
-            {/* Visual Animated Progress Bar - ONLY shown once the user clicks upload */}
+            {/* Visual Animated Progress Bar */}
             {uploading && (
               <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3 rounded-lg animate-[fade-in_0.15s_ease-out]">
                 <div className="flex items-center justify-between text-xs">
@@ -381,6 +390,43 @@ export function UploadMixModal({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Sunday Mix Review Toggle (Premium Exclusive) */}
+            <div className={`p-3 rounded-lg border transition-colors ${
+              canReview
+                ? isSundayReview
+                  ? 'bg-purple-950/40 border-purple-800/80'
+                  : 'bg-neutral-900/60 border-neutral-800 hover:border-neutral-700'
+                : 'bg-neutral-900/30 border-neutral-800/60 opacity-70'
+            }`}>
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isSundayReview}
+                  onChange={e => setIsSundayReview(e.target.checked)}
+                  disabled={uploading || !canReview}
+                  className="w-4 h-4 rounded border-neutral-700 text-purple-600 focus:ring-0 bg-neutral-800 cursor-pointer mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-white">
+                      Submit for Sunday Mix Review
+                    </span>
+                    <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-purple-950/60 text-purple-300 border border-purple-700/50">
+                      PREMIUM
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    Request direct, personalized mix review and feedback from Jared and the pro engineering team.
+                  </p>
+                  {!canReview && (
+                    <p className="text-[11px] text-amber-400 mt-1 font-medium">
+                      Requires Premium Tier ($30/mo). Upgrade in Membership to unlock Sunday reviews.
+                    </p>
+                  )}
+                </div>
+              </label>
             </div>
 
             <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
