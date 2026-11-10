@@ -12,7 +12,8 @@ const DISCORD_GUILD_ID =
   '1488266305743360252';
 
 const REQUIRED_MEMBERSHIP_ROLE_ID =
-  (process.env.DISCORD_REQUIRED_ROLE_ID || '1488271670119633047').trim();
+  (process.env.DISCORD_REQUIRED_ROLE_ID || '1569410882822475837').trim();
+const PLUS_ROLE_IDS = [REQUIRED_MEMBERSHIP_ROLE_ID, '1569410882822475837', '1488271670119633047'];
 
 export async function POST(request: NextRequest) {
   const sessionToken =
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
     const memberData = await res.json();
     const roles: string[] = Array.isArray(memberData.roles) ? memberData.roles : [];
     const hasAdminRole = roles.includes('1553858763474214912');
-    const hasRole = hasAdminRole || roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
+    const hasRole = hasAdminRole || PLUS_ROLE_IDS.some(id => roles.includes(id)) || roles.includes('1488346107351269526');
 
     if (!hasRole) {
       return NextResponse.json({

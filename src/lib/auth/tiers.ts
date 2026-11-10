@@ -2,7 +2,8 @@ import { isUserAdmin } from './admin';
 
 export type MembershipTier = 'FREE' | 'PLUS' | 'PREMIUM';
 
-export const PLUS_ROLE_ID = (process.env.DISCORD_REQUIRED_ROLE_ID || '1488271670119633047').trim();
+export const PLUS_ROLE_ID = (process.env.DISCORD_PLUS_ROLE_ID || process.env.DISCORD_REQUIRED_ROLE_ID || '1569410882822475837').trim();
+export const PLUS_ROLE_IDS = ['1569410882822475837', '1488271670119633047'];
 export const PREMIUM_ROLE_ID = (process.env.DISCORD_PREMIUM_ROLE_ID || '1488346107351269526').trim();
 
 /**
@@ -35,7 +36,7 @@ export function hasMemberAccess(user: any): boolean {
 
   if (isAdmin) return true;
 
-  if (roles.includes(PLUS_ROLE_ID) || roles.includes(PREMIUM_ROLE_ID)) {
+  if (PLUS_ROLE_IDS.some(id => roles.includes(id)) || roles.includes(PREMIUM_ROLE_ID)) {
     return true;
   }
 
@@ -80,7 +81,7 @@ export function getMembershipTier(user: any): MembershipTier {
     return 'PREMIUM';
   }
 
-  if (roles.includes(PLUS_ROLE_ID) || user.has_membership || user.user_metadata?.has_membership) {
+  if (PLUS_ROLE_IDS.some(id => roles.includes(id)) || user.has_membership || user.user_metadata?.has_membership) {
     return 'PLUS';
   }
 
