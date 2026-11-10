@@ -18,8 +18,13 @@ export async function GET(request: NextRequest) {
         m.id,
         m.owner_id,
         m.title,
+        m.church,
+        m.bpm,
+        m.song_key,
         m.description,
         m.is_pro,
+        m.discord_message_id,
+        m.discord_thread_id,
         m.created_at,
         m.updated_at,
         COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
@@ -35,7 +40,7 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
     if (search.trim()) {
       params.push(`%${search.trim()}%`);
-      conditions.push(`m.title ILIKE $${params.length}`);
+      conditions.push(`(m.title ILIKE $${params.length} OR m.church ILIKE $${params.length})`);
     }
     if (proOnly) {
       conditions.push(`m.is_pro = true`);
@@ -46,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     query += `
-      GROUP BY m.id, m.is_pro, p.server_display_name, p.display_name, p.email, p.avatar_url
+      GROUP BY m.id, m.church, m.bpm, m.song_key, m.is_pro, m.discord_message_id, m.discord_thread_id, p.server_display_name, p.display_name, p.email, p.avatar_url
       ORDER BY m.created_at DESC
     `;
 
@@ -74,10 +79,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, is_pro } = body;
+    const { title, church, bpm, song_key, description, is_pro } = body;
 
     if (!title || !title.trim()) {
-      return NextResponse.json({ error: 'Multi title is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Song name is required.' }, { status: 400 });
+    }
+    if (!church || !church.trim()) {
+      return NextResponse.json({ error: 'Church name is required.' }, { status: 400 });
+    }
+    if (!song_key || !song_key.trim()) {
+      return NextResponse.json({ error: 'Song key is required.' }, { status: 400 });
+    }
+    const bpmNum = parseInt(String(bpm).trim(), 10);
+    if (!bpm || isNaN(bpmNum) || bpmNum <= 0) {
+      return NextResponse.json({ error: 'Valid BPM is required.' }, { status: 400 });
     }
 
     const pool = getDbPool();
@@ -135,10 +150,18 @@ export async function POST(request: NextRequest) {
     ).catch(e => console.warn('Could not auto-upsert profile in multis POST:', e.message));
 
     const result = await pool.query(
-      `INSERT INTO public.multis (owner_id, title, description, is_pro, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, now(), now())
+      `INSERT INTO public.multis (owner_id, title, church, bpm, song_key, description, is_pro, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now())
        RETURNING *`,
-      [user.id, title.trim(), description ? description.trim() : null, isProMulti]
+      [
+        user.id,
+        title.trim(),
+        church.trim(),
+        bpmNum,
+        song_key.trim(),
+        description ? description.trim() : null,
+        isProMulti,
+      ]
     );
 
     const createdMulti = result.rows[0];

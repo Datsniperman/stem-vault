@@ -103,6 +103,9 @@ export interface Multi {
   id: string;
   owner_id: string;
   title: string;
+  church?: string | null;
+  bpm?: number | null;
+  song_key?: string | null;
   description?: string | null;
   is_pro?: boolean;
   zip_r2_key?: string | null;

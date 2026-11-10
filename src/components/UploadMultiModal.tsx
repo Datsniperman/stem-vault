@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { X, Upload, FileArchive, CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { X, Upload, CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 import { sanitizeTrackFilename } from '@/lib/audio/renamer';
 import { parseZipEntries, extractZipEntry, ZipAudioEntry } from '@/lib/zip/parser';
 
@@ -23,10 +23,13 @@ interface RenameMapping {
 export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModalProps) {
   const router = useRouter();
   const [title, setTitle] = useState('');
+  const [church, setChurch] = useState('');
+  const [songKey, setSongKey] = useState('');
+  const [bpm, setBpm] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const userRoles: string[] = [
     ...(Array.isArray((user as any)?.roles) ? (user as any).roles : []),
     ...(Array.isArray(user?.user_metadata?.roles) ? user.user_metadata.roles : []),
@@ -34,6 +37,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   ];
   const isProUser =
     userRoles.includes('1488346107351269526') ||
+    userRoles.includes('1488271670119633047') ||
     user?.user_metadata?.provider_id === '1377286620344221778' ||
     user?.user_metadata?.provider_id === '635718336822378506';
 
@@ -60,6 +64,12 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       abortControllerRef.current = new AbortController();
       uploadedKeysRef.current = [];
       runningMultiIdRef.current = null;
+      setTitle('');
+      setChurch('');
+      setSongKey('');
+      setBpm('');
+      setDescription('');
+      setFile(null);
       setError(null);
       setStatusMessage('');
       setUploadProgress(null);
@@ -101,62 +111,40 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       }
     }
 
-    // 4. Delete any R2 keys uploaded so far
-    if (uploadedKeysRef.current.length > 0) {
-      try {
-        await fetch('/api/storage/delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keys: [...uploadedKeysRef.current] }),
-        });
-      } catch (delErr) {
-        console.warn('Could not delete uploaded keys on cancel:', delErr);
-      }
-    }
-
-    // 5. Reset all state and close modal
     setUploading(false);
-    setUploadProgress(null);
     setStatusMessage('');
-    setFile(null);
-    setTitle('');
-    setDescription('');
-    setResultMappings(null);
-    setCreatedMultiId(null);
-    runningMultiIdRef.current = null;
-    uploadedKeysRef.current = [];
-    activeXhrsRef.current.clear();
-    bgParsePromiseRef.current = null;
-    bgErrorRef.current = null;
-    setError(null);
-
+    setUploadProgress(null);
     onClose();
   };
 
-  const startBackgroundZipParsing = (zipFile: File): Promise<ZipAudioEntry[]> => {
-    bgErrorRef.current = null;
+  const handleFinish = () => {
+    const targetId = createdMultiId || runningMultiIdRef.current;
+    if (onSuccess && targetId) {
+      onSuccess(targetId);
+    }
+    onClose();
+    if (targetId) {
+      router.push(`/multis/${targetId}`);
+    }
+  };
 
-    const promise = (async () => {
-      try {
-        const audioEntries = await parseZipEntries(zipFile);
-        if (audioEntries.length === 0) {
-          throw new Error('No valid audio files (WAV, FLAC, MP3, AIFF, OGG) found in this ZIP archive.');
+  const startBackgroundZipParsing = (selectedFile: File) => {
+    const parsePromise = parseZipEntries(selectedFile)
+      .then((entries) => {
+        if (!isCancelledRef.current) {
+          setParsedEntries(entries);
         }
-        setParsedEntries(audioEntries);
-        return audioEntries;
-      } catch (err: any) {
-        throw new Error(err.message || 'Could not parse ZIP archive. Please ensure it is a valid ZIP file.');
-      }
-    })();
+        return entries;
+      })
+      .catch((err) => {
+        if (!isCancelledRef.current) {
+          bgErrorRef.current = err.message || 'Could not parse ZIP archive.';
+        }
+        return [] as ZipAudioEntry[];
+      });
 
-    bgParsePromiseRef.current = promise;
-    promise.catch(err => {
-      console.warn('Background zip parse error:', err);
-      bgErrorRef.current = err.message || 'Failed to inspect ZIP file.';
-      setError(err.message);
-    });
-
-    return promise;
+    bgParsePromiseRef.current = parsePromise;
+    return parsePromise;
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,8 +152,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
     if (!selected) return;
 
     if (!selected.name.toLowerCase().endsWith('.zip')) {
-      setError('Only ZIP archives (.zip) are supported for multitrack packs.');
-      setFile(null);
+      setError('Please select a valid ZIP archive (.zip).');
       return;
     }
 
@@ -234,12 +221,25 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      setError('Multi title is required.');
-      return;
-    }
     if (!file) {
       setError('Please select a ZIP file containing the multitrack audio stems.');
+      return;
+    }
+    if (!title.trim()) {
+      setError('Song Name is required.');
+      return;
+    }
+    if (!church.trim()) {
+      setError('Church Name is required.');
+      return;
+    }
+    if (!songKey.trim()) {
+      setError('Song Key is required.');
+      return;
+    }
+    const bpmNum = parseInt(bpm.trim(), 10);
+    if (!bpm.trim() || isNaN(bpmNum) || bpmNum <= 0) {
+      setError('Valid BPM is required (e.g. 128).');
       return;
     }
 
@@ -274,6 +274,9 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(),
+          church: church.trim(),
+          song_key: songKey.trim(),
+          bpm: bpmNum,
           description: description.trim() || null,
           is_pro: isProUser,
         }),
@@ -338,33 +341,40 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
       if (isCancelledRef.current) return;
 
-      // 4. Extract individual stem tracks for preview (if feasible, otherwise session is fully uploaded via ZIP)
+      // 4. Extract and upload individual audio stems directly to R2
+      const existingStoredNames = new Set<string>();
       const mappings: RenameMapping[] = [];
-      const usedNames = new Set<string>();
 
       if (audioEntries && audioEntries.length > 0) {
-        for (let i = 0; i < audioEntries.length; i++) {
+        const totalTracks = audioEntries.length;
+        for (let i = 0; i < totalTracks; i++) {
           if (isCancelledRef.current) return;
 
           const item = audioEntries[i];
-          const storedName = sanitizeTrackFilename(item.filename, usedNames);
-          usedNames.add(storedName.toLowerCase());
-
-          const overallProgress = 60 + Math.round(((i + 1) / audioEntries.length) * 35);
-          setUploadProgress(overallProgress);
-          setStatusMessage(`Processing preview stem ${i + 1} of ${audioEntries.length}: ${storedName}...`);
+          const storedName = sanitizeTrackFilename(item.filename, existingStoredNames);
+          setStatusMessage(`Extracting track ${i + 1} of ${totalTracks}: ${storedName}...`);
 
           try {
             const blob = await extractZipEntry(file, item);
             if (isCancelledRef.current) return;
 
-            // Request presigned URL
+            const mimeMap: Record<string, string> = {
+              wav: 'audio/wav',
+              mp3: 'audio/mpeg',
+              flac: 'audio/flac',
+              aiff: 'audio/aiff',
+              aif: 'audio/aiff',
+              ogg: 'audio/ogg',
+            };
+            const extClean = item.ext.replace('.', '').toLowerCase();
+            const contentType = mimeMap[extClean] || 'audio/wav';
+
             const presignRes = await fetch('/api/storage/presign', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 filename: storedName,
-                contentType: blob.type || 'audio/wav',
+                contentType,
                 folder: `multis/${multiId}`,
               }),
               signal: abortControllerRef.current.signal,
@@ -374,7 +384,12 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
               const presignData = await presignRes.json();
               if (presignData?.uploadUrl) {
                 uploadedKeysRef.current.push(presignData.key);
-                await uploadDirectToR2(presignData.uploadUrl, blob, blob.type || 'audio/wav');
+                await uploadDirectToR2(presignData.uploadUrl, blob, contentType, (pct) => {
+                  const trackSlice = 35 / totalTracks;
+                  const baseProgress = 60 + i * trackSlice;
+                  setUploadProgress(Math.min(95, Math.round(baseProgress + (pct / 100) * trackSlice)));
+                });
+
                 if (isCancelledRef.current) return;
 
                 await fetch(`/api/multis/${multiId}/tracks`, {
@@ -409,10 +424,14 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       // Announce to Discord automatically
       try {
         setStatusMessage('Announcing multitrack to Discord...');
-        await fetch(`/api/multis/${multiId}/publish`, {
+        const pubRes = await fetch(`/api/multis/${multiId}/publish?force=true`, {
           method: 'POST',
           signal: abortControllerRef.current.signal,
         });
+        if (!pubRes.ok) {
+          const pubData = await pubRes.json().catch(() => null);
+          console.warn('Auto-publish returned non-ok status:', pubRes.status, pubData);
+        }
       } catch (pubErr) {
         console.warn('Could not auto-publish to Discord:', pubErr);
       }
@@ -423,7 +442,6 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       if (mappings.length > 0) {
         setResultMappings(mappings);
       } else {
-        // Full session archive ready
         if (onSuccess) onSuccess(multiId);
         onClose();
         router.push(`/multis/${multiId}`);
@@ -433,47 +451,34 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       console.error('Upload multi error:', err);
       setError(err.message || 'Failed to process multitrack upload.');
       setUploading(false);
-      setUploadProgress(null);
-    }
-  };
-
-  const handleFinish = () => {
-    if (createdMultiId) {
-      if (onSuccess) onSuccess(createdMultiId);
-      onClose();
-      router.push(`/multis/${createdMultiId}`);
-    } else {
-      onClose();
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800 sticky top-0 bg-[#121212] z-10">
+      <div className="relative w-full max-w-xl bg-[#121212] border border-neutral-800 rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 shrink-0">
           <div>
-            <h3 className="text-base font-semibold text-white flex items-center gap-2">
-              <FileArchive className="w-5 h-5 text-neutral-300" />
-              <span>Upload Multitrack Song (ZIP)</span>
-            </h3>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <h3 className="text-base font-semibold text-white">Upload Multitrack Song (ZIP)</h3>
+            <p className="text-xs text-neutral-400">
               Upload a ZIP multitrack archive. Audio files will be automatically validated and cleaned.
             </p>
           </div>
           <button
             onClick={handleCancel}
-            className="text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition-colors"
+            disabled={uploading}
+            className="text-neutral-400 hover:text-white transition-colors disabled:opacity-40"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-4 sm:p-6 space-y-4">
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-4 flex-1">
           {error && (
-            <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-lg text-red-200 text-xs flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+            <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-lg text-red-200 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
               <span>{error}</span>
             </div>
           )}
@@ -516,7 +521,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 <button
                   type="button"
                   onClick={handleFinish}
-                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors"
+                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors cursor-pointer"
                 >
                   View Multitrack Pack
                 </button>
@@ -560,7 +565,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 </div>
               </div>
 
-              {/* Visual Animated Progress Bar - ONLY shown once the user clicks upload */}
+              {/* Visual Animated Progress Bar */}
               {uploading && (
                 <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3.5 rounded-lg animate-[fade-in_0.15s_ease-out]">
                   <div className="flex items-center justify-between text-xs">
@@ -585,20 +590,69 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 </div>
               )}
 
+              {/* Song Name * */}
               <div>
                 <label className="block text-xs font-medium text-neutral-300 mb-1">
-                  Song / Multi Title <span className="text-red-400">*</span>
+                  Song Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  placeholder="e.g. Gravity - Multitrack Stems"
+                  placeholder="e.g. Thank God I'm Free"
                   disabled={uploading}
                   className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
 
+              {/* Church Name * */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Church Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={church}
+                  onChange={e => setChurch(e.target.value)}
+                  placeholder="e.g. Elevation Church, Bethel Music, Passion, Hillsong"
+                  disabled={uploading}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                />
+              </div>
+
+              {/* Song Key * & BPM * in 2 columns */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Song Key <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={songKey}
+                    onChange={e => setSongKey(e.target.value)}
+                    placeholder="e.g. C, Eb, F#m, G"
+                    disabled={uploading}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    BPM <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={bpm}
+                    onChange={e => setBpm(e.target.value)}
+                    placeholder="e.g. 128"
+                    min="1"
+                    max="300"
+                    disabled={uploading}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  />
+                </div>
+              </div>
+
+              {/* Description / Notes (Optional) */}
               <div>
                 <label className="block text-xs font-medium text-neutral-300 mb-1">
                   Description / Notes (Optional)
@@ -606,19 +660,19 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 <textarea
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  placeholder="BPM, key, recording notes, microphone setup..."
+                  placeholder="Recording notes, microphone setup, arrangement details..."
                   rows={2}
                   disabled={uploading}
                   className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
 
-              {/* Informative notice for Pro users - strictly NO checkbox */}
+              {/* Informative notice for Pro users */}
               {isProUser && (
                 <div className="bg-amber-950/20 border border-amber-800/60 p-3 rounded-lg">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-semibold text-white">Pro Multitrack</span>
-                    <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">PREMIUM EXCLUSIVE</span>
+                    <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">PREMIUM EXCLUSIVE</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 mt-0.5">As a Pro member, your upload will be published directly to Pro Tracks for Premium members.</p>
                 </div>
@@ -628,14 +682,14 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors"
+                  className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors cursor-pointer"
                 >
                   {uploading ? 'Cancel Upload' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  disabled={uploading || !file || !title.trim()}
-                  className="bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-1.5 shadow-sm"
+                  disabled={uploading || !file || !title.trim() || !church.trim() || !songKey.trim() || !bpm.trim()}
+                  className="bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   {uploading ? (
                     <>

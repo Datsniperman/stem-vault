@@ -39,27 +39,36 @@ export async function POST(request: NextRequest) {
     // 2. Parse multipart form data
     const formData = await request.formData();
     const title = (formData.get('title') as string || '').trim();
+    const church = (formData.get('church') as string || formData.get('artist') as string || '').trim();
+    const songKey = (formData.get('song_key') as string || formData.get('key') as string || '').trim();
+    const bpmRaw = (formData.get('bpm') as string || '').trim();
+    const bpm = bpmRaw && !isNaN(Number(bpmRaw)) ? parseInt(bpmRaw, 10) : null;
     const description = (formData.get('description') as string || '').trim() || null;
     const file = formData.get('file') as File | null;
 
     if (!title) {
-      return NextResponse.json({ error: 'Multi title is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Song name is required.' }, { status: 400 });
     }
-
+    if (!church) {
+      return NextResponse.json({ error: 'Church name is required.' }, { status: 400 });
+    }
+    if (!songKey) {
+      return NextResponse.json({ error: 'Song key is required.' }, { status: 400 });
+    }
+    if (!bpm || bpm <= 0) {
+      return NextResponse.json({ error: 'Valid BPM is required.' }, { status: 400 });
+    }
     if (!file) {
       return NextResponse.json({ error: 'No ZIP file provided.' }, { status: 400 });
     }
 
-    // 3. File size and quota verification
-    // Unlimited upload - no file size limits
-
-    // 4. Save ZIP to temporary location for validation and inspection
+    // 3. Save ZIP to temporary location for validation and inspection
     const tempDir = os.tmpdir();
     tempZipPath = path.join(tempDir, `multi-upload-${Date.now()}-${Math.random().toString(36).slice(2)}.zip`);
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(tempZipPath, fileBuffer);
 
-    // 5. Open and validate ZIP contents
+    // 4. Open and validate ZIP contents
     let zip: AdmZip;
     try {
       zip = new AdmZip(tempZipPath);
@@ -75,7 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'The ZIP archive is empty.' }, { status: 400 });
     }
 
-    // 6. Security & extension validation
+    // 5. Security & extension validation
     const audioEntries: AdmZip.IZipEntry[] = [];
 
     for (const entry of entries) {
@@ -89,7 +98,7 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Zip-Slip protection: ensure no path segment navigates upwards
+      // Zip-Slip protection
       const pathSegments = rawName.split(/[/\\]/);
       if (pathSegments.includes('..') || path.isAbsolute(rawName)) {
         return NextResponse.json(
@@ -127,10 +136,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. Extract to temporary folder for processing
+    // 6. Extract to temporary folder for processing
     tempExtractDir = fs.mkdtempSync(path.join(tempDir, 'multi-extracted-'));
 
-    // 8. Check pro status & create Multi record in database
+    // 7. Check pro status & create Multi record in database
     const userIsPro = await isProUserUploader(user);
     const isAdmin = isUserAdmin({
       email: user.email,
@@ -140,21 +149,20 @@ export async function POST(request: NextRequest) {
       userMetadata: user.user_metadata,
       roles: user.user_metadata?.roles || (user as any).roles,
     });
-    // Only people with the pro role '1488346107351269526' can upload to pro tracks
     const isProMulti = userIsPro;
 
     const pool = getDbPool();
     const multiRes = await pool.query(
-      `INSERT INTO public.multis (owner_id, title, description, is_pro, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, now(), now())
-       RETURNING id, owner_id, title, description, is_pro, created_at`,
-      [user.id, title, description, isProMulti]
+      `INSERT INTO public.multis (owner_id, title, church, bpm, song_key, description, is_pro, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now())
+       RETURNING id, owner_id, title, church, bpm, song_key, description, is_pro, created_at`,
+      [user.id, title, church, bpm, songKey, description, isProMulti]
     );
 
     const multi = multiRes.rows[0];
     const multiId = multi.id;
 
-    // 9. Process tracks: rename, calculate duration, upload to storage, insert to DB
+    // 8. Process tracks: rename, calculate duration, upload to storage, insert to DB
     const existingStoredNames = new Set<string>();
     const renameMappings: Array<{ original: string; stored: string; size_bytes: number; duration_seconds: number | null }> = [];
     const mimeMap: Record<string, string> = {
@@ -166,7 +174,6 @@ export async function POST(request: NextRequest) {
       '.ogg': 'audio/ogg',
     };
 
-    // Sort entries naturally so track 01, 02 etc remain in logical order
     audioEntries.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
     for (const entry of audioEntries) {
@@ -223,7 +230,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    // 10. Clean up temporary files
     if (tempZipPath) {
       try {
         fs.unlinkSync(tempZipPath);

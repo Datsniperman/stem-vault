@@ -18,8 +18,13 @@ export async function GET(
         m.id,
         m.owner_id,
         m.title,
+        m.church,
+        m.bpm,
+        m.song_key,
         m.description,
         m.is_pro,
+        m.discord_message_id,
+        m.discord_thread_id,
         m.zip_r2_key,
         m.zip_public_url,
         m.zip_size_bytes,
@@ -60,39 +65,59 @@ export async function GET(
       [id]
     );
 
-    // 3. Fetch Mixes linked to this Multi
+    // 3. Fetch Mixes
     const mixesRes = await pool.query(
       `SELECT
-        mx.id,
-        mx.owner_id,
-        mx.multi_id,
-        mx.title,
-        mx.format,
-        mx.size_bytes,
-        mx.r2_key,
-        mx.public_url,
-        mx.duration_seconds,
-        mx.is_sunday_review,
-        mx.created_at,
+        mix.id,
+        mix.multi_id,
+        mix.owner_id,
+        mix.title,
+        mix.description,
+        mix.format,
+        mix.size_bytes,
+        mix.duration_seconds,
+        mix.r2_key,
+        mix.public_url,
+        mix.created_at,
+        mix.updated_at,
         COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
         p.avatar_url
-       FROM public.mixes mx
-       LEFT JOIN public.profiles p ON mx.owner_id = p.id
-       WHERE mx.multi_id = $1
-       ORDER BY mx.created_at DESC`,
+       FROM public.mixes mix
+       LEFT JOIN public.profiles p ON mix.owner_id = p.id
+       WHERE mix.multi_id = $1
+       ORDER BY mix.created_at DESC`,
       [id]
     );
 
-    const totalSizeBytes = tracksRes.rows.reduce((sum, t) => sum + Number(t.size_bytes), 0);
+    // Calculate total size
+    const totalSizeBytes = tracksRes.rows.reduce(
+      (sum, t) => sum + Number(t.size_bytes || 0),
+      0
+    );
 
     return NextResponse.json({
       multi: {
-        ...multi,
+        id: multi.id,
+        owner_id: multi.owner_id,
+        title: multi.title,
+        church: multi.church,
+        bpm: multi.bpm,
+        song_key: multi.song_key,
+        description: multi.description,
+        is_pro: Boolean(multi.is_pro),
+        discord_message_id: multi.discord_message_id,
+        discord_thread_id: multi.discord_thread_id,
+        zip_r2_key: multi.zip_r2_key,
+        zip_public_url: multi.zip_public_url,
         zip_size_bytes: multi.zip_size_bytes ? Number(multi.zip_size_bytes) : null,
         zip_last_downloaded_at: multi.zip_last_downloaded_at,
-        zip_status: multi.zip_status || 'ready',
+        zip_status: multi.zip_status,
+        created_at: multi.created_at,
+        updated_at: multi.updated_at,
+        uploader_name: multi.uploader_name,
+        avatar_url: multi.avatar_url,
         track_count: tracksRes.rows.length,
-        total_size_bytes: totalSizeBytes,
+        total_size_bytes: totalSizeBytes || (multi.zip_size_bytes ? Number(multi.zip_size_bytes) : 0),
         tracks: tracksRes.rows.map(t => ({
           ...t,
           size_bytes: Number(t.size_bytes),
@@ -159,9 +184,14 @@ export async function PATCH(
     const body = await request.json();
     const {
       title,
+      church,
+      bpm,
+      song_key,
       description,
       owner_id,
       is_pro,
+      discord_message_id,
+      discord_thread_id,
       zip_r2_key,
       zip_public_url,
       zip_size_bytes,
@@ -177,6 +207,18 @@ export async function PATCH(
       fields.push(`title = $${idx++}`);
       values.push(title.trim());
     }
+    if (church !== undefined) {
+      fields.push(`church = $${idx++}`);
+      values.push(church ? church.trim() : null);
+    }
+    if (bpm !== undefined) {
+      fields.push(`bpm = $${idx++}`);
+      values.push(bpm ? parseInt(bpm, 10) : null);
+    }
+    if (song_key !== undefined) {
+      fields.push(`song_key = $${idx++}`);
+      values.push(song_key ? song_key.trim() : null);
+    }
     if (description !== undefined) {
       fields.push(`description = $${idx++}`);
       values.push(description ? description.trim() : null);
@@ -188,6 +230,14 @@ export async function PATCH(
     if (is_pro !== undefined && isAdmin) {
       fields.push(`is_pro = $${idx++}`);
       values.push(Boolean(is_pro));
+    }
+    if (discord_message_id !== undefined) {
+      fields.push(`discord_message_id = $${idx++}`);
+      values.push(discord_message_id);
+    }
+    if (discord_thread_id !== undefined) {
+      fields.push(`discord_thread_id = $${idx++}`);
+      values.push(discord_thread_id);
     }
     if (zip_r2_key !== undefined) {
       fields.push(`zip_r2_key = $${idx++}`);
@@ -217,35 +267,12 @@ export async function PATCH(
     fields.push(`updated_at = now()`);
     values.push(id);
 
-    const updateQuery = `UPDATE public.multis SET ${fields.join(', ')} WHERE id = $${idx}`;
-    await pool.query(updateQuery, values);
+    const updateQuery = `UPDATE public.multis SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
+    const updateRes = await pool.query(updateQuery, values);
 
-    // Fetch refreshed multi with updated uploader details
-    const refreshed = await pool.query(
-      `SELECT
-        m.id,
-        m.owner_id,
-        m.title,
-        m.description,
-        m.is_pro,
-        m.zip_r2_key,
-        m.zip_public_url,
-        m.zip_size_bytes,
-        m.zip_last_downloaded_at,
-        m.zip_status,
-        m.created_at,
-        m.updated_at,
-        COALESCE(p.server_display_name, p.display_name, p.email, 'Member') AS uploader_name,
-        p.avatar_url
-       FROM public.multis m
-       LEFT JOIN public.profiles p ON m.owner_id = p.id
-       WHERE m.id = $1`,
-      [id]
-    );
-
-    return NextResponse.json({ multi: refreshed.rows[0] });
+    return NextResponse.json({ multi: updateRes.rows[0] });
   } catch (err: any) {
-    console.error('[multis/update] Error:', err);
+    console.error('[multis/patch] Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -267,7 +294,7 @@ export async function DELETE(
 
     // Verify ownership or admin
     const checkRes = await pool.query(
-      `SELECT m.id, m.owner_id, m.zip_r2_key, p.role
+      `SELECT m.id, m.owner_id, p.role
        FROM public.multis m
        LEFT JOIN public.profiles p ON p.id = $1
        WHERE m.id = $2`,
@@ -294,39 +321,30 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete full ZIP archive if present
-    if (item.zip_r2_key) {
-      await deleteBlob(item.zip_r2_key).catch(() => {});
-    }
-
-    // Delete individual track blobs from R2
+    // 1. Fetch all track and mix R2 keys to purge from storage
     const tracksRes = await pool.query(
       `SELECT r2_key FROM public.multi_tracks WHERE multi_id = $1`,
       [id]
     );
-
-    for (const track of tracksRes.rows) {
-      if (track.r2_key) {
-        await deleteBlob(track.r2_key).catch(() => {});
-      }
-    }
-
-    // Delete individual mix blobs from R2
     const mixesRes = await pool.query(
       `SELECT r2_key FROM public.mixes WHERE multi_id = $1`,
       [id]
     );
 
-    for (const mix of mixesRes.rows) {
-      if (mix.r2_key) {
-        await deleteBlob(mix.r2_key).catch(() => {});
-      }
-    }
+    const keysToDelete: string[] = [
+      ...tracksRes.rows.map(r => r.r2_key).filter(Boolean),
+      ...mixesRes.rows.map(r => r.r2_key).filter(Boolean),
+    ];
 
-    // Delete record from DB (cascades to tracks, mixes, etc.)
+    // Purge blobs in parallel
+    await Promise.all(
+      keysToDelete.map(key => deleteBlob(key).catch(e => console.warn('Could not delete blob on multi delete:', e)))
+    );
+
+    // 2. Cascade delete will remove multi_tracks and mixes records from DB
     await pool.query(`DELETE FROM public.multis WHERE id = $1`, [id]);
 
-    return NextResponse.json({ success: true, message: 'Multi deleted successfully.' });
+    return NextResponse.json({ success: true, message: 'Multi and all associated tracks/mixes deleted.' });
   } catch (err: any) {
     console.error('[multis/delete] Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
