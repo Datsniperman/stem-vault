@@ -31,6 +31,9 @@ export function EditMultiModal({
   const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
 
   const [title, setTitle] = useState(multi.title || '');
+  const [church, setChurch] = useState(multi.church || '');
+  const [songKey, setSongKey] = useState(multi.song_key || '');
+  const [bpm, setBpm] = useState(multi.bpm ? String(multi.bpm) : '');
   const [description, setDescription] = useState(multi.description || '');
   const [isPro, setIsPro] = useState(Boolean(multi.is_pro));
   const [ownerId, setOwnerId] = useState(multi.owner_id || '');
@@ -42,6 +45,9 @@ export function EditMultiModal({
   useEffect(() => {
     if (isOpen) {
       setTitle(multi.title || '');
+      setChurch(multi.church || '');
+      setSongKey(multi.song_key || '');
+      setBpm(multi.bpm ? String(multi.bpm) : '');
       setDescription(multi.description || '');
       setIsPro(Boolean(multi.is_pro));
       setOwnerId(multi.owner_id || '');
@@ -65,7 +71,20 @@ export function EditMultiModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      setError('Multi title is required.');
+      setError('Song name is required.');
+      return;
+    }
+    if (!church.trim()) {
+      setError('Church name is required.');
+      return;
+    }
+    if (!songKey.trim()) {
+      setError('Song key is required.');
+      return;
+    }
+    const bpmNum = parseInt(bpm.trim(), 10);
+    if (!bpm.trim() || isNaN(bpmNum) || bpmNum <= 0) {
+      setError('Valid BPM is required.');
       return;
     }
 
@@ -75,6 +94,9 @@ export function EditMultiModal({
     try {
       const payload: any = {
         title: title.trim(),
+        church: church.trim(),
+        song_key: songKey.trim(),
+        bpm: bpmNum,
         description: description.trim() || null,
       };
 
@@ -99,7 +121,7 @@ export function EditMultiModal({
       if (onSuccess) onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Error updating multi details.');
+      setError(err.message || 'Failed to save changes.');
     } finally {
       setSaving(false);
     }
@@ -107,32 +129,27 @@ export function EditMultiModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800">
-          <div>
-            <h3 className="text-base font-semibold text-white flex items-center gap-2">
-              <Layers className="w-5 h-5 text-neutral-300" />
-              <span>Edit Multitrack Details</span>
-            </h3>
-            <p className="text-xs text-neutral-400 mt-0.5">
-              Update title, description, tier requirements, or reassign uploader.
-            </p>
+      <div className="relative w-full max-w-lg bg-[#121212] border border-neutral-800 rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 shrink-0">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-neutral-400" />
+            <h3 className="text-sm font-semibold text-white">Edit Multitrack Details</h3>
           </div>
           <button
             onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition-colors"
-            title="Cancel"
+            disabled={saving}
+            className="text-neutral-400 hover:text-white transition-colors disabled:opacity-40"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-4 flex-1">
           {error && (
-            <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-lg text-red-200 text-xs flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+            <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-lg text-red-200 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
               <span>{error}</span>
             </div>
           )}
@@ -140,7 +157,7 @@ export function EditMultiModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-neutral-300 mb-1">
-                Song / Multi Title <span className="text-red-400">*</span>
+                Song Name <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -149,6 +166,51 @@ export function EditMultiModal({
                 disabled={saving}
                 className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-300 mb-1">
+                Church Name <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={church}
+                onChange={e => setChurch(e.target.value)}
+                placeholder="e.g. Elevation Church, Bethel Music"
+                disabled={saving}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Song Key <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={songKey}
+                  onChange={e => setSongKey(e.target.value)}
+                  placeholder="e.g. C, Eb, F#m, G"
+                  disabled={saving}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  BPM <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={bpm}
+                  onChange={e => setBpm(e.target.value)}
+                  placeholder="e.g. 128"
+                  min="1"
+                  max="300"
+                  disabled={saving}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                />
+              </div>
             </div>
 
             <div>
@@ -229,7 +291,7 @@ export function EditMultiModal({
                     <div>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-semibold text-white">Mark as Pro Multitrack</span>
-                        <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">
+                        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">
                           PREMIUM ONLY
                         </span>
                       </div>
@@ -247,25 +309,22 @@ export function EditMultiModal({
                 type="button"
                 onClick={onClose}
                 disabled={saving}
-                className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors"
+                className="px-3.5 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-white transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={saving || !title.trim()}
-                className="bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-1.5 shadow-sm"
+                disabled={saving || !title.trim() || !church.trim() || !songKey.trim() || !bpm.trim()}
+                className="bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 {saving ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Saving Changes...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Save Changes</span>
-                  </>
+                  <span>Save Changes</span>
                 )}
               </button>
             </div>

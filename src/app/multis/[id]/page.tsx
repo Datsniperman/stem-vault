@@ -26,6 +26,7 @@ import {
 import { Multi, MultiTrack, Mix } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { canAccessProMultitracks } from '@/lib/auth/tiers';
+import { isUserAdmin } from '@/lib/auth/admin';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { UploadMixModal } from '@/components/UploadMixModal';
 import { EditMultiModal } from '@/components/EditMultiModal';
@@ -73,7 +74,20 @@ export default function MultiDetailPage() {
   }, [multiId]);
 
   const isOwner = user && multi && user.id === multi.owner_id;
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = Boolean(
+    profile?.role === 'admin' ||
+    user?.role === 'admin' ||
+    (user
+      ? isUserAdmin({
+          email: user.email,
+          discordId: (user as any).discord_id || (user as any).user_metadata?.discord_id || (user as any).user_metadata?.provider_id || (user as any).sub,
+          username: (user as any).user_metadata?.server_display_name || (user as any).user_metadata?.display_name || (user as any).display_name,
+          role: user.role,
+          userMetadata: (user as any).user_metadata,
+          roles: (user as any).user_metadata?.roles || (user as any).roles || [],
+        })
+      : false)
+  );
   const canManage = isOwner || isAdmin;
   const hasProAccess = !multi?.is_pro || canAccessProMultitracks(user);
 
@@ -81,7 +95,7 @@ export default function MultiDetailPage() {
     if (!multi) return;
     setPublishingDiscord(true);
     try {
-      const res = await fetch(`/api/multis/${multiId}/publish`, { method: 'POST' });
+      const res = await fetch(`/api/multis/${multiId}/publish?force=true`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to publish to Discord');
       setMulti({ ...multi, discord_message_id: data.messageId, discord_thread_id: data.threadId });
@@ -184,20 +198,18 @@ export default function MultiDetailPage() {
 
           {canManage && (
             <div className="flex items-center gap-2">
-              {!multi?.discord_message_id && (
-                <button
-                  onClick={handlePublishDiscord}
-                  disabled={publishingDiscord}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/80 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
-                  title="Announce this multitrack to Discord"
-                >
-                  {publishingDiscord ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Music2 className="w-3.5 h-3.5" />}
-                  <span>Publish to Discord</span>
-                </button>
-              )}
+              <button
+                onClick={handlePublishDiscord}
+                disabled={publishingDiscord}
+                className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/80 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                title="Announce or re-announce this multitrack to Discord"
+              >
+                {publishingDiscord ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Music2 className="w-3.5 h-3.5" />}
+                <span>{multi?.discord_message_id ? 'Re-publish to Discord' : 'Publish to Discord'}</span>
+              </button>
               {multi?.discord_thread_id && (
                 <a
-                  href={`https://discord.com/channels/${process.env.NEXT_PUBLIC_DISCORD_GUILD_ID || '1488277259646271649'}/${multi.discord_thread_id}`}
+                  href={`https://discord.com/channels/${process.env.NEXT_PUBLIC_DISCORD_GUILD_ID || '1488266305743360252'}/${multi.discord_thread_id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
@@ -248,6 +260,12 @@ export default function MultiDetailPage() {
                 {multi.title}
               </h1>
 
+              {multi.church && (
+                <div className="text-sm font-semibold text-emerald-400 mt-1">
+                  {multi.church}
+                </div>
+              )}
+
               {multi.description && (
                 <p className="text-xs sm:text-sm text-neutral-300 mt-2 max-w-3xl whitespace-pre-line">
                   {multi.description}
@@ -256,6 +274,18 @@ export default function MultiDetailPage() {
 
               {/* Meta pills */}
               <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-neutral-400 mt-4">
+                {multi.song_key && (
+                  <span className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded text-neutral-300">
+                    <Music2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Key: {multi.song_key}</span>
+                  </span>
+                )}
+                {multi.bpm && (
+                  <span className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded text-neutral-300">
+                    <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>{multi.bpm} BPM</span>
+                  </span>
+                )}
                 <span className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-neutral-500" />
                   <strong className="text-neutral-200">{multi.uploader_name || 'Member'}</strong>

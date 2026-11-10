@@ -5,13 +5,15 @@ import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
 
-const botToken = process.env.DISCORD_BOT_TOKEN || 'dummy_token_for_build';
-const rest = new REST({ version: '10' }).setToken(botToken);
+function getDiscordClient(): REST {
+  const token = (process.env.DISCORD_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
+  return new REST({ version: '10' }).setToken(token);
+}
 
-export const GUILD_ID = process.env.DISCORD_GUILD_ID || '';
-export const MULTITRACK_CHANNEL_ID = process.env.DISCORD_MULTITRACKS_CHANNEL_ID || '1565366257996275847';
-export const MIXES_CHANNEL_ID = process.env.DISCORD_MIXES_CHANNEL_ID || '1566216856115609610';
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com';
+export const GUILD_ID = (process.env.DISCORD_GUILD_ID || '').trim().replace(/^["']|["']$/g, '');
+export const MULTITRACK_CHANNEL_ID = (process.env.DISCORD_MULTITRACKS_CHANNEL_ID || '1565366257996275847').trim().replace(/^["']|["']$/g, '');
+export const MIXES_CHANNEL_ID = (process.env.DISCORD_MIXES_CHANNEL_ID || '1566216856115609610').trim().replace(/^["']|["']$/g, '');
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com').trim().replace(/\/+$/, '').replace(/^["']|["']$/g, '');
 
 export interface StemAnnouncementPayload {
   stemId: string;
@@ -32,12 +34,15 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
   messageId: string | null;
   threadId: string | null;
 }> {
-  const channelId = process.env.DISCORD_MULTITRACKS_CHANNEL_ID || MULTITRACK_CHANNEL_ID || '1565366257996275847';
-  if (!process.env.DISCORD_BOT_TOKEN || !channelId) {
+  const token = (process.env.DISCORD_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
+  const channelId = (process.env.DISCORD_MULTITRACKS_CHANNEL_ID || MULTITRACK_CHANNEL_ID || '1565366257996275847').trim().replace(/^["']|["']$/g, '');
+
+  if (!token || !channelId) {
     console.warn('[Discord] Bot token or multitracks channel ID not set. Skipping Discord announcement.');
     return { messageId: null, threadId: null };
   }
 
+  const client = getDiscordClient();
   const engineerMention = payload.discordId ? `<@${payload.discordId}>` : `**${payload.uploaderHandle}**`;
 
   try {
@@ -66,11 +71,8 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
     }
 
     const fields: any[] = [];
-    if (payload.trackCount) {
-      fields.push({ name: 'Channels', value: `${payload.trackCount} Tracks`, inline: true });
-    }
-    if (payload.totalSize) {
-      fields.push({ name: 'Archive Size', value: payload.totalSize, inline: true });
+    if (payload.artist) {
+      fields.push({ name: 'Church / Artist', value: payload.artist, inline: true });
     }
     if (payload.key) {
       fields.push({ name: 'Key', value: payload.key, inline: true });
@@ -78,12 +80,18 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
     if (payload.bpm) {
       fields.push({ name: 'BPM', value: String(payload.bpm), inline: true });
     }
+    if (payload.trackCount) {
+      fields.push({ name: 'Channels', value: `${payload.trackCount} Tracks`, inline: true });
+    }
+    if (payload.totalSize) {
+      fields.push({ name: 'Archive Size', value: payload.totalSize, inline: true });
+    }
     if (payload.tracksPreview) {
       fields.push({ name: 'Included Stems', value: payload.tracksPreview, inline: false });
     }
 
     // 1. Post Embed with Link Buttons to multitrack-releases channel (1565366257996275847)
-    const message = (await rest.post(Routes.channelMessages(channelId), {
+    const message = (await client.post(Routes.channelMessages(channelId), {
       body: {
         content: 'New Multitracks:',
         embeds: [
@@ -92,7 +100,7 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
             description: `Uploaded by: ${engineerMention}`,
             color: 0x00ffaa,
             fields,
-            footer: { text: 'The Mixing Vault • Download stems and post your mix for feedback!' },
+            footer: { text: 'The Mixing Vault - Download stems and post your mix for feedback!' },
           },
         ],
         components: [
@@ -105,23 +113,29 @@ export async function announceMultitrack(payload: StemAnnouncementPayload): Prom
     })) as { id: string };
 
     // 2. Start a Public Feedback Thread under that announcement
-    const thread = (await rest.post(Routes.threads(channelId, message.id), {
-      body: {
-        name: `Mix Feedback: ${payload.title}`,
-        auto_archive_duration: 10080, // 7 days
-      },
-    })) as { id: string };
+    let threadId = message.id;
+    try {
+      const thread = (await client.post(Routes.threads(channelId, message.id), {
+        body: {
+          name: `Mix Feedback: ${payload.title}`,
+          auto_archive_duration: 10080, // 7 days
+        },
+      })) as { id: string };
+      threadId = thread.id;
 
-    // 3. Post a Welcome/Instruction message inside the new thread
-    await rest.post(Routes.channelMessages(thread.id), {
-      body: {
-        content: `Welcome to the feedback thread for **${payload.title}**!\nWhen members submit a mix on the site, their mix details and audio will drop here. Reply directly to any mix to share feedback and time-stamped tips!`,
-      },
-    });
+      // 3. Post a Welcome/Instruction message inside the new thread
+      await client.post(Routes.channelMessages(thread.id), {
+        body: {
+          content: `Welcome to the feedback thread for **${payload.title}**!\nWhen members submit a mix on the site, their mix details and audio will drop here. Reply directly to any mix to share feedback and time-stamped tips!`,
+        },
+      });
+    } catch (threadErr: any) {
+      console.warn('[Discord] Could not spawn thread under announcement:', threadErr?.message);
+    }
 
     return {
       messageId: message.id,
-      threadId: thread.id,
+      threadId,
     };
   } catch (error: any) {
     console.error('[Discord] Error in announceMultitrack:', error);
@@ -176,29 +190,30 @@ function prepareDiscordAudio(buffer: Buffer, originalExt: string, title: string)
 }
 
 export async function announceMix(payload: MixAnnouncementPayload): Promise<string | null> {
-  const channelId = process.env.DISCORD_MIXES_CHANNEL_ID || MIXES_CHANNEL_ID || '1566216856115609610';
+  const channelId = (process.env.DISCORD_MIXES_CHANNEL_ID || MIXES_CHANNEL_ID || '1566216856115609610').trim().replace(/^["']|["']$/g, '');
   if (!process.env.DISCORD_BOT_TOKEN) {
     console.warn('[Discord] Bot token not set. Skipping mix announcement.');
     return null;
   }
 
+  const client = getDiscordClient();
   const engineerMention = payload.discordId ? `<@${payload.discordId}>` : `**${payload.uploaderName}**`;
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com').replace(/\/+$/, '');
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com').trim().replace(/\/+$/, '').replace(/^["']|["']$/g, '');
 
   const targetChannelOrThread = payload.threadId || channelId;
 
   // If posting to a thread, ensure it's not archived
   if (payload.threadId) {
     try {
-      await rest.patch(Routes.channel(payload.threadId), { body: { archived: false } });
+      await client.patch(Routes.channel(payload.threadId), { body: { archived: false } });
     } catch {}
   }
 
   try {
     const actionButtons: any[] = [
       {
-        type: 2,
-        style: 5,
+        type: 2, // Button
+        style: 5, // Link
         label: 'View on Mixing Vault',
         url: `${siteUrl}/mixes`,
       },
@@ -244,7 +259,7 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
       ? `[Sunday Mix Review] ${payload.title}`
       : `Mix: ${payload.title}`;
 
-    const message = (await rest.post(Routes.channelMessages(targetChannelOrThread), {
+    const message = (await client.post(Routes.channelMessages(targetChannelOrThread), {
       body: {
         content: payload.isSundayReview ? 'New Sunday Mix Review Submitted' : 'New Mix',
         embeds: [
@@ -257,8 +272,8 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
             fields,
             footer: {
               text: payload.isSundayReview
-                ? 'The Mixing Vault • Sunday Mix Review Queue'
-                : 'The Mixing Vault • Listen and leave your critique!',
+                ? 'The Mixing Vault - Sunday Mix Review Queue'
+                : 'The Mixing Vault - Listen and leave your critique!',
             },
           },
         ],
@@ -297,15 +312,16 @@ export async function postMixToThread(
     return null;
   }
 
+  const client = getDiscordClient();
   const engineerMention = mix.discordId ? `<@${mix.discordId}>` : mix.submitterHandle;
 
   // Unarchive thread if Discord automatically closed it
   try {
-    await rest.patch(Routes.channel(threadId), { body: { archived: false } });
+    await client.patch(Routes.channel(threadId), { body: { archived: false } });
   } catch {}
 
   try {
-    const post = (await rest.post(Routes.channelMessages(threadId), {
+    const post = (await client.post(Routes.channelMessages(threadId), {
       body: {
         content: `**New Mix Submitted by ${engineerMention}!**`,
         embeds: [
@@ -337,8 +353,9 @@ export async function fetchGuildMember(discordUserId: string) {
     return null;
   }
 
+  const client = getDiscordClient();
   try {
-    const member = (await rest.get(Routes.guildMember(GUILD_ID, discordUserId))) as any;
+    const member = (await client.get(Routes.guildMember(GUILD_ID, discordUserId))) as any;
     return member;
   } catch (error: any) {
     if (error.status === 404 || error.code === 10007) {

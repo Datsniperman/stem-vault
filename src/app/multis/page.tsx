@@ -92,7 +92,7 @@ export default function MultisPage() {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search by song name..."
+                placeholder="Search by song or church name..."
                 className="w-full bg-[#121212] border border-neutral-800 hover:border-neutral-700 rounded-lg pl-10 pr-10 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors shadow-xs"
               />
               {search && (
@@ -182,9 +182,16 @@ export default function MultisPage() {
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="text-sm font-semibold text-white group-hover:text-neutral-200 transition-colors line-clamp-1">
-                      {m.title}
-                    </h3>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-white group-hover:text-neutral-200 transition-colors line-clamp-1">
+                        {m.title}
+                      </h3>
+                      {m.church && (
+                        <div className="text-xs font-medium text-emerald-400 truncate mt-0.5">
+                          {m.church}
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {m.is_pro && (
                         <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-amber-950/40 text-amber-300 border border-amber-600/40">
@@ -197,6 +204,21 @@ export default function MultisPage() {
                       </span>
                     </div>
                   </div>
+
+                  {(m.song_key || m.bpm) && (
+                    <div className="flex flex-wrap items-center gap-1.5 mb-2.5 text-[10px] font-mono">
+                      {m.song_key && (
+                        <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
+                          Key: {m.song_key}
+                        </span>
+                      )}
+                      {m.bpm && (
+                        <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
+                          {m.bpm} BPM
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {m.description && (
                     <p className="text-xs text-neutral-400 line-clamp-2 mb-3">
