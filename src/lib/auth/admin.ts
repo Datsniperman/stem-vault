@@ -3,16 +3,22 @@ export const ADMIN_EMAILS = [
   'connorwbrown2007@gmail.com',
   'tyler@mixingvault.com',
   'tylerkerpsack@gmail.com',
+  'jaredmessingermusic@gmail.com',
+  'artur@mixingvault.com',
 ];
 
 export const ADMIN_DISCORD_IDS = [
   '725867136232456302', // Connor (datsniperman)
   '1377286620344221778', // Tyler Kerpsack
+  '635718336822378506', // Jared Messinger
+  '700870462846140436', // Artur
 ];
 
 export const ADMIN_USERNAMES = [
   'datsniperman',
   'tylerkerpsack',
+  'jared06137',
+  'prod.by_art',
 ];
 
 export const ADMIN_DISCORD_ROLE_IDS = [
