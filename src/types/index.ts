@@ -115,6 +115,8 @@ export interface Multi {
   owner?: Profile | null;
   uploader_name?: string;
   track_count?: number;
+  discord_message_id?: string | null;
+  discord_thread_id?: string | null;
   total_size_bytes?: number;
   tracks?: MultiTrack[];
   mixes?: Mix[];

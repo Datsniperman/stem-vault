@@ -43,6 +43,7 @@ export default function MultiDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [mixModalOpen, setMixModalOpen] = useState(false);
   const [editMultiOpen, setEditMultiOpen] = useState(false);
+  const [publishingDiscord, setPublishingDiscord] = useState(false);
   const [editingMix, setEditingMix] = useState<Mix | null>(null);
   const [deletingMulti, setDeletingMulti] = useState(false);
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
@@ -75,6 +76,22 @@ export default function MultiDetailPage() {
   const isAdmin = profile?.role === 'admin';
   const canManage = isOwner || isAdmin;
   const hasProAccess = !multi?.is_pro || canAccessProMultitracks(user);
+
+  const handlePublishDiscord = async () => {
+    if (!multi) return;
+    setPublishingDiscord(true);
+    try {
+      const res = await fetch(`/api/multis/${multiId}/publish`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to publish to Discord');
+      setMulti({ ...multi, discord_message_id: data.messageId, discord_thread_id: data.threadId });
+      alert('Successfully announced multitrack to Discord!');
+    } catch (err: any) {
+      alert(err.message || 'Error publishing to Discord');
+    } finally {
+      setPublishingDiscord(false);
+    }
+  };
 
   const handleDeleteMulti = async () => {
     if (!confirm('Are you sure you want to delete this entire multi pack and all its audio stems? This cannot be undone.')) {
@@ -167,6 +184,29 @@ export default function MultiDetailPage() {
 
           {canManage && (
             <div className="flex items-center gap-2">
+              {!multi?.discord_message_id && (
+                <button
+                  onClick={handlePublishDiscord}
+                  disabled={publishingDiscord}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/80 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                  title="Announce this multitrack to Discord"
+                >
+                  {publishingDiscord ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Music2 className="w-3.5 h-3.5" />}
+                  <span>Publish to Discord</span>
+                </button>
+              )}
+              {multi?.discord_thread_id && (
+                <a
+                  href={`https://discord.com/channels/${process.env.NEXT_PUBLIC_DISCORD_GUILD_ID || '1488277259646271649'}/${multi.discord_thread_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                  title="Open Discord discussion thread"
+                >
+                  <Music2 className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>Discord Thread</span>
+                </a>
+              )}
               <button
                 onClick={() => setEditMultiOpen(true)}
                 className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
