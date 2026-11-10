@@ -69,7 +69,7 @@ async function verifyLiveDiscordRole(discordId: string): Promise<boolean> {
 
     const data = await res.json();
     const roles: string[] = Array.isArray(data.roles) ? data.roles : [];
-    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID) || roles.includes(PRO_MEMBER_ROLE_ID);
+    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID) || roles.includes(PRO_MEMBER_ROLE_ID) || roles.includes(ADMIN_ROLE_ID);
 
     roleCache.set(discordId, { hasRole, checkedAt: now });
     return hasRole;

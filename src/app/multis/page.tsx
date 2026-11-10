@@ -127,7 +127,7 @@ export default function MultisPage() {
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Pro Only (Premium)</span>
+                <span>Pro Tracks (Premium)</span>
               </button>
             </div>
           </div>

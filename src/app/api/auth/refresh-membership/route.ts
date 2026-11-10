@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyJwt, createUserToken, signJwt } from '@/lib/db/jwt';
 import { invalidateDiscordRoleCache } from '@/proxy';
 import { isUserAdmin } from '@/lib/auth/admin';
+import { getDbPool } from '@/lib/db/pool';
 
 const DISCORD_BOT_TOKEN =
   (process.env.DISCORD_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
@@ -83,7 +84,8 @@ export async function POST(request: NextRequest) {
 
     const memberData = await res.json();
     const roles: string[] = Array.isArray(memberData.roles) ? memberData.roles : [];
-    const hasRole = roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
+    const hasAdminRole = roles.includes('1553858763474214912');
+    const hasRole = hasAdminRole || roles.includes(REQUIRED_MEMBERSHIP_ROLE_ID);
 
     if (!hasRole) {
       return NextResponse.json({
@@ -93,16 +95,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const calculatedRole = (hasAdminRole || payload.role === 'admin') ? 'admin' : (payload.role || 'authenticated');
+
+    if (hasAdminRole) {
+      try {
+        const pool = getDbPool();
+        await pool.query("UPDATE public.profiles SET role = 'admin' WHERE id = $1", [payload.sub]);
+      } catch (err: any) {
+        console.warn('[refresh-membership] Failed to update profile to admin:', err.message);
+      }
+    }
+
     // Role verified! Generate updated token and return success
     const updatedUser: any = {
       id: payload.sub,
       email: payload.email,
-      role: payload.role || 'authenticated',
+      role: calculatedRole,
       user_metadata: {
         ...userMetadata,
         discord_id: discordId,
         provider_id: discordId,
         has_membership: true,
+        role: calculatedRole,
         roles,
       },
     };

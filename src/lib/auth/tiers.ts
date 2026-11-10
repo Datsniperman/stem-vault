@@ -11,6 +11,12 @@ export const PREMIUM_ROLE_ID = (process.env.DISCORD_PREMIUM_ROLE_ID || '14883461
 export function hasMemberAccess(user: any): boolean {
   if (!user) return false;
 
+  const roles: string[] =
+    user.roles ||
+    user.user_metadata?.roles ||
+    user.user_metadata?.custom_claims?.roles ||
+    [];
+
   const isAdmin = isUserAdmin({
     email: user.email,
     discordId:
@@ -24,6 +30,7 @@ export function hasMemberAccess(user: any): boolean {
       user.display_name,
     role: user.role,
     userMetadata: user.user_metadata,
+    roles,
   });
 
   if (isAdmin) return true;
@@ -51,6 +58,12 @@ export function hasMemberAccess(user: any): boolean {
 export function getMembershipTier(user: any): MembershipTier {
   if (!user) return 'FREE';
 
+  const roles: string[] =
+    user.roles ||
+    user.user_metadata?.roles ||
+    user.user_metadata?.custom_claims?.roles ||
+    [];
+
   const isAdmin = isUserAdmin({
     email: user.email,
     discordId:
@@ -64,6 +77,7 @@ export function getMembershipTier(user: any): MembershipTier {
       user.display_name,
     role: user.role,
     userMetadata: user.user_metadata,
+    roles,
   });
 
   if (isAdmin) return 'PREMIUM';
