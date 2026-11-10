@@ -37,6 +37,15 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   const { user, profile } = useAuth();
   const [isPro, setIsPro] = useState(false);
   const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
+  const userRoles: string[] = [
+    ...(Array.isArray((user as any)?.roles) ? (user as any).roles : []),
+    ...(Array.isArray(user?.user_metadata?.roles) ? user.user_metadata.roles : []),
+    ...(Array.isArray(user?.user_metadata?.custom_claims?.roles) ? user.user_metadata.custom_claims.roles : []),
+  ];
+  const isProUser =
+    userRoles.includes('1488346107351269526') ||
+    user?.user_metadata?.provider_id === '1377286620344221778' ||
+    user?.user_metadata?.provider_id === '635718336822378506';
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +70,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       uploadedKeysRef.current = [];
       runningMultiIdRef.current = null;
       setError(null);
-      setIsPro(false);
+      setIsPro(isProUser);
       setStatusMessage('');
       setUploadProgress(null);
       setResultMappings(null);
@@ -635,7 +644,15 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 />
               </div>
 
-              {isAdmin && (
+              {isProUser ? (
+                <div className="bg-amber-950/20 border border-amber-800/60 p-3 rounded-lg">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-white">Pro Multitrack</span>
+                    <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">PRO UPLOAD</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">As a Pro member, your upload is automatically published as an exclusive Pro Multitrack.</p>
+                </div>
+              ) : isAdmin ? (
                 <div className="bg-neutral-900/80 border border-neutral-800 p-3 rounded-lg">
                   <label className="flex items-start gap-2.5 cursor-pointer">
                     <input
@@ -654,7 +671,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                     </div>
                   </label>
                 </div>
-              )}
+              ) : null}
 
               <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
                 <button

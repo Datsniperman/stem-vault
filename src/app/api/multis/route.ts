@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db/pool';
 import { createDbServerClient } from '@/lib/db/server';
 import { isUserAdmin } from '@/lib/auth/admin';
+import { isProUserUploader } from '@/lib/auth/tiers';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,16 +82,19 @@ export async function POST(request: NextRequest) {
 
     const pool = getDbPool();
 
-    // Check admin status for is_pro flag
+    // Check if uploader is a pro user with role '1488346107351269526' or admin
+    const userIsPro = await isProUserUploader(user);
     const isAdmin = isUserAdmin({
       email: user.email,
       discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
       username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
       role: user.role,
       userMetadata: user.user_metadata,
+      roles: user.user_metadata?.roles || (user as any).roles,
     });
 
-    const isProMulti = isAdmin && Boolean(is_pro);
+    // Pro users in role '1488346107351269526' automatically end up as pro multitracks
+    const isProMulti = userIsPro || (isAdmin && Boolean(is_pro));
 
     // Auto-upsert profile for this user if missing so left joins always show the uploader's name
     let displayName =

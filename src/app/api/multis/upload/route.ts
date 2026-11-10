@@ -1,4 +1,5 @@
 import { isUserAdmin } from '@/lib/auth/admin';
+import { isProUserUploader } from '@/lib/auth/tiers';
 import { NextRequest, NextResponse } from 'next/server';
 import os from 'os';
 import path from 'path';
@@ -129,13 +130,24 @@ export async function POST(request: NextRequest) {
     // 7. Extract to temporary folder for processing
     tempExtractDir = fs.mkdtempSync(path.join(tempDir, 'multi-extracted-'));
 
-    // 8. Create Multi record in database
+    // 8. Check pro status & create Multi record in database
+    const userIsPro = await isProUserUploader(user);
+    const isAdmin = isUserAdmin({
+      email: user.email,
+      discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
+      username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+      role: user.role,
+      userMetadata: user.user_metadata,
+      roles: user.user_metadata?.roles || (user as any).roles,
+    });
+    const isProMulti = userIsPro || (isAdmin && (formData.get('is_pro') === 'true' || formData.get('is_pro') === '1'));
+
     const pool = getDbPool();
     const multiRes = await pool.query(
-      `INSERT INTO public.multis (owner_id, title, description, created_at, updated_at)
-       VALUES ($1, $2, $3, now(), now())
-       RETURNING id, owner_id, title, description, created_at`,
-      [user.id, title, description]
+      `INSERT INTO public.multis (owner_id, title, description, is_pro, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, now(), now())
+       RETURNING id, owner_id, title, description, is_pro, created_at`,
+      [user.id, title, description, isProMulti]
     );
 
     const multi = multiRes.rows[0];
