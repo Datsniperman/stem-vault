@@ -35,12 +35,6 @@ export function hasMemberAccess(user: any): boolean {
 
   if (isAdmin) return true;
 
-  const roles: string[] =
-    user.roles ||
-    user.user_metadata?.roles ||
-    user.user_metadata?.custom_claims?.roles ||
-    [];
-
   if (roles.includes(PLUS_ROLE_ID) || roles.includes(PREMIUM_ROLE_ID)) {
     return true;
   }
@@ -81,12 +75,6 @@ export function getMembershipTier(user: any): MembershipTier {
   });
 
   if (isAdmin) return 'PREMIUM';
-
-  const roles: string[] =
-    user.roles ||
-    user.user_metadata?.roles ||
-    user.user_metadata?.custom_claims?.roles ||
-    [];
 
   if (roles.includes(PREMIUM_ROLE_ID)) {
     return 'PREMIUM';

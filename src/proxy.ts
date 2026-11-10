@@ -18,6 +18,9 @@ const REQUIRED_MEMBERSHIP_ROLE_ID =
 const PRO_MEMBER_ROLE_ID =
   (process.env.DISCORD_PREMIUM_ROLE_ID || '1488346107351269526').trim();
 
+const ADMIN_ROLE_ID =
+  (process.env.DISCORD_ADMIN_ROLE_ID || '1553858763474214912').trim();
+
 // In-memory cache for live Discord role checks
 // 10-second TTL prevents Discord 429 rate-limiting during rapid page navigation while guaranteeing instant revocation upon subscription loss
 interface CachedRole {
