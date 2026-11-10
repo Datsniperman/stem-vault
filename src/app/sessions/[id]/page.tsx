@@ -20,6 +20,7 @@ import {
   Loader2,
   ShieldCheck,
   Pencil,
+  Trash2,
 } from 'lucide-react';
 
 export default function SessionDetailPage() {
@@ -35,6 +36,7 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
 
   useEffect(() => {
@@ -62,6 +64,29 @@ export default function SessionDetailPage() {
 
     fetchSession();
   }, [id]);
+
+  const handleDelete = async () => {
+    if (!session) return;
+    if (!window.confirm(`Are you sure you want to permanently delete "${session.title}"?`)) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/sessions/${session.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to delete session.');
+      } else {
+        router.push('/sessions');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete session.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const userWatermark =
     profile?.server_display_name ||
@@ -185,14 +210,29 @@ export default function SessionDetailPage() {
                   {session?.title}
                 </h1>
                 {isAdmin && (
-                  <button
-                    onClick={() => setIsEditOpen(true)}
-                    className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-xs"
-                    title="Edit session details"
-                  >
-                    <Pencil className="w-3.5 h-3.5 text-neutral-400" />
-                    <span>Edit Session</span>
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+                    <button
+                      onClick={() => setIsEditOpen(true)}
+                      className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
+                      title="Edit session details"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Edit Session</span>
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="text-xs text-red-400 hover:text-red-300 bg-neutral-900 hover:bg-red-950/40 border border-neutral-800 hover:border-red-900/50 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
+                      title="Delete session"
+                    >
+                      {deleting ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                      <span>{deleting ? 'Deleting...' : 'Delete'}</span>
+                    </button>
+                  </div>
                 )}
               </div>
 

@@ -243,21 +243,33 @@ export async function createRecordedSession(data: {
  */
 export async function deleteRecordedSession(id: string): Promise<{ success: boolean; error?: string }> {
   const user = await getSessionUser();
-  const isAdmin = user
-    ? isUserAdmin({
-        email: user.email,
-        discordId: user.user_metadata?.provider_id || user.id,
-        username: user.user_metadata?.display_name,
-        role: user.role,
-        userMetadata: user.user_metadata,
-      })
-    : false;
+  if (!user) {
+    return { success: false, error: 'Unauthorized: Authentication required.' };
+  }
+
+  const pool = getDbPool();
+  let isDbAdmin = false;
+  try {
+    const pRes = await pool.query(`SELECT role FROM public.profiles WHERE id = $1`, [user.id]);
+    if (pRes.rows[0]?.role === 'admin') isDbAdmin = true;
+  } catch {}
+
+  const isAdmin =
+    isDbAdmin ||
+    user.role === 'admin' ||
+    isUserAdmin({
+      email: user.email,
+      discordId: user.user_metadata?.provider_id || user.id,
+      username: user.user_metadata?.display_name,
+      role: user.role,
+      userMetadata: user.user_metadata,
+      roles: user.roles,
+    });
 
   if (!isAdmin) {
     return { success: false, error: 'Unauthorized: Admin privileges required.' };
   }
 
-  const pool = getDbPool();
   await pool.query(`DELETE FROM public.recorded_sessions WHERE id = $1`, [id]);
   return { success: true };
 }
