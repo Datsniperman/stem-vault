@@ -192,3 +192,48 @@ export interface StorageQuotaInfo {
   is_r2_active: boolean;
   missing_r2_keys: string[];
 }
+
+export interface Competition {
+  id: string;
+  guildId: string;
+  title: string;
+  slug?: string | null;
+  description?: string | null;
+  rules?: string | null;
+  multitrackUrl?: string | null;
+  multitrackId?: string | null;
+  deadline?: string | null;
+  earlyAccessEndsAt?: string | null;
+  publicReleaseAt?: string | null;
+  hubChannelId: string;
+  adminChannelId: string;
+  categoryId?: string | null;
+  hubMessageId?: string | null;
+  status: 'ACTIVE' | 'ENDED' | 'UPCOMING';
+  createdBy?: string | null;
+  isSpecialLinkOnly?: boolean;
+  bannerUrl?: string | null;
+  sponsorOrPrize?: string | null;
+  maxSubmissionsPerUser?: number;
+  createdAt: string;
+  updatedAt: string;
+  submission_count?: number;
+}
+
+export interface CompetitionSubmission {
+  id: string;
+  competitionId: string;
+  guildId: string;
+  userId: string;
+  userTag?: string | null;
+  profileId?: string | null;
+  audioUrl?: string | null;
+  audioFilename?: string | null;
+  audioFilesize?: number | null;
+  r2Key?: string | null;
+  dawOrConsole?: string | null;
+  mixNotes?: string | null;
+  status: 'SUBMITTED' | 'IN_PROGRESS' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+}

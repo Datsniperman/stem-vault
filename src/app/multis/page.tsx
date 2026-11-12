@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Layers, Search, Plus, Calendar, HardDrive, Music, User as UserIcon, X, Sparkles } from 'lucide-react';
+import { Layers, Search, Plus, Calendar, HardDrive, Music, User as UserIcon, X, Sparkles, ArrowRight } from 'lucide-react';
 import { Multi } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { UploadMultiModal } from '@/components/UploadMultiModal';
@@ -83,6 +83,34 @@ export default function MultisPage() {
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
+        {/* Christmas Mix Competition Banner */}
+        <div className="mb-6 rounded-xl border border-red-900/60 bg-gradient-to-r from-red-950/40 via-neutral-900/60 to-neutral-950 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-mono">
+              <span className="px-2 py-0.5 rounded bg-red-950/80 border border-red-700/80 text-red-300 font-semibold">
+                HOLIDAY SPECIAL
+              </span>
+              <span className="text-amber-400 font-semibold">
+                Plus & Premium 3-Day Early Access
+              </span>
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-white">
+              Annual Christmas Mix Competition
+            </h3>
+            <p className="text-xs text-neutral-300 max-w-2xl">
+              Recorded live at Sunday service. Download the multitrack session and submit your mix. All submissions via special link with verified Discord account.
+            </p>
+          </div>
+
+          <Link
+            href="/competitions/christmas"
+            className="shrink-0 bg-white hover:bg-neutral-200 text-black text-xs font-semibold px-4 py-2 rounded transition-colors inline-flex items-center gap-1.5 self-start sm:self-center"
+          >
+            <span>View Competition</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
         {/* Search Bar & Tier Filter */}
         <div className="mb-6 space-y-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

@@ -145,6 +145,9 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/api/cron') ||
     pathname.startsWith('/api/sessions/') ||
     pathname.startsWith('/auth') ||
+    pathname.startsWith('/competitions') ||
+    pathname.startsWith('/comp') ||
+    pathname.startsWith('/api/competitions') ||
     pathname === '/membership' ||
     pathname === '/unauthorized' ||
     pathname === '/favicon.ico' ||

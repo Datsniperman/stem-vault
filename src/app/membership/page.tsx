@@ -19,6 +19,7 @@ const LAUNCHPASS_PREMIUM_URL = 'https://www.launchpass.com/all-access-by-tyler/m
 
 const PLUS_PERKS = [
   'Full Access to The Mixing Vault (multitracks, stems, mixes)',
+  '3-Day Early Access to Mix Competitions (including Christmas Special)',
   'Stream library of walkthroughs and archived video sessions',
   'Monthly Featured Track Competitions with live review chances',
   'Free Premium Plugin Chain Presets for major DAWs',
