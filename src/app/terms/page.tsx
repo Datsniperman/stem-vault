@@ -149,10 +149,29 @@ export default function TermsOfServicePage() {
             </div>
           </section>
 
-          {/* Section 6: Contact Information */}
+          {/* Section 6: Platform Ownership, Executive Discretion & Content Rights */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
               <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">6</span>
+              Platform Ownership, Executive Authority & Content Distribution Rights
+            </h2>
+            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-400 space-y-3 leading-relaxed">
+              <p>
+                <strong className="text-white">Sole Ownership & Executive Authority:</strong> The site owner and operator retain exclusive, complete ownership of The Mixing Vault platform, brand, codebase, system features, and infrastructure. The site owner holds absolute and final executive authority over all aspects of the service, including without limitation the unilateral right to make all operational, technical, administrative, and editorial determinations, and the right to add, alter, reclassify, or remove any content, multitrack, mix, feature, or user account at any time at their sole discretion.
+              </p>
+              <p>
+                <strong className="text-white">Uploaded Content License & Monetization Rights:</strong> By uploading, submitting, transmitting, or sharing any content, multitrack sessions, audio stems, stereo mixes, DAW templates, plugin chains, stems, artwork, audio recordings, or comments to or through the Service, you grant to the site owner, operator, and their successors and assigns an irrevocable, perpetual, worldwide, transferable, sublicensable, royalty-free, fully paid-up license to use, reproduce, modify, adapt, publish, distribute, publicly display, publicly perform, monetize, commercialize, package, and exploit such content in any manner, format, medium, or distribution channel now known or hereafter created, without any obligation of notice, attribution, accounting, or compensation to you.
+              </p>
+              <p>
+                <strong className="text-white">Distribution Permissions:</strong> The site owner possesses full authority and permission to distribute, license, and commercialize uploaded files and community contributions across educational modules, premium features, competitions, promotions, and subscription tiers at their sole executive discretion.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 7: Contact Information */}
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">7</span>
               Contact & Inquiries
             </h2>
             <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-400 space-y-1 font-mono">
