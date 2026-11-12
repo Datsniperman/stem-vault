@@ -146,6 +146,10 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/api/sessions/') ||
     pathname.startsWith('/auth') ||
     pathname === '/membership' ||
+    pathname === '/privacy' ||
+    pathname === '/terms' ||
+    pathname === '/dmca' ||
+    pathname === '/unsubscribe' ||
     pathname === '/unauthorized' ||
     pathname === '/favicon.ico' ||
     pathname === '/robots.txt' ||
