@@ -130,7 +130,7 @@ export function Header({ onStemAdded }: HeaderProps) {
                 href="/competitions"
                 className="text-xs font-medium text-neutral-300 hover:text-white px-2 py-1.5 rounded hover:bg-neutral-900 transition-colors flex items-center gap-1.5 whitespace-nowrap"
               >
-                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                <Trophy className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Competitions</span>
               </Link>
               <Link

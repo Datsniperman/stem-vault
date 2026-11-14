@@ -171,10 +171,10 @@ export function CompetitionDetailClient({
           </Link>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/80 font-bold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
               {competition.status}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950/50 text-blue-300 border border-blue-800/70">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800">
               1 SUBMISSION PER MEMBER
             </span>
           </div>
@@ -182,22 +182,22 @@ export function CompetitionDetailClient({
       </div>
 
       {/* Hero Banner */}
-      <div className={`border-b border-neutral-800 ${isChristmas ? 'bg-gradient-to-b from-red-950/20 via-neutral-950 to-[#0a0a0a]' : 'bg-neutral-950/40'} py-10 px-4 sm:px-6`}>
+      <div className={"border-b border-neutral-800 bg-[#0d0d0e] py-8 px-4 sm:px-6"}>
         <div className="max-w-6xl mx-auto space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <Trophy className="w-3.5 h-3.5 text-neutral-400" />
               <span>COMMUNITY MIX COMPETITION</span>
             </span>
 
             {isChristmas && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-950/40 text-red-300 border border-red-800/60 font-semibold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
                 <span>HOLIDAY SPECIAL</span>
               </span>
             )}
 
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-950/40 text-amber-300 border border-amber-700/60">
-              <Sparkles className="w-3 h-3 text-amber-400" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
+              <Sparkles className="w-3 h-3 text-neutral-400" />
               <span>PLUS & PREMIUM 3-DAY EARLY ACCESS</span>
             </span>
           </div>
@@ -221,7 +221,7 @@ export function CompetitionDetailClient({
 
             {competition.sponsorOrPrize && (
               <span className="flex items-center gap-1.5">
-                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                <Trophy className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Prize: <strong className="text-neutral-200">{competition.sponsorOrPrize}</strong></span>
               </span>
             )}
@@ -234,11 +234,11 @@ export function CompetitionDetailClient({
 
         {/* Early Access Alert Banner */}
         {userState.isEarlyAccessActive && (
-          <div className="p-4 rounded-xl border border-amber-600/40 bg-amber-950/20 text-xs sm:text-sm text-neutral-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-xl border border-neutral-800 bg-[#121212] text-xs sm:text-sm text-neutral-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <Sparkles className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-amber-300">
+                <p className="font-semibold text-white">
                   Members 3-Day Early Access Window Active
                 </p>
                 <p className="text-xs text-neutral-400 mt-0.5">
@@ -250,7 +250,7 @@ export function CompetitionDetailClient({
             {!userState.hasEarlyAccess && (
               <Link
                 href="/membership"
-                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded bg-amber-400 hover:bg-amber-300 text-black transition-colors"
+                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded bg-white hover:bg-neutral-200 text-black transition-colors"
               >
                 Upgrade for Instant Access
               </Link>
@@ -264,7 +264,7 @@ export function CompetitionDetailClient({
             {/* Stems Download Card */}
             <div className="bg-[#121212] border border-neutral-800 rounded-xl p-5 space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-neutral-800">
-                <Disc className="w-4 h-4 text-emerald-400" />
+                <Disc className="w-4 h-4 text-neutral-400" />
                 <h3 className="text-sm font-semibold text-white">Multitrack Session Stems</h3>
               </div>
 
@@ -287,10 +287,10 @@ export function CompetitionDetailClient({
                     disabled
                     className="w-full py-2.5 px-4 rounded bg-neutral-800 text-neutral-500 font-medium text-xs cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    <Lock className="w-4 h-4 text-amber-400/80" />
+                    <Lock className="w-4 h-4 text-neutral-500" />
                     <span>Locked (Early Access Active)</span>
                   </button>
-                  <p className="text-[11px] text-amber-300/80 text-center">
+                  <p className="text-[11px] text-neutral-400 text-center">
                     Unlocks for everyone once the 3-day member window concludes.
                   </p>
                 </div>
@@ -300,7 +300,7 @@ export function CompetitionDetailClient({
             {/* Rules Card */}
             <div className="bg-[#121212] border border-neutral-800 rounded-xl p-5 space-y-3">
               <div className="flex items-center gap-2 pb-3 border-b border-neutral-800">
-                <ShieldCheck className="w-4 h-4 text-blue-400" />
+                <ShieldCheck className="w-4 h-4 text-neutral-400" />
                 <h3 className="text-sm font-semibold text-white">Competition Guidelines</h3>
               </div>
 
@@ -344,13 +344,13 @@ export function CompetitionDetailClient({
               </div>
             ) : userState.hasSubmitted || submitSuccess ? (
               /* Condition 2: Already submitted mix */
-              <div className="border border-emerald-800/80 bg-emerald-950/20 rounded-xl p-6 sm:p-8 space-y-6">
+              <div className="border border-neutral-800 bg-[#121212] rounded-xl p-6 sm:p-8 space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-900/60 border border-emerald-700/80 flex items-center justify-center text-emerald-400 shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-white shrink-0">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[11px] font-mono font-bold text-emerald-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-mono font-bold text-neutral-300 uppercase tracking-wider">
                       Submission Locked In
                     </span>
                     <h2 className="text-xl font-bold text-white">
@@ -367,7 +367,7 @@ export function CompetitionDetailClient({
                   <div className="bg-[#121212] border border-neutral-800 rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
                       <span className="flex items-center gap-1.5 text-neutral-200">
-                        <FileAudio className="w-3.5 h-3.5 text-emerald-400" />
+                        <FileAudio className="w-3.5 h-3.5 text-neutral-400" />
                         <span>{userState.submission.audioFilename}</span>
                       </span>
                       <span>{formatSize(userState.submission.audioFilesize)}</span>
@@ -410,7 +410,7 @@ export function CompetitionDetailClient({
                   onClick={() => fileInputRef.current?.click()}
                   className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
                     selectedFile
-                      ? 'border-emerald-600/70 bg-emerald-950/20'
+                      ? 'border-neutral-500 bg-neutral-900/60'
                       : 'border-neutral-700 hover:border-neutral-600 bg-neutral-900/40 hover:bg-neutral-900/70'
                   }`}
                 >
@@ -424,10 +424,10 @@ export function CompetitionDetailClient({
 
                   {selectedFile ? (
                     <div className="space-y-1">
-                      <FileAudio className="w-8 h-8 text-emerald-400 mx-auto" />
+                      <FileAudio className="w-8 h-8 text-neutral-300 mx-auto" />
                       <p className="text-sm font-semibold text-white">{selectedFile.name}</p>
                       <p className="text-xs text-neutral-400 font-mono">{formatSize(selectedFile.size)}</p>
-                      <p className="text-[11px] text-emerald-400/90 pt-1">Click or drag another file to replace</p>
+                      <p className="text-[11px] text-neutral-400 pt-1">Click or drag another file to replace</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -472,7 +472,7 @@ export function CompetitionDetailClient({
 
                 {/* Warning callout */}
                 <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-400 flex items-start gap-2.5">
-                  <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                  <Info className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                   <span>
                     Reminder: Exactly 1 mix submission is permitted per Discord account. Once submitted, your entry will be locked in for competition review.
                   </span>
