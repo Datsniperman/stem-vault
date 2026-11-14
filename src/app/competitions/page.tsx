@@ -72,10 +72,6 @@ export default async function CompetitionsPage() {
                 <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
                   FEATURED EVENT
                 </span>
-                <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-neutral-400" />
-                  <span>PLUS & PREMIUM 3-DAY EARLY ACCESS</span>
-                </span>
               </div>
 
               <span className="text-[11px] font-mono text-neutral-300 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded">
@@ -102,7 +98,7 @@ export default async function CompetitionsPage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>1 Submission Per Discord Member</span>
+                  <span>Limit is 1 submission per User</span>
                 </span>
               </div>
 

@@ -105,7 +105,7 @@ export async function POST(
     if (existingSubRes.rows.length > 0) {
       return NextResponse.json(
         {
-          error: 'You have already submitted your mix for this competition. Limit is exactly 1 submission per Discord account.',
+          error: 'You have already submitted your mix for this competition. Limit is 1 submission per User.',
           alreadySubmitted: true,
           existingSubmission: existingSubRes.rows[0],
         },
@@ -117,22 +117,14 @@ export async function POST(
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const dawOrConsole = (formData.get('dawOrConsole') as string || '').trim();
-    const mixNotes = (formData.get('mixNotes') as string || '').trim();
+    const mixNotes = '';
 
     if (!file) {
       return NextResponse.json({ error: 'Audio file is required.' }, { status: 400 });
     }
 
     const originalFilename = file.name || 'mix.wav';
-    const ext = path.extname(originalFilename).toLowerCase();
-    const allowedExtensions = ['.wav', '.mp3', '.flac', '.aif', '.aiff', '.m4a'];
-
-    if (!allowedExtensions.includes(ext)) {
-      return NextResponse.json(
-        { error: 'Invalid file format. Please upload a WAV, MP3, FLAC, or AIFF audio mix file.' },
-        { status: 400 }
-      );
-    }
+    const ext = path.extname(originalFilename).toLowerCase() || '.wav';
 
     // Max 150 MB
     if (file.size > 150 * 1024 * 1024) {
@@ -214,9 +206,6 @@ export async function POST(
         ];
         if (dawOrConsole) {
           fields.push({ name: 'DAW / Console', value: dawOrConsole, inline: true });
-        }
-        if (mixNotes) {
-          fields.push({ name: 'Mix Notes', value: mixNotes.slice(0, 1024), inline: false });
         }
 
         await fetch(`https://discord.com/api/v10/channels/${competition.adminChannelId}/messages`, {

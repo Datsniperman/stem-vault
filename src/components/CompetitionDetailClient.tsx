@@ -66,8 +66,7 @@ export function CompetitionDetailClient({
   // Submission form state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dawOrConsole, setDawOrConsole] = useState('');
-  const [mixNotes, setMixNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +113,7 @@ export function CompetitionDetailClient({
       return;
     }
 
-    if (!confirm('Are you sure you want to submit this mix? Exactly 1 submission per Discord account is permitted and submissions are final.')) {
+    if (!confirm('Are you sure you want to submit this mix? Limit is 1 submission per User and submissions are final.')) {
       return;
     }
 
@@ -124,8 +123,7 @@ export function CompetitionDetailClient({
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('dawOrConsole', dawOrConsole);
-      formData.append('mixNotes', mixNotes);
-
+      
       const res = await fetch(`/api/competitions/${slug}/submit`, {
         method: 'POST',
         body: formData,
@@ -138,7 +136,7 @@ export function CompetitionDetailClient({
         return;
       }
 
-      addToast('Mix successfully submitted! Exactly 1 submission is allowed per member.', 'success');
+      addToast('Mix successfully submitted! Limit is 1 submission per User.', 'success');
       setSubmitSuccess(true);
       fetchCompetitionData();
     } catch (err: any) {
@@ -175,7 +173,7 @@ export function CompetitionDetailClient({
               {competition.status}
             </span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800">
-              1 SUBMISSION PER MEMBER
+              LIMIT IS 1 SUBMISSION PER USER
             </span>
           </div>
         </div>
@@ -196,10 +194,6 @@ export function CompetitionDetailClient({
               </span>
             )}
 
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
-              <Sparkles className="w-3 h-3 text-neutral-400" />
-              <span>PLUS & PREMIUM 3-DAY EARLY ACCESS</span>
-            </span>
           </div>
 
           <div className="space-y-2">
@@ -218,13 +212,6 @@ export function CompetitionDetailClient({
               <Clock className="w-3.5 h-3.5 text-neutral-500" />
               <span>Deadline: <strong className="text-neutral-200">{competition.deadline || 'TBD (Announced in Discord)'}</strong></span>
             </span>
-
-            {competition.sponsorOrPrize && (
-              <span className="flex items-center gap-1.5">
-                <Trophy className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Prize: <strong className="text-neutral-200">{competition.sponsorOrPrize}</strong></span>
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -307,11 +294,10 @@ export function CompetitionDetailClient({
               <div className="text-xs text-neutral-300 space-y-2.5 whitespace-pre-line leading-relaxed">
                 {competition.rules || (
                   <>
-                    <p>1. Exactly one mix submission per Discord account.</p>
-                    <p>2. Audio formats accepted: 24-bit WAV, MP3, or FLAC.</p>
-                    <p>3. Keep your mix clean and balanced with headroom for mastering.</p>
-                    <p>4. Include your DAW/console and signal chain notes.</p>
-                    <p>5. Have fun and bring out the best in the performance!</p>
+                    <p>1. Limit is 1 submission per User.</p>
+                    <p>2. Preferred audio formats: WAV, MP3, or FLAC.</p>
+                    <p>3. Include your DAW or console used with your submission.</p>
+                    <p>4. Have fun and bring out the best in the performance!</p>
                   </>
                 )}
               </div>
@@ -329,7 +315,7 @@ export function CompetitionDetailClient({
                 <div className="space-y-1">
                   <h3 className="text-base font-semibold text-white">Discord Account Required</h3>
                   <p className="text-xs text-neutral-400 max-w-md mx-auto">
-                    All competition submissions are verified through your Discord account to guarantee fair play and enforce the 1-submission limit per member.
+                    All competition submissions are verified through your Discord account to guarantee fair play and enforce the limit of 1 submission per User.
                   </p>
                 </div>
                 <div>
@@ -357,7 +343,7 @@ export function CompetitionDetailClient({
                       Your Mix Has Been Submitted!
                     </h2>
                     <p className="text-xs text-neutral-300">
-                      You have entered the {competition.title}. Each Discord account is limited to exactly 1 submission.
+                      You have entered the {competition.title}. Limit is 1 submission per User.
                     </p>
                   </div>
                 </div>
@@ -385,11 +371,6 @@ export function CompetitionDetailClient({
                       </div>
                     )}
 
-                    {userState.submission.mixNotes && (
-                      <div className="text-xs text-neutral-300 bg-neutral-900/60 p-3 rounded border border-neutral-800 whitespace-pre-line">
-                        {userState.submission.mixNotes}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -399,7 +380,7 @@ export function CompetitionDetailClient({
                 <div>
                   <h2 className="text-lg font-bold text-white">Submit Your Competition Mix</h2>
                   <p className="text-xs text-neutral-400 mt-0.5">
-                    Submitting as <strong className="text-neutral-200">{userState.username || 'Member'}</strong>. Limit is 1 submission per Discord account.
+                    Submitting as <strong className="text-neutral-200">{userState.username || 'Member'}</strong>. Limit is 1 submission per User.
                   </p>
                 </div>
 
@@ -417,8 +398,7 @@ export function CompetitionDetailClient({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".wav,.mp3,.flac,.aif,.aiff,.m4a"
-                    onChange={handleFileSelect}
+                                        onChange={handleFileSelect}
                     className="hidden"
                   />
 
@@ -436,7 +416,7 @@ export function CompetitionDetailClient({
                         Drop your stereo mix file here, or <span className="text-white underline">browse</span>
                       </p>
                       <p className="text-[11px] text-neutral-500 font-mono">
-                        Accepts WAV, MP3, FLAC (Max 150MB)
+                        Preferred formats: WAV, MP3, FLAC (Max 150MB)
                       </p>
                     </div>
                   )}
@@ -455,26 +435,11 @@ export function CompetitionDetailClient({
                     className="w-full bg-[#161616] border border-neutral-800 rounded-lg px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors"
                   />
                 </div>
-
-                {/* Mix Notes Textarea */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-neutral-300 block">
-                    Mix Notes & Processing Details (Optional)
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={mixNotes}
-                    onChange={(e) => setMixNotes(e.target.value)}
-                    placeholder="Share any special outboard gear, master bus processing, or vocal chains you used..."
-                    className="w-full bg-[#161616] border border-neutral-800 rounded-lg p-3 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors leading-relaxed"
-                  />
-                </div>
-
-                {/* Warning callout */}
+{/* Warning callout */}
                 <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-400 flex items-start gap-2.5">
                   <Info className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                   <span>
-                    Reminder: Exactly 1 mix submission is permitted per Discord account. Once submitted, your entry will be locked in for competition review.
+                    Reminder: Limit is 1 submission per User. Once submitted, your entry will be locked in for competition review.
                   </span>
                 </div>
 
@@ -492,7 +457,7 @@ export function CompetitionDetailClient({
                   ) : (
                     <>
                       <Trophy className="w-4 h-4" />
-                      <span>Submit Mix (1 Final Submission)</span>
+                      <span>Submit Mix (Limit 1 Submission per User)</span>
                     </>
                   )}
                 </button>
