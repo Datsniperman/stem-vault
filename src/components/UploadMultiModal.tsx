@@ -69,6 +69,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   const [ownerId, setOwnerId] = useState('');
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
 
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -107,8 +108,40 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       setParsedEntries(null);
       bgParsePromiseRef.current = null;
       bgErrorRef.current = null;
+      setUserSearch('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && canUploadAsAnyUser && users.length === 0) {
+      setLoadingUsers(true);
+      fetch('/api/admin/users')
+        .then(res => res.json())
+        .then(data => {
+          if (data && Array.isArray(data.users)) {
+            setUsers(data.users);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load users:', err);
+        })
+        .finally(() => {
+          setLoadingUsers(false);
+        });
+    }
+  }, [isOpen, canUploadAsAnyUser, users.length]);
+
+  const filteredUsers = userSearch.trim()
+    ? users.filter(u => {
+        const q = userSearch.toLowerCase();
+        return (
+          u.display_name?.toLowerCase().includes(q) ||
+          u.displayName?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q) ||
+          u.discordId?.toLowerCase().includes(q)
+        );
+      })
+    : users;
 
   if (!isOpen) return null;
 
@@ -699,19 +732,33 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
               {/* Upload as User selector (Admin / Staff) */}
               {canUploadAsAnyUser && (
-                <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1 flex items-center justify-between">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-medium text-neutral-300">
                     <span className="flex items-center gap-1.5">
                       <UserIcon className="w-3.5 h-3.5 text-neutral-400" />
                       <span>Upload as User (Admin / Staff)</span>
                     </span>
-                    {loadingUsers && (
-                      <span className="text-[10px] text-neutral-500 flex items-center gap-1">
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Loading users...</span>
-                      </span>
-                    )}
-                  </label>
+                    <span className="text-[10px] text-neutral-500 font-mono">
+                      {loadingUsers ? (
+                        <span className="flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Loading members...</span>
+                        </span>
+                      ) : (
+                        <span>{filteredUsers.length} of {users.length} members</span>
+                      )}
+                    </span>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={e => setUserSearch(e.target.value)}
+                    placeholder="Search member by name..."
+                    disabled={uploading || loadingUsers}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  />
+
                   <select
                     value={ownerId}
                     onChange={e => setOwnerId(e.target.value)}
@@ -721,13 +768,13 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                     <option value="">
                       Myself ({user?.user_metadata?.server_display_name || user?.user_metadata?.display_name || user?.email || 'Current User'})
                     </option>
-                    {users.map((u: any) => (
+                    {filteredUsers.map((u: any) => (
                       <option key={u.id} value={u.id}>
                         {u.display_name || u.displayName} {u.email ? `(${u.email})` : ''} {u.role === 'admin' ? '[Admin]' : ''}
                       </option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-neutral-500 mt-1">
+                  <p className="text-[10px] text-neutral-500">
                     Attribute this multitrack to any registered member, or leave as yourself.
                   </p>
                 </div>
