@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { X, Upload, CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { X, Upload, CheckCircle2, AlertCircle, Loader2, ArrowRight, User as UserIcon } from 'lucide-react';
+import { isUserAdmin } from '@/lib/auth/admin';
 import { sanitizeTrackFilename } from '@/lib/audio/renamer';
 import { parseZipEntries, extractZipEntry, ZipAudioEntry } from '@/lib/zip/parser';
 
@@ -29,17 +30,45 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const userRoles: string[] = [
     ...(Array.isArray((user as any)?.roles) ? (user as any).roles : []),
     ...(Array.isArray(user?.user_metadata?.roles) ? user.user_metadata.roles : []),
     ...(Array.isArray(user?.user_metadata?.custom_claims?.roles) ? user.user_metadata.custom_claims.roles : []),
   ];
-  const isProUser =
+  const userDiscordId =
+    (user as any)?.discord_id ||
+    user?.user_metadata?.discord_id ||
+    user?.user_metadata?.provider_id ||
+    (user?.identities && user.identities[0]?.id) ||
+    '';
+
+  const isAdmin =
+    profile?.role === 'admin' ||
+    user?.role === 'admin' ||
+    userDiscordId === '725867136232456302' ||
+    userDiscordId === '1377286620344221778' ||
+    isUserAdmin({
+      email: user?.email,
+      discordId: userDiscordId,
+      username: user?.user_metadata?.server_display_name || user?.user_metadata?.display_name,
+      role: user?.role,
+      userMetadata: user?.user_metadata,
+      roles: userRoles,
+    });
+
+  const canUploadAsAnyUser = isAdmin || userDiscordId === '725867136232456302';
+  const canSetPro =
+    canUploadAsAnyUser ||
     userRoles.includes('1488346107351269526') ||
     userRoles.includes('1488271670119633047') ||
-    user?.user_metadata?.provider_id === '1377286620344221778' ||
-    user?.user_metadata?.provider_id === '635718336822378506';
+    userDiscordId === '1377286620344221778' ||
+    userDiscordId === '635718336822378506';
+
+  const [isPro, setIsPro] = useState(false);
+  const [ownerId, setOwnerId] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -278,7 +307,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
           song_key: songKey.trim(),
           bpm: bpmNum,
           description: description.trim() || null,
-          is_pro: isProUser,
+          is_pro: isPro,
+          owner_id: ownerId || undefined,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -667,14 +697,64 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 />
               </div>
 
-              {/* Informative notice for Pro users */}
-              {isProUser && (
-                <div className="bg-amber-950/20 border border-amber-800/60 p-3 rounded-lg">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-white">Pro Multitrack</span>
-                    <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-700/50">PREMIUM EXCLUSIVE</span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">As a Pro member, your upload will be published directly to Pro Tracks for Premium members.</p>
+              {/* Upload as User selector (Admin / Staff) */}
+              {canUploadAsAnyUser && (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <UserIcon className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Upload as User (Admin / Staff)</span>
+                    </span>
+                    {loadingUsers && (
+                      <span className="text-[10px] text-neutral-500 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Loading users...</span>
+                      </span>
+                    )}
+                  </label>
+                  <select
+                    value={ownerId}
+                    onChange={e => setOwnerId(e.target.value)}
+                    disabled={uploading || loadingUsers}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
+                  >
+                    <option value="">
+                      Myself ({user?.user_metadata?.server_display_name || user?.user_metadata?.display_name || user?.email || 'Current User'})
+                    </option>
+                    {users.map((u: any) => (
+                      <option key={u.id} value={u.id}>
+                        {u.display_name || u.displayName} {u.email ? `(${u.email})` : ''} {u.role === 'admin' ? '[Admin]' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-neutral-500 mt-1">
+                    Attribute this multitrack to any registered member, or leave as yourself.
+                  </p>
+                </div>
+              )}
+
+              {/* Pro Multitrack Option */}
+              {canSetPro && (
+                <div className="bg-[#141414] border border-neutral-800 p-3 rounded-lg flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="is_pro_toggle"
+                    checked={isPro}
+                    onChange={e => setIsPro(e.target.checked)}
+                    disabled={uploading}
+                    className="mt-0.5 w-4 h-4 rounded bg-neutral-900 border-neutral-700 text-white accent-neutral-300 cursor-pointer"
+                  />
+                  <label htmlFor="is_pro_toggle" className="flex-1 cursor-pointer select-none">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-white">Pro Multitrack</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
+                        PREMIUM EXCLUSIVE
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Publish as a Pro Multitrack (full ZIP download locked to Pro & Premium members).
+                    </p>
+                  </label>
                 </div>
               )}
 

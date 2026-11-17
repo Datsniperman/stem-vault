@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, church, bpm, song_key, description, is_pro } = body;
+    const { title, church, bpm, song_key, description, is_pro, owner_id } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Song name is required.' }, { status: 400 });
@@ -97,19 +97,37 @@ export async function POST(request: NextRequest) {
 
     const pool = getDbPool();
 
-    // Check if uploader is a pro user with role '1488346107351269526' or admin
-    const userIsPro = await isProUserUploader(user);
-    const isAdmin = isUserAdmin({
-      email: user.email,
-      discordId: user.user_metadata?.provider_id || (user.identities && user.identities[0]?.id),
-      username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
-      role: user.role,
-      userMetadata: user.user_metadata,
-      roles: user.user_metadata?.roles || (user as any).roles,
-    });
+    const userDiscordId =
+      (user as any)?.discord_id ||
+      user.user_metadata?.discord_id ||
+      user.user_metadata?.provider_id ||
+      (user.identities && user.identities[0]?.id) ||
+      '';
 
-    // Only people with the pro role '1488346107351269526' can upload to pro tracks
-    const isProMulti = userIsPro;
+    const userIsPro = await isProUserUploader(user);
+    const isAdmin =
+      userDiscordId === '725867136232456302' ||
+      isUserAdmin({
+        email: user.email,
+        discordId: userDiscordId,
+        username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+        role: user.role,
+        userMetadata: user.user_metadata,
+        roles: user.user_metadata?.roles || (user as any).roles,
+      });
+
+    const canUploadAsAnyUser = isAdmin || userDiscordId === '725867136232456302';
+    const canTogglePro = isAdmin || userIsPro || userDiscordId === '725867136232456302';
+
+    let targetOwnerId = user.id;
+    if (canUploadAsAnyUser && owner_id && typeof owner_id === 'string' && owner_id.trim()) {
+      targetOwnerId = owner_id.trim();
+    }
+
+    let isProMulti = false;
+    if (canTogglePro) {
+      isProMulti = typeof is_pro === 'boolean' ? is_pro : Boolean(is_pro);
+    }
 
     // Auto-upsert profile for this user if missing so left joins always show the uploader's name
     let displayName =
@@ -154,7 +172,7 @@ export async function POST(request: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now())
        RETURNING *`,
       [
-        user.id,
+        targetOwnerId,
         title.trim(),
         church.trim(),
         bpmNum,

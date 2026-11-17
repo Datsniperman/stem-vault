@@ -170,7 +170,23 @@ export async function isProUserUploader(user: any): Promise<boolean> {
     (user.identities && user.identities[0]?.id) ||
     (user.user_metadata?.sub && String(user.user_metadata.sub).length > 15 ? user.user_metadata.sub : null);
 
-  if (discordId === '1377286620344221778' || discordId === '635718336822378506') {
+  if (
+    discordId === '725867136232456302' ||
+    discordId === '1377286620344221778' ||
+    discordId === '635718336822378506'
+  ) {
+    return true;
+  }
+
+  const isAdmin = isUserAdmin({
+    email: user.email,
+    discordId,
+    username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
+    role: user.role,
+    userMetadata: user.user_metadata,
+    roles,
+  });
+  if (isAdmin) {
     return true;
   }
 
