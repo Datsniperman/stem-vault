@@ -59,11 +59,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
   const canUploadAsAnyUser = isAdmin || userDiscordId === '725867136232456302';
   const canSetPro =
-    canUploadAsAnyUser ||
     userRoles.includes('1488346107351269526') ||
-    userRoles.includes('1488271670119633047') ||
-    userDiscordId === '1377286620344221778' ||
-    userDiscordId === '635718336822378506';
+    userDiscordId === '725867136232456302';
 
   const [isPro, setIsPro] = useState(false);
   const [ownerId, setOwnerId] = useState('');
@@ -109,6 +106,8 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
       bgParsePromiseRef.current = null;
       bgErrorRef.current = null;
       setUserSearch('');
+      setIsPro(false);
+      setOwnerId('');
     }
   }, [isOpen]);
 

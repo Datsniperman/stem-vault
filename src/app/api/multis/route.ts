@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       });
 
     const canUploadAsAnyUser = isAdmin || userDiscordId === '725867136232456302';
-    const canTogglePro = isAdmin || userIsPro || userDiscordId === '725867136232456302';
+    const canTogglePro = userIsPro || userDiscordId === '725867136232456302';
 
     let targetOwnerId = user.id;
     if (canUploadAsAnyUser && owner_id && typeof owner_id === 'string' && owner_id.trim()) {

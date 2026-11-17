@@ -7,7 +7,7 @@ export const PLUS_ROLE_IDS = [PLUS_ROLE_ID, '1569410882822475837'];
 export const PREMIUM_ROLE_ID = (process.env.DISCORD_PREMIUM_ROLE_ID || '1488346107351269526').trim();
 export const PREMIUM_ROLE_IDS = [PREMIUM_ROLE_ID, '1488346107351269526', '1488271670119633047'];
 export const PRO_ROLE_ID = '1488346107351269526';
-export const PRO_ROLE_IDS = [PRO_ROLE_ID, '1488346107351269526', '1488271670119633047'];
+export const PRO_ROLE_IDS = ['1488346107351269526'];
 export const STAFF_ADMIN_ROLE_ID = (process.env.DISCORD_ADMIN_ROLE_ID || '1553858763474214912').trim();
 
 /**
@@ -140,8 +140,8 @@ export function canSubmitSundayReview(user: any): boolean {
 }
 
 /**
- * Check whether an uploader is a pro user with Discord role '1488346107351269526' or '1488271670119633047'
- * (uploads automatically become Pro Multitracks).
+ * Check whether an uploader is a pro user with Discord role '1488346107351269526'
+ * (only users with role '1488346107351269526' can post pro multitracks).
  */
 export async function isProUserUploader(user: any): Promise<boolean> {
   if (!user) return false;
@@ -152,14 +152,7 @@ export async function isProUserUploader(user: any): Promise<boolean> {
     ...(Array.isArray(user.user_metadata?.custom_claims?.roles) ? user.user_metadata.custom_claims.roles : []),
   ];
 
-  if (
-    PREMIUM_ROLE_IDS.some(id => roles.includes(id)) ||
-    PRO_ROLE_IDS.some(id => roles.includes(id)) ||
-    roles.includes(PRO_ROLE_ID) ||
-    roles.includes(PREMIUM_ROLE_ID) ||
-    roles.includes('1488271670119633047') ||
-    roles.includes('1488346107351269526')
-  ) {
+  if (roles.includes('1488346107351269526')) {
     return true;
   }
 
@@ -170,23 +163,7 @@ export async function isProUserUploader(user: any): Promise<boolean> {
     (user.identities && user.identities[0]?.id) ||
     (user.user_metadata?.sub && String(user.user_metadata.sub).length > 15 ? user.user_metadata.sub : null);
 
-  if (
-    discordId === '725867136232456302' ||
-    discordId === '1377286620344221778' ||
-    discordId === '635718336822378506'
-  ) {
-    return true;
-  }
-
-  const isAdmin = isUserAdmin({
-    email: user.email,
-    discordId,
-    username: user.user_metadata?.server_display_name || user.user_metadata?.display_name,
-    role: user.role,
-    userMetadata: user.user_metadata,
-    roles,
-  });
-  if (isAdmin) {
+  if (discordId === '725867136232456302') {
     return true;
   }
 
@@ -202,14 +179,7 @@ export async function isProUserUploader(user: any): Promise<boolean> {
       if (res.ok) {
         const memberData = await res.json();
         const liveRoles: string[] = Array.isArray(memberData.roles) ? memberData.roles : [];
-        if (
-          PREMIUM_ROLE_IDS.some(id => liveRoles.includes(id)) ||
-          PRO_ROLE_IDS.some(id => liveRoles.includes(id)) ||
-          liveRoles.includes(PRO_ROLE_ID) ||
-          liveRoles.includes(PREMIUM_ROLE_ID) ||
-          liveRoles.includes('1488271670119633047') ||
-          liveRoles.includes('1488346107351269526')
-        ) {
+        if (liveRoles.includes('1488346107351269526')) {
           return true;
         }
       }
