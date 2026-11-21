@@ -7,6 +7,7 @@ import { UploadSessionModal } from '@/components/UploadSessionModal';
 import { EditSessionModal } from '@/components/EditSessionModal';
 import { getRecordedSessions } from '@/app/actions/sessions';
 import { RecordedSessionListItem } from '@/types/sessions';
+import { FluidOrb } from '@/components/ui/fluid-orb';
 import {
   Video,
   Play,
@@ -78,54 +79,60 @@ export default function RecordedSessionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-neutral-800 pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-400 mb-2">
-              <Video className="w-4 h-4" />
-              <span>Exclusive Member Archive</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
-              Recorded Sessions
-            </h1>
-            <p className="text-sm text-neutral-400 max-w-2xl">
-              Live console breakdowns, multitrack mix walkthroughs, and audio masterclasses streaming securely in HLS.
-            </p>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+        {/* Rare UI Hero Canvas */}
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#121215]/80 backdrop-blur-xl p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] mb-8">
+          <div className="absolute -right-20 -top-20 opacity-20 blur-2xl pointer-events-none">
+            <FluidOrb size={320} color="#203028" />
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Membership Status Pill */}
-            <div className="px-3.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-xs flex items-center gap-2">
-              <span className="text-neutral-500">Access:</span>
-              <span
-                className={`font-semibold flex items-center gap-1.5 ${
-                  isMember ? 'text-emerald-400' : 'text-neutral-400'
-                }`}
-              >
-                {isMember ? (
-                  <>
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Member Unlocked</span>
-                  </>
-                ) : (
-                  <span>Membership Required</span>
-                )}
-              </span>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-neutral-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+                <span>THE MIXING VAULT / SESSIONS ARCHIVE</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
+                <Video className="w-6 h-6 text-neutral-300" />
+                <span>Recorded Sessions</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-400 max-w-2xl leading-relaxed">
+                Live console breakdowns, multitrack mix walkthroughs, and audio masterclasses streaming securely in HLS.
+              </p>
             </div>
 
-            {isAdmin && (
-              <button
-                onClick={() => setIsUploadOpen(true)}
-                className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Upload Session</span>
-              </button>
-            )}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs flex items-center gap-2">
+                <span className="text-neutral-500 font-mono text-[11px]">ACCESS:</span>
+                <span
+                  className={`font-semibold text-xs flex items-center gap-1.5 ${
+                    isMember ? 'text-white' : 'text-neutral-400'
+                  }`}
+                >
+                  {isMember ? (
+                    <>
+                      <ShieldCheck className="w-3.5 h-3.5 text-neutral-200" />
+                      <span>Member Unlocked</span>
+                    </>
+                  ) : (
+                    <span>Membership Required</span>
+                  )}
+                </span>
+              </div>
+
+              {isAdmin && (
+                <button
+                  onClick={() => setIsUploadOpen(true)}
+                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded-full transition-all flex items-center gap-1.5 shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Upload Session</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

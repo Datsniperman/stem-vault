@@ -154,12 +154,12 @@ export function CompetitionDetailClient({
   const isChristmas = competition.slug === 'christmas' || competition.title.toLowerCase().includes('christmas');
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 pb-24">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 pb-24">
       <Header />
 
       {/* Top Breadcrumb & Status */}
-      <div className="border-b border-neutral-800 bg-[#0d0d0d] px-4 sm:px-6 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6">
+        <div className="flex items-center justify-between gap-4 py-2">
           <Link
             href="/competitions"
             className="text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors"
@@ -169,10 +169,10 @@ export function CompetitionDetailClient({
           </Link>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
+            <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-white/[0.04] text-neutral-300 border border-white/[0.08]">
               {competition.status}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800">
+            <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-white/[0.04] text-neutral-400 border border-white/[0.08]">
               LIMIT IS 1 SUBMISSION PER USER
             </span>
           </div>
@@ -180,20 +180,19 @@ export function CompetitionDetailClient({
       </div>
 
       {/* Hero Banner */}
-      <div className={"border-b border-neutral-800 bg-[#0d0d0e] py-8 px-4 sm:px-6"}>
-        <div className="max-w-6xl mx-auto space-y-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-3">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#121215]/80 backdrop-blur-xl p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-neutral-300">
               <Trophy className="w-3.5 h-3.5 text-neutral-400" />
               <span>COMMUNITY MIX COMPETITION</span>
             </span>
 
             {isChristmas && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.04] text-neutral-300 border border-white/[0.08]">
                 <span>HOLIDAY SPECIAL</span>
               </span>
             )}
-
           </div>
 
           <div className="space-y-2">

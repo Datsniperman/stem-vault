@@ -14,6 +14,7 @@ import {
   FolderArchive,
 } from 'lucide-react';
 import { detectTrackCategory } from '@/lib/daw/colorMap';
+import { FluidOrb } from '@/components/ui/fluid-orb';
 
 interface TrackItem {
   id: string;
@@ -129,23 +130,29 @@ export default function DawConverterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
-        {/* Title Header */}
-        <div className="mb-8 border-b border-neutral-800 pb-6">
-          <div className="flex items-center gap-3 text-cyan-400 text-xs font-mono uppercase tracking-wider mb-2">
-            <Sliders className="w-4 h-4" />
-            <span>Cross-Platform Studio Utilities</span>
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
+        {/* Rare UI Hero Canvas */}
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#121215]/80 backdrop-blur-xl p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] mb-8">
+          <div className="absolute -right-20 -top-20 opacity-20 blur-2xl pointer-events-none">
+            <FluidOrb size={320} color="#2a3040" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
-            DAW Session Generator & Converter
-          </h1>
-          <p className="text-sm text-neutral-400 max-w-3xl">
-            Convert multitrack stems or project structures into native, color-coded, ready-to-open session
-            files for your digital audio workstation. No source DAW software required.
-          </p>
+
+          <div className="relative z-10 space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-neutral-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+              <span>THE MIXING VAULT / DAW UTILITIES</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
+              <Sliders className="w-6 h-6 text-neutral-300" />
+              <span>DAW Session Generator & Converter</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 max-w-3xl leading-relaxed">
+              Convert multitrack stems or project structures into native, color-coded, ready-to-open session files for your digital audio workstation. No source DAW software required.
+            </p>
+          </div>
         </div>
 
         {error && (

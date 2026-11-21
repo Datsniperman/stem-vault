@@ -10,6 +10,7 @@ import {
 import { Header } from '@/components/Header';
 import { getDbPool } from '@/lib/db/pool';
 import { Competition } from '@/types';
+import { FluidOrb } from '@/components/ui/fluid-orb';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,43 +45,49 @@ export default async function CompetitionsPage() {
   const competition: Competition | undefined = compRes.rows[0];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 pb-24">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 pb-24">
       <Header />
 
-      {/* Hero Header */}
-      <div className="border-b border-neutral-800 bg-[#0d0d0e] py-8 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto space-y-2">
-          <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
-            <span>THE MIXING VAULT / COMPETITIONS</span>
+      {/* Rare UI Hero Canvas */}
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 pt-6">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#121215]/80 backdrop-blur-xl p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]">
+          <div className="absolute -right-20 -top-20 opacity-20 blur-2xl pointer-events-none">
+            <FluidOrb size={320} color="#353540" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <Trophy className="w-5 h-5 text-neutral-300" />
-            <span>Mix Competitions</span>
-          </h1>
-          <p className="text-xs text-neutral-400 max-w-2xl leading-relaxed">
-            Test your mixing skills against community engineers. Download multitrack stems, balance your mix, and submit directly through the vault with your linked Discord account.
-          </p>
+
+          <div className="relative z-10 space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-neutral-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+              <span>THE MIXING VAULT / COMPETITIONS</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
+              <Trophy className="w-6 h-6 text-neutral-300" />
+              <span>Mix Competitions</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 max-w-2xl leading-relaxed">
+              Test your mixing skills against community engineers. Download multitrack stems, balance your mix, and submit directly through the vault with your linked Discord account.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 pt-8">
         {competition ? (
-          <div className="bg-[#121212] border border-neutral-800 rounded-xl p-6 sm:p-7 space-y-5 shadow-xs">
+          <div className="rare-card p-7 sm:p-8 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-[11px] font-mono">
-                <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
+                <span className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-neutral-300">
                   FEATURED EVENT
                 </span>
               </div>
 
-              <span className="text-[11px] font-mono text-neutral-300 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded">
+              <span className="text-[11px] font-mono text-neutral-300 bg-white/[0.04] border border-white/[0.08] px-3 py-1 rounded-full">
                 ACTIVE
               </span>
             </div>
 
-            <div className="space-y-1.5">
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 {competition.title}
               </h2>
               {competition.description && (
@@ -90,7 +97,7 @@ export default async function CompetitionsPage() {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-neutral-800/80">
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-white/[0.06]">
               <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-neutral-400">
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-neutral-400" />
@@ -104,7 +111,7 @@ export default async function CompetitionsPage() {
 
               <Link
                 href={`/competitions/${competition.slug || competition.id}`}
-                className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors inline-flex items-center gap-2 shadow-xs"
+                className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-5 py-2.5 rounded-full transition-all inline-flex items-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Enter Competition</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -112,7 +119,7 @@ export default async function CompetitionsPage() {
             </div>
           </div>
         ) : (
-          <div className="border border-neutral-800 rounded-xl p-12 text-center text-xs text-neutral-500 bg-[#121212]">
+          <div className="rounded-[28px] border border-white/[0.08] p-12 text-center text-xs text-neutral-500 bg-[#141416]/60 backdrop-blur-xl">
             No active competitions at this time.
           </div>
         )}

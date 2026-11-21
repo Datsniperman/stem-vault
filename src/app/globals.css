@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
-/* ── Minimalist Monochrome Studio Theme Tokens ────────────────────────────── */
+/* ── Rare UI / Studio Dark Theme Tokens ────────────────────────────── */
 @theme {
-  --color-bg-base:        #0a0a0a;
-  --color-bg-surface:     #121212;
+  --color-bg-base:        #0d0d0e;
+  --color-bg-surface:     #121214;
   --color-bg-elevated:    #18181b;
-  --color-bg-well:        #0f0f10;
+  --color-bg-well:        #0a0a0c;
   
-  --color-border-subtle:  #1f1f23;
-  --color-border:         #27272a;
-  --color-border-hover:   #3f3f46;
+  --color-border-subtle:  rgba(255, 255, 255, 0.06);
+  --color-border:         rgba(255, 255, 255, 0.1);
+  --color-border-hover:   rgba(255, 255, 255, 0.2);
 
   --color-text-primary:   #fafafa;
   --color-text-secondary: #a1a1aa;
@@ -27,16 +27,18 @@
   html { scroll-behavior: smooth; }
 
   body {
-    background-color: #0a0a0a;
+    background-color: #0d0d0e;
     color: #e4e4e7;
     font-family: var(--font-body);
     min-height: 100vh;
+    background-image: radial-gradient(120% 75% at 50% -5%, rgba(255, 255, 255, 0.05), transparent 60%);
+    background-attachment: fixed;
   }
 
   button { cursor: pointer; }
 
   *:focus-visible {
-    outline: 1px solid #ffffff;
+    outline: 1px solid rgba(255, 255, 255, 0.4);
     outline-offset: 2px;
   }
 
@@ -46,7 +48,36 @@
   }
 
   ::-webkit-scrollbar       { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0a0a0a; }
-  ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: #0d0d0e; }
+  ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
   ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+}
+
+/* ── Rare UI Utility Layer ────────────────────────────────────────────────── */
+.rare-canvas {
+  background-color: #121214;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 28px;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.rare-card {
+  background-color: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rare-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+}
+
+.rare-pill {
+  border-radius: 9999px;
+  background-color: rgba(22, 22, 24, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }

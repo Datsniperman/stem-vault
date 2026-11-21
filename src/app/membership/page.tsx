@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
+import { Header } from '@/components/Header';
+import { FluidOrb } from '@/components/ui/fluid-orb';
 
 const LAUNCHPASS_PLUS_URL = 'https://www.launchpass.com/all-access-by-tyler/plus';
 const LAUNCHPASS_PREMIUM_URL = 'https://www.launchpass.com/all-access-by-tyler/membership';
@@ -59,7 +61,6 @@ function MembershipContent() {
     user?.user_metadata?.avatar_url ||
     null;
 
-  // Derive active tier using canonical tier resolver
   const userTier = getMembershipTier(user);
   const isPremium = userTier === 'PREMIUM';
   const isPlus = userTier === 'PLUS';
@@ -99,30 +100,36 @@ function MembershipContent() {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10 py-6">
       {/* Title & Explainer */}
-      <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-mono uppercase tracking-wider text-emerald-400">
-          <span>Tiered Memberships</span>
+      <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#121215]/80 backdrop-blur-xl p-8 sm:p-12 text-center shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] space-y-4">
+        <div className="absolute -left-16 -top-16 opacity-25 blur-2xl pointer-events-none">
+          <FluidOrb size={320} color="#2b2d35" />
         </div>
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
-          Tyler Kerpsack All Access
-        </h1>
-        <p className="text-neutral-400 text-sm max-w-xl mx-auto leading-relaxed">
-          Unlock multitracks, video lessons, plugin chains, and direct feedback from pros on The Mixing Vault.
-        </p>
+
+        <div className="relative z-10 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono uppercase tracking-wider text-neutral-300">
+            <span>MEMBERSHIP TIERS</span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+            Tyler Kerpsack All Access
+          </h1>
+          <p className="text-neutral-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+            Unlock multitracks, video lessons, plugin chains, and direct feedback from pros on The Mixing Vault.
+          </p>
+        </div>
       </div>
 
       {/* Account Status Strip (If Logged In) */}
       {user && (
-        <div className="bg-[#121212] border border-neutral-800 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="rare-card p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={displayName}
-                className="w-11 h-11 rounded-full border border-neutral-700 object-cover shrink-0"
+                className="w-11 h-11 rounded-full border border-white/[0.1] object-cover shrink-0"
               />
             ) : (
-              <div className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center text-sm font-bold text-white shrink-0">
+              <div className="w-11 h-11 rounded-full bg-neutral-800 border border-white/[0.1] flex items-center justify-center text-sm font-bold text-white shrink-0">
                 {displayName.slice(0, 2).toUpperCase()}
               </div>
             )}
@@ -130,12 +137,12 @@ function MembershipContent() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-white">{displayName}</span>
                 <span
-                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                  className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
                     userTier === 'PREMIUM'
-                      ? 'bg-amber-950/60 text-amber-400 border-amber-800'
+                      ? 'bg-amber-400/10 text-amber-300 border-amber-400/30'
                       : userTier === 'PLUS'
-                      ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800'
-                      : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                      ? 'bg-emerald-400/10 text-emerald-300 border-emerald-400/30'
+                      : 'bg-white/[0.05] text-neutral-400 border-white/[0.08]'
                   }`}
                 >
                   {userTier === 'PREMIUM' ? 'Premium Member' : userTier === 'PLUS' ? 'Plus Member' : 'Free Tier'}
@@ -153,7 +160,7 @@ function MembershipContent() {
             <button
               onClick={handleRefreshRoles}
               disabled={refreshing}
-              className="flex-1 sm:flex-none bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-xs py-2 px-3.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 sm:flex-none bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] disabled:opacity-50 text-white text-xs py-2 px-4 rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer backdrop-blur-xl"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               <span>{refreshing ? 'Refreshing...' : 'Refresh Roles'}</span>
@@ -162,7 +169,7 @@ function MembershipContent() {
             {userTier !== 'FREE' && (
               <a
                 href={returnTo.startsWith('/membership') ? '/' : returnTo}
-                className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-none bg-white hover:bg-neutral-200 text-black font-semibold text-xs py-2 px-4 rounded-full transition-all flex items-center justify-center gap-1.5 shadow-md"
               >
                 <span>Enter Vault</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -171,7 +178,7 @@ function MembershipContent() {
 
             <button
               onClick={() => signOut()}
-              className="p-2 text-neutral-500 hover:text-neutral-300 transition-colors rounded-lg hover:bg-neutral-800"
+              className="p-2 text-neutral-500 hover:text-white transition-colors rounded-full hover:bg-white/[0.06]"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -181,7 +188,7 @@ function MembershipContent() {
       )}
 
       {refreshMessage && (
-        <p className="text-xs text-amber-300 text-center px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg max-w-lg mx-auto">
+        <p className="text-xs text-amber-300 text-center px-4 py-2 bg-neutral-900 border border-white/[0.08] rounded-full max-w-lg mx-auto">
           {refreshMessage}
         </p>
       )}
@@ -190,18 +197,18 @@ function MembershipContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         {/* Plus Tier Card */}
         <div
-          className={`relative bg-[#121212] border rounded-2xl p-6 sm:p-8 flex flex-col justify-between transition-all shadow-xl ${
-            userTier === 'PLUS' ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-neutral-800 hover:border-neutral-700'
+          className={`rare-card p-7 sm:p-8 flex flex-col justify-between ${
+            userTier === 'PLUS' ? 'border-white/40 ring-1 ring-white/30' : ''
           }`}
         >
           <div>
             <div className="flex items-center justify-between mb-4">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/80">
-                <ShieldCheck className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/[0.05] text-neutral-200 border border-white/[0.08]">
+                <ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Plus Tier</span>
               </div>
               {userTier === 'PLUS' && (
-                <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">
+                <span className="text-[11px] text-white font-semibold uppercase tracking-wider font-mono">
                   Your Current Plan
                 </span>
               )}
@@ -212,16 +219,15 @@ function MembershipContent() {
               Designed for those ready to actively level up their live mixing skills.
             </p>
 
-            <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-neutral-800">
+            <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-white/[0.08]">
               <span className="text-4xl font-extrabold text-white">$15</span>
               <span className="text-xs text-neutral-400 font-medium">/ month</span>
             </div>
 
-            {/* Perks List */}
             <ul className="space-y-3 mb-8">
               {PLUS_PERKS.map((perk, idx) => (
                 <li key={idx} className="flex items-start gap-2.5 text-xs text-neutral-300 leading-relaxed">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <Check className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                   <span>{perk}</span>
                 </li>
               ))}
@@ -233,10 +239,10 @@ function MembershipContent() {
               href={LAUNCHPASS_PLUS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-full font-semibold text-xs py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+              className={`w-full font-semibold text-xs py-3 px-4 rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
                 userTier === 'PLUS'
-                  ? 'bg-neutral-800 hover:bg-neutral-700 text-white'
-                  : 'bg-emerald-500 hover:bg-emerald-400 text-black'
+                  ? 'bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.1]'
+                  : 'bg-white hover:bg-neutral-200 text-black'
               }`}
             >
               <span>{userTier === 'PLUS' ? 'Manage Plus Subscription' : 'Join Plus Tier ($15/mo)'}</span>
@@ -247,25 +253,22 @@ function MembershipContent() {
 
         {/* Premium Tier Card */}
         <div
-          className={`relative bg-[#121212] border rounded-2xl p-6 sm:p-8 flex flex-col justify-between transition-all shadow-2xl ${
-            userTier === 'PREMIUM'
-              ? 'border-amber-500 ring-1 ring-amber-500'
-              : 'border-neutral-700/80 hover:border-amber-500/60'
+          className={`relative rare-card p-7 sm:p-8 flex flex-col justify-between ${
+            userTier === 'PREMIUM' ? 'border-amber-400/60 ring-1 ring-amber-400/40' : ''
           }`}
         >
-          {/* Top highlight ribbon */}
-          <div className="absolute -top-3 right-6 bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-extrabold text-[10px] tracking-wider uppercase px-3 py-1 rounded-full shadow-md">
+          <div className="absolute -top-3 right-6 bg-white text-black font-extrabold text-[10px] tracking-wider uppercase px-3 py-1 rounded-full shadow-md">
             Ultimate All-Access
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-400 border border-amber-800/80">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-400/10 text-amber-300 border border-amber-400/30">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Premium Tier</span>
               </div>
               {userTier === 'PREMIUM' && (
-                <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
+                <span className="text-[11px] text-amber-300 font-semibold uppercase tracking-wider font-mono">
                   Your Current Plan
                 </span>
               )}
@@ -276,12 +279,11 @@ function MembershipContent() {
               The ultimate pass for hands-on professional feedback, direct reviews, and pro multitracks.
             </p>
 
-            <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-neutral-800">
+            <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-white/[0.08]">
               <span className="text-4xl font-extrabold text-white">$30</span>
               <span className="text-xs text-neutral-400 font-medium">/ month</span>
             </div>
 
-            {/* Perks List */}
             <ul className="space-y-3 mb-8">
               {PREMIUM_PERKS.map((perk, idx) => (
                 <li key={idx} className="flex items-start gap-2.5 text-xs text-neutral-300 leading-relaxed">
@@ -297,7 +299,7 @@ function MembershipContent() {
               href={LAUNCHPASS_PREMIUM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+              className="w-full bg-white hover:bg-neutral-200 text-black font-semibold text-xs py-3 px-4 rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-[1.01]"
             >
               <span>{userTier === 'PREMIUM' ? 'Manage Premium Subscription' : 'Join Premium Tier ($30/mo)'}</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -306,16 +308,15 @@ function MembershipContent() {
         </div>
       </div>
 
-      {/* Discord Connect Callout if Not Logged In */}
       {!user && (
-        <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 text-center space-y-3">
+        <div className="rounded-[28px] border border-white/[0.08] p-8 text-center space-y-3 bg-[#141416]/60 backdrop-blur-xl">
           <h3 className="text-base font-semibold text-white">Already a member?</h3>
           <p className="text-xs text-neutral-400 max-w-md mx-auto">
             Log in with your Discord account to verify your active role and immediately access your unlocked vault.
           </p>
           <button
             onClick={handleDiscordSignIn}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium text-xs py-2.5 px-6 rounded-lg transition-colors inline-flex items-center gap-2 shadow-md cursor-pointer"
+            className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium text-xs py-2.5 px-6 rounded-full transition-all inline-flex items-center gap-2 shadow-md cursor-pointer"
           >
             <span>Log In with Discord</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -328,20 +329,8 @@ function MembershipContent() {
 
 export default function MembershipPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col justify-between selection:bg-neutral-800 selection:text-white font-sans">
-      <header className="border-b border-neutral-800/80 bg-[#0a0a0a]/90 backdrop-blur-md sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider shadow-xs">
-              MV
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-sm font-semibold tracking-tight text-white">THE MIXING VAULT</span>
-              <span className="text-[11px] text-neutral-500 font-normal">/ Beta</span>
-            </div>
-          </a>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-200 flex flex-col justify-between selection:bg-neutral-800 selection:text-white font-sans">
+      <Header />
 
       <main className="max-w-6xl mx-auto px-4 py-8 flex-1 w-full">
         <Suspense fallback={<div className="text-center py-20 text-xs text-neutral-500">Loading...</div>}>
@@ -349,7 +338,7 @@ export default function MembershipPage() {
         </Suspense>
       </main>
 
-      <footer className="border-t border-neutral-800/60 py-6 text-center text-xs text-neutral-500">
+      <footer className="border-t border-white/[0.06] py-6 text-center text-xs text-neutral-500 font-mono">
         <p>&copy; {new Date().getFullYear()} The Mixing Vault. Powered by KerpBot.</p>
       </footer>
     </div>

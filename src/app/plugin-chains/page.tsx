@@ -2,12 +2,24 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Sliders, Search, Plus, Upload, Filter, Calendar, User, Info, ArrowRight } from 'lucide-react';
+import {
+  Sliders,
+  Search,
+  Plus,
+  Upload,
+  Calendar,
+  User,
+  Info,
+  ArrowRight,
+  Layers,
+} from 'lucide-react';
 import { PluginChain } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { CreatePluginChainModal } from '@/components/CreatePluginChainModal';
 import { ImportPluginChainModal } from '@/components/ImportPluginChainModal';
 import { Header } from '@/components/Header';
+import { FluidOrb } from '@/components/ui/fluid-orb';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
 
 const COMMON_DAWS = [
   'All DAWs',
@@ -54,129 +66,121 @@ export default function PluginChainsPage() {
   }, [search, selectedDaw, pluginFilter]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 pb-20">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 pb-24">
       <Header />
-      {/* Hero Header */}
-      <div className="border-b border-neutral-800 bg-neutral-950/60 backdrop-blur-sm py-10 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 mb-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>THE MIXING VAULT / SIGNAL CHAINS</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <Sliders className="w-7 h-7 text-neutral-300" />
-              <span>Plugin Chains</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl">
-              Save and discover structured audio processing chains. Order EQ, dynamics, and time-based plugins with custom settings notes.
-            </p>
+
+      {/* Rare UI Hero Canvas */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-6">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#121215]/80 backdrop-blur-xl p-8 sm:p-12 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]">
+          <div className="absolute -right-16 -top-16 opacity-25 blur-2xl pointer-events-none">
+            <FluidOrb size={360} color="#302a35" />
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {user ? (
-              <>
-                <button
-                  onClick={() => setImportOpen(true)}
-                  className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 hover:text-white font-medium text-xs px-3.5 py-2.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Import JSON</span>
-                </button>
-                <button
-                  onClick={() => setCreateOpen(true)}
-                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2.5 rounded transition-colors flex items-center gap-2 shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create Chain</span>
-                </button>
-              </>
-            ) : (
-              <p className="text-xs text-neutral-500 bg-neutral-900 border border-neutral-800 px-3 py-1.5 rounded">
-                Log in to create or import chains
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-neutral-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span>SIGNAL PROCESSING BLUEPRINTS</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white flex items-center gap-3">
+                <Sliders className="w-8 h-8 text-neutral-300 shrink-0" />
+                <span>Plugin Chains</span>
+              </h1>
+
+              <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                Save, import, and share structured audio signal chains. Order your EQ, compression, saturation, and spatial FX plugins with exact parameters and notes.
               </p>
-            )}
+
+              <div className="flex flex-wrap items-center gap-4 pt-3 text-xs font-mono">
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
+                  <span className="text-neutral-500">Chains:</span>
+                  <AnimatedCounter value={chains.length} className="text-white font-semibold" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              {user ? (
+                <>
+                  <button
+                    onClick={() => setImportOpen(true)}
+                    className="bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/[0.1] font-semibold text-xs px-4 py-2.5 rounded-full transition-all flex items-center gap-2 backdrop-blur-xl"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Import JSON</span>
+                  </button>
+                  <button
+                    onClick={() => setCreateOpen(true)}
+                    className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-5 py-2.5 rounded-full transition-all flex items-center gap-2 shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create Chain</span>
+                  </button>
+                </>
+              ) : (
+                <div className="text-xs text-neutral-400 bg-white/[0.04] border border-white/[0.08] px-4 py-2.5 rounded-full">
+                  Connect Discord to build chains
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-        {/* DAW Integration Notice Banner */}
-        <div className="mb-6 p-3.5 bg-neutral-900/80 border border-neutral-800 rounded-lg flex items-start gap-3 text-xs text-neutral-400">
-          <Info className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
-          <div>
-            <span className="text-neutral-200 font-medium">DAW plugin support coming later — export/import schema ready.</span>
-            <p className="text-neutral-400 mt-0.5">
-              Signal chains can be imported and exported as standardized JSON matching our <code className="text-neutral-300">PLUGIN-CHAIN-SCHEMA.md</code> v1 specification. Native VST3/AU DAW plugin synchronizer is scheduled for the next release.
-            </p>
-          </div>
-        </div>
-
-        {/* Filter & Search Bar */}
-        <div className="mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="flex flex-col sm:flex-row items-center gap-2.5 flex-1">
-            <div className="relative flex-1 w-full sm:max-w-xs">
-              <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search chains by title..."
-                className="w-full bg-neutral-900 border border-neutral-800 rounded pl-9 pr-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
-              />
-            </div>
-
-            <div className="relative w-full sm:w-48">
-              <input
-                type="text"
-                value={pluginFilter}
-                onChange={e => setPluginFilter(e.target.value)}
-                placeholder="Filter by plugin name..."
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
-              />
-            </div>
-
-            <div className="w-full sm:w-40">
-              <select
-                value={selectedDaw}
-                onChange={e => setSelectedDaw(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500"
-              >
-                {COMMON_DAWS.map(d => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-8 space-y-6">
+        {/* Search & DAW Selector */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-neutral-500 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by chain name, track type (e.g. Lead Vocals)..."
+              className="w-full bg-[#141416]/90 border border-white/[0.08] hover:border-white/[0.15] rounded-full pl-11 pr-10 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-all backdrop-blur-xl shadow-xs"
+            />
           </div>
 
-          <span className="text-xs text-neutral-500 font-mono self-end md:self-auto">
-            {chains.length} {chains.length === 1 ? 'chain' : 'chains'}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <select
+              value={selectedDaw}
+              onChange={e => setSelectedDaw(e.target.value)}
+              className="bg-[#141416]/90 border border-white/[0.08] rounded-full px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white/30 transition-all backdrop-blur-xl cursor-pointer"
+            >
+              {COMMON_DAWS.map(daw => (
+                <option key={daw} value={daw} className="bg-neutral-900 text-white">
+                  {daw}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Chains Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map(n => (
-              <div key={n} className="h-44 bg-neutral-900/40 border border-neutral-800 rounded-lg animate-pulse" />
+            {[1, 2, 3, 4, 5, 6].map(n => (
+              <div
+                key={n}
+                className="h-44 rounded-[22px] bg-white/[0.02] border border-white/[0.06] animate-pulse"
+              />
             ))}
           </div>
         ) : chains.length === 0 ? (
-          <div className="border border-neutral-800 rounded-lg p-12 text-center bg-neutral-950/40">
+          <div className="rounded-[28px] border border-white/[0.08] p-16 text-center bg-[#141416]/60 backdrop-blur-xl">
             <Sliders className="w-10 h-10 text-neutral-600 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-neutral-300">No Plugin Chains Found</h3>
-            <p className="text-xs text-neutral-500 mt-1 max-w-md mx-auto">
-              {search || pluginFilter || selectedDaw !== 'All DAWs'
-                ? 'Try clearing or relaxing your search filters.'
-                : 'Be the first to create and share a signal chain!'}
+            <h3 className="text-sm font-semibold text-neutral-200">No Chains Found</h3>
+            <p className="text-xs text-neutral-400 mt-1 max-w-md mx-auto">
+              {search
+                ? 'Try adjusting your search criteria.'
+                : 'Be the first to share an audio processing chain.'}
             </p>
             {user && (
               <button
                 onClick={() => setCreateOpen(true)}
-                className="mt-4 bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-3.5 py-1.5 rounded transition-colors inline-flex items-center gap-1.5"
+                className="mt-5 bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded-full transition-all inline-flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Create First Chain</span>
@@ -185,46 +189,70 @@ export default function PluginChainsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {chains.map((chain: PluginChain) => (
-              <Link
-                key={chain.id}
-                href={`/plugin-chains/${chain.id}`}
-                className="bg-[#121212] hover:bg-[#161616] border border-neutral-800 hover:border-neutral-700 rounded-lg p-4 transition-all flex flex-col justify-between group shadow-xs"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="text-sm font-semibold text-white group-hover:text-neutral-200 transition-colors line-clamp-1">
-                      {chain.name}
-                    </h3>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 shrink-0">
-                      {chain.daw}
-                    </span>
+            {chains.map(chain => {
+              const pluginCount = chain.plugin_count || (chain.items?.length ?? 0);
+              return (
+                <Link
+                  key={chain.id}
+                  href={`/plugin-chains/${chain.id}`}
+                  className="rare-card group p-5 flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-white group-hover:text-neutral-200 transition-colors line-clamp-1">
+                          {chain.name}
+                        </h3>
+                      </div>
+
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] text-neutral-300 border border-white/[0.08] shrink-0">
+                        {chain.daw}
+                      </span>
+                    </div>
+
+                    {chain.description && (
+                      <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">
+                        {chain.description}
+                      </p>
+                    )}
+
+                    {chain.items && chain.items.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {chain.items.slice(0, 4).map((p, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-neutral-300"
+                          >
+                            {p.plugin_name}
+                          </span>
+                        ))}
+                        {chain.items.length > 4 && (
+                          <span className="text-[10px] font-mono text-neutral-500">
+                            +{chain.items.length - 4} more
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {chain.description && (
-                    <p className="text-xs text-neutral-400 line-clamp-2 mb-3">
-                      {chain.description}
-                    </p>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono mt-2">
-                  <div className="flex items-center gap-1 text-neutral-400 truncate max-w-[140px]">
-                    <User className="w-3 h-3 text-neutral-500 shrink-0" />
-                    <span className="truncate">{chain.owner_name || 'Member'}</span>
+                  <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-500 font-mono mt-4">
+                    <div className="flex items-center gap-1.5 text-neutral-400 truncate max-w-[140px]">
+                      <User className="w-3 h-3 text-neutral-500 shrink-0" />
+                      <span className="truncate">{chain.owner_name || 'Member'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-neutral-300 font-semibold">
+                        {pluginCount} plugins
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-neutral-500" />
+                        <span>{new Date(chain.created_at).toLocaleDateString()}</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-neutral-300 font-semibold">
-                      {chain.plugin_count || 0} plugins
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-neutral-500" />
-                      <span>{new Date(chain.created_at).toLocaleDateString()}</span>
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
@@ -232,12 +260,13 @@ export default function PluginChainsPage() {
       <CreatePluginChainModal
         isOpen={createOpen}
         onClose={() => setCreateOpen(false)}
-        onSuccess={fetchChains}
+        onSuccess={() => fetchChains()}
       />
+
       <ImportPluginChainModal
         isOpen={importOpen}
         onClose={() => setImportOpen(false)}
-        onSuccess={fetchChains}
+        onSuccess={() => fetchChains()}
       />
     </div>
   );
