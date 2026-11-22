@@ -167,7 +167,7 @@ export default function DawConverterPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Settings & Target DAW */}
           <div className="space-y-6">
-            <div className="p-5 rounded-lg bg-neutral-900/60 border border-neutral-800 space-y-4">
+            <div className="rare-card p-6 space-y-4">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-cyan-400" />
                 <span>Project Parameters</span>
@@ -182,7 +182,7 @@ export default function DawConverterPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Sunday Service Worship Mix"
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-[#16161a] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -197,7 +197,7 @@ export default function DawConverterPage() {
                   placeholder="120"
                   min="20"
                   max="300"
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-[#16161a] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -210,7 +210,7 @@ export default function DawConverterPage() {
                     className={`flex items-center gap-3 p-2.5 rounded border cursor-pointer transition-colors ${
                       targetFormat === 'reaper'
                         ? 'bg-neutral-800 border-cyan-500 text-white'
-                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                        : 'bg-neutral-950 border-white/[0.08] text-neutral-400 hover:text-neutral-200'
                     }`}
                   >
                     <input
@@ -233,7 +233,7 @@ export default function DawConverterPage() {
                     className={`flex items-center gap-3 p-2.5 rounded border cursor-pointer transition-colors ${
                       targetFormat === 'ableton'
                         ? 'bg-neutral-800 border-cyan-500 text-white'
-                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                        : 'bg-neutral-950 border-white/[0.08] text-neutral-400 hover:text-neutral-200'
                     }`}
                   >
                     <input
@@ -256,7 +256,7 @@ export default function DawConverterPage() {
                     className={`flex items-center gap-3 p-2.5 rounded border cursor-pointer transition-colors ${
                       targetFormat === 'dawproject'
                         ? 'bg-neutral-800 border-cyan-500 text-white'
-                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                        : 'bg-neutral-950 border-white/[0.08] text-neutral-400 hover:text-neutral-200'
                     }`}
                   >
                     <input
@@ -288,7 +288,7 @@ export default function DawConverterPage() {
             </div>
 
             {/* Instruction Tip */}
-            <div className="p-4 rounded-lg bg-neutral-900/30 border border-neutral-800/80 text-xs text-neutral-400 space-y-2">
+            <div className="p-4 rounded-lg bg-neutral-900/30 border border-white/[0.08]/80 text-xs text-neutral-400 space-y-2">
               <div className="font-semibold text-white flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
                 <span>How to use:</span>
@@ -304,7 +304,7 @@ export default function DawConverterPage() {
 
           {/* Right Column: Track List & Dropzone */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="p-5 rounded-lg bg-neutral-900/60 border border-neutral-800">
+            <div className="rare-card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
                   <FileAudio className="w-4 h-4 text-neutral-400" />
@@ -320,7 +320,7 @@ export default function DawConverterPage() {
               </div>
 
               {/* Drag and Drop Zone */}
-              <label className="block border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-6 text-center cursor-pointer transition-colors mb-4 group">
+              <label className="block border-2 border-dashed border-white/[0.08] hover:border-neutral-700 rounded-lg p-6 text-center cursor-pointer transition-colors mb-4 group">
                 <input
                   type="file"
                   multiple
@@ -349,7 +349,7 @@ export default function DawConverterPage() {
                     return (
                       <div
                         key={t.id}
-                        className="flex items-center gap-3 p-2.5 rounded bg-neutral-950 border border-neutral-800/80 text-xs"
+                        className="flex items-center gap-3 p-2.5 rounded bg-neutral-950 border border-white/[0.08]/80 text-xs"
                       >
                         <div
                           className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -371,7 +371,7 @@ export default function DawConverterPage() {
                           value={t.filename}
                           onChange={(e) => handleTrackChange(t.id, 'filename', e.target.value)}
                           placeholder="filename.wav"
-                          className="w-36 sm:w-48 bg-neutral-900/60 border border-neutral-800 rounded px-2 py-1 text-neutral-400 text-[11px] focus:outline-none font-mono"
+                          className="w-36 sm:w-48 bg-neutral-900/60 border border-white/[0.08] rounded px-2 py-1 text-neutral-400 text-[11px] focus:outline-none font-mono"
                         />
                         <button
                           onClick={() => handleRemoveTrack(t.id)}

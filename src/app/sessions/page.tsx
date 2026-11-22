@@ -149,12 +149,12 @@ export default function RecordedSessionsPage() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="bg-neutral-900/50 border border-neutral-800 rounded-xl aspect-video animate-pulse"
+                className="bg-neutral-900/50 border border-white/[0.08] rounded-xl aspect-video animate-pulse"
               />
             ))}
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-center py-20 border border-dashed border-neutral-800 rounded-2xl p-8">
+          <div className="text-center py-20 border border-dashed border-white/[0.08] rounded-2xl p-8">
             <Video className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
             <h3 className="text-base font-semibold text-white mb-1">No recorded sessions found</h3>
             <p className="text-xs text-neutral-500 max-w-md mx-auto">
@@ -166,7 +166,7 @@ export default function RecordedSessionsPage() {
             {sessions.map((session) => (
               <div
                 key={session.id}
-                className="group relative bg-neutral-900/40 border border-neutral-800 hover:border-neutral-700 rounded-xl overflow-hidden flex flex-col transition-all duration-200 shadow-lg"
+                className="rare-card group overflow-hidden overflow-hidden flex flex-col transition-all duration-200 shadow-lg"
               >
                 {/* Thumbnail Area */}
                 <div className="relative aspect-video bg-neutral-950 overflow-hidden">
@@ -243,7 +243,7 @@ export default function RecordedSessionsPage() {
                     )}
                   </div>
 
-                  <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between">
+                  <div className="pt-3 border-t border-white/[0.08]/80 flex items-center justify-between">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {session.tags.slice(0, 2).map((t, idx) => (
                         <span

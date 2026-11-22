@@ -281,9 +281,9 @@ export function UploadMixModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-lg shadow-2xl flex flex-col">
+      <div className="bg-[#121216] border border-white/[0.1] rounded-[28px] w-full max-w-lg shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+        <div className="flex items-center justify-between p-4 border-b border-white/[0.08]">
           <div>
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <Music2 className="w-5 h-5 text-neutral-300" />
@@ -316,7 +316,7 @@ export function UploadMixModal({
               <label className="block text-xs font-medium text-neutral-300 mb-1">
                 Audio File <span className="text-red-400">*</span>
               </label>
-              <div className="relative border-2 border-dashed border-neutral-800 hover:border-neutral-700 rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
+              <div className="relative border-2 border-dashed border-white/[0.08] hover:border-neutral-700 rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors bg-neutral-900/30">
                 <Music2 className="w-7 h-7 text-neutral-500 mb-1.5" />
                 <p className="text-xs text-neutral-200 font-medium truncate max-w-xs">
                   {file ? file.name : 'Choose audio file (WAV, FLAC, MP3, AIFF, OGG)'}
@@ -336,7 +336,7 @@ export function UploadMixModal({
 
             {/* Visual Animated Progress Bar */}
             {uploading && (
-              <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3 rounded-lg animate-[fade-in_0.15s_ease-out]">
+              <div className="space-y-1.5 bg-neutral-900/60 border border-white/[0.08] p-3 rounded-lg animate-[fade-in_0.15s_ease-out]">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-neutral-300 font-mono text-[11px] truncate flex items-center gap-1.5">
                     {(uploadProgress ?? 0) === 100 ? (
@@ -369,7 +369,7 @@ export function UploadMixModal({
                 onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. Connor's Final Mixdown (v3)"
                 disabled={uploading}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
@@ -381,7 +381,7 @@ export function UploadMixModal({
                 value={selectedMultiId}
                 onChange={e => setSelectedMultiId(e.target.value)}
                 disabled={uploading}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
               >
                 <option value="">None (Standalone Mix)</option>
                 {multis.map(m => (
@@ -397,8 +397,8 @@ export function UploadMixModal({
               canReview
                 ? isSundayReview
                   ? 'bg-purple-950/40 border-purple-800/80'
-                  : 'bg-neutral-900/60 border-neutral-800 hover:border-neutral-700'
-                : 'bg-neutral-900/30 border-neutral-800/60 opacity-70'
+                  : 'bg-neutral-900/60 border-white/[0.08] hover:border-neutral-700'
+                : 'bg-neutral-900/30 border-white/[0.08]/60 opacity-70'
             }`}>
               <label className="flex items-start gap-2.5 cursor-pointer">
                 <input
@@ -429,7 +429,7 @@ export function UploadMixModal({
               </label>
             </div>
 
-            <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
+            <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/[0.08]">
               <button
                 type="button"
                 onClick={handleCancel}

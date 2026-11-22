@@ -206,7 +206,14 @@ export function GooeyNav({
   const pathname = usePathname();
   const reduced = useReducedMotion() ?? false;
 
-  const routeIndex = items.findIndex((item) => toItem(item).href === pathname);
+  const isMatch = (href?: string) => {
+    if (!href) return false;
+    if (href === '/' && (pathname === '/' || pathname === '/multis' || pathname.startsWith('/multis/'))) return true;
+    if (href !== '/' && pathname.startsWith(href)) return true;
+    return false;
+  };
+
+  const routeIndex = items.findIndex((item) => isMatch(toItem(item).href));
   const [uncontrolled, setUncontrolled] = useState(() =>
     routeIndex === -1 ? defaultValue : routeIndex,
   );

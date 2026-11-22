@@ -316,7 +316,7 @@ export function StemDetailClient({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-neutral-200 pb-16">
+    <div className="min-h-screen flex flex-col bg-[#0d0d0e] text-neutral-200 pb-16">
       <Header />
 
       {/* Top Breadcrumb */}
@@ -332,13 +332,13 @@ export function StemDetailClient({
 
       {/* Main Track Session Card */}
       <div className="max-w-5xl mx-auto w-full px-4 sm:px-6">
-        <div className="bg-[#121212] border border-neutral-800/80 rounded-lg p-6 sm:p-8 space-y-6 shadow-xs">
+        <div className="rare-card p-6 sm:p-8 space-y-6 shadow-xs">
 
           {/* Header Row */}
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-neutral-800">
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-neutral-900 text-neutral-300 border border-white/[0.08]">
                   {stem.host_platform}
                 </span>
                 {localVerified && (
@@ -347,14 +347,14 @@ export function StemDetailClient({
                   </span>
                 )}
                 {stemData.daw_template_url && (
-                  <span className="text-[10px] font-mono text-neutral-300 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded flex items-center gap-1">
+                  <span className="text-[10px] font-mono text-neutral-300 bg-neutral-900 border border-white/[0.08] px-2 py-0.5 rounded flex items-center gap-1">
                     <Layers className="w-3 h-3" /> DAW Template Included
                   </span>
                 )}
               </div>
 
               {/* Rating */}
-              <div className="flex items-center gap-1.5 text-xs bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded font-mono">
+              <div className="flex items-center gap-1.5 text-xs bg-neutral-900 border border-white/[0.08] px-2.5 py-1 rounded font-mono">
                 <Star className="w-3.5 h-3.5 fill-white text-white" />
                 <span className="font-semibold text-white">{avgRating > 0 ? avgRating : 'New'}</span>
                 <span className="text-neutral-500">({ratingCount})</span>
@@ -403,7 +403,7 @@ export function StemDetailClient({
                   href={stemData.daw_template_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-neutral-900 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-800 text-xs font-medium px-3.5 py-2 rounded transition-colors flex items-center gap-1.5"
+                  className="bg-neutral-900 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-white/[0.08] text-xs font-medium px-3.5 py-2 rounded transition-colors flex items-center gap-1.5"
                 >
                   <Layers className="w-3.5 h-3.5" />
                   <span>Download DAW Template</span>
@@ -416,7 +416,7 @@ export function StemDetailClient({
                   href={`https://discord.com/channels/${process.env.NEXT_PUBLIC_DISCORD_GUILD_ID || ''}/${stemData.discord_thread_id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-neutral-900 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-800 text-xs font-medium px-3.5 py-2 rounded transition-colors flex items-center gap-1.5"
+                  className="bg-neutral-900 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-white/[0.08] text-xs font-medium px-3.5 py-2 rounded transition-colors flex items-center gap-1.5"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span>Discord Feedback Thread</span>
@@ -427,7 +427,7 @@ export function StemDetailClient({
               {canEdit && (
                 <button
                   onClick={() => setIsEditOpen(true)}
-                  className="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 text-xs font-medium px-3 py-2 rounded transition-colors flex items-center gap-1.5"
+                  className="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-white/[0.08] text-xs font-medium px-3 py-2 rounded transition-colors flex items-center gap-1.5"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>Edit</span>
@@ -463,14 +463,14 @@ export function StemDetailClient({
 
           {/* Description */}
           {stem.description && (
-            <div className="bg-[#0f0f10] border border-neutral-800 p-4 rounded space-y-1">
+            <div className="bg-[#0f0f10] border border-white/[0.08] p-4 rounded space-y-1">
               <span className="text-[10px] uppercase font-mono text-neutral-400 tracking-wider block">Session Details</span>
               <p className="text-xs text-neutral-300 leading-relaxed whitespace-pre-wrap">{stem.description}</p>
             </div>
           )}
 
           {/* Star Rating Section */}
-          <div className="bg-[#0f0f10] border border-neutral-800 p-3.5 rounded flex items-center justify-between gap-4">
+          <div className="bg-[#0f0f10] border border-white/[0.08] p-3.5 rounded flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold text-white">Rate Multitrack Quality</p>
               <p className="text-[11px] text-neutral-400">Help community engineers discover clean, high-grade live multitracks.</p>
@@ -507,12 +507,12 @@ export function StemDetailClient({
       <div className="max-w-5xl mx-auto px-4 sm:px-6 mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
 
         {/* Community Mixes */}
-        <section id="mixes-section" className="space-y-3 bg-[#121212] border border-neutral-800/80 rounded-lg p-5">
-          <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+        <section id="mixes-section" className="space-y-3 rare-card p-5">
+          <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
             <div className="flex items-center gap-2">
               <Music2 className="w-4 h-4 text-neutral-400" />
               <h2 className="text-sm font-semibold text-white">Community Mixes</h2>
-              <span className="text-[10px] bg-neutral-900 border border-neutral-800 text-neutral-400 px-1.5 py-0.2 rounded font-mono">
+              <span className="text-[10px] bg-neutral-900 border border-white/[0.08] text-neutral-400 px-1.5 py-0.2 rounded font-mono">
                 {mixes.length}
               </span>
             </div>
@@ -529,7 +529,7 @@ export function StemDetailClient({
           {/* Mix Submission Form */}
           {showMixForm && (
             <div className="bg-[#0f0f10] border border-neutral-700 p-4 rounded-lg space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+              <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
                 <h3 className="text-xs font-semibold text-white flex items-center gap-1.5">
                   <Music2 className="w-3.5 h-3.5 text-neutral-300" />
                   <span>Post Mix for Discord Critique</span>
@@ -544,7 +544,7 @@ export function StemDetailClient({
               </div>
 
               {!user ? (
-                <div className="p-3 bg-[#121212] border border-neutral-800 rounded space-y-2">
+                <div className="p-3 bg-[#121216] border border-white/[0.08] rounded space-y-2">
                   <p className="text-xs text-neutral-400">
                     Connect your Discord account to post your mix to the community and Discord feedback thread.
                   </p>
@@ -571,7 +571,7 @@ export function StemDetailClient({
                 </div>
               ) : (
                 <form onSubmit={handleMixSubmit} className="space-y-3 text-xs">
-                  <div className="bg-[#121212] px-2.5 py-1.5 rounded flex items-center justify-between text-[11px] text-neutral-400 border border-neutral-800">
+                  <div className="bg-[#121216] px-2.5 py-1.5 rounded flex items-center justify-between text-[11px] text-neutral-400 border border-white/[0.08]">
                     <span>Posting as: <strong className="text-white">{profile?.server_display_name || userHandle}</strong></span>
                     <span className="text-neutral-300 font-mono">● Verified</span>
                   </div>
@@ -584,7 +584,7 @@ export function StemDetailClient({
                       value={songName}
                       onChange={e => setSongName(e.target.value)}
                       placeholder="e.g. Goodness of God (Live Mix)"
-                      className="w-full bg-[#121212] border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                      className="w-full bg-[#121216] border border-white/[0.08] rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
                     />
                   </div>
 
@@ -597,7 +597,7 @@ export function StemDetailClient({
                         value={musicalKey}
                         onChange={e => setMusicalKey(e.target.value)}
                         placeholder="e.g. C Major"
-                        className="w-full bg-[#121212] border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                        className="w-full bg-[#121216] border border-white/[0.08] rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
                       />
                     </div>
                     <div>
@@ -610,7 +610,7 @@ export function StemDetailClient({
                         value={bpmInput}
                         onChange={e => setBpmInput(e.target.value)}
                         placeholder="72"
-                        className="w-full bg-[#121212] border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                        className="w-full bg-[#121216] border border-white/[0.08] rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
                       />
                     </div>
                   </div>
@@ -623,7 +623,7 @@ export function StemDetailClient({
                       value={mixUrl}
                       onChange={e => setMixUrl(e.target.value)}
                       placeholder="https://drive.google.com/..."
-                      className="w-full bg-[#121212] border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                      className="w-full bg-[#121216] border border-white/[0.08] rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
                     />
                   </div>
 
@@ -634,7 +634,7 @@ export function StemDetailClient({
                       onChange={e => setMixNotes(e.target.value)}
                       rows={2}
                       placeholder="Console, DAW, bus processing, questions..."
-                      className="w-full bg-[#121212] border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 resize-none"
+                      className="w-full bg-[#121216] border border-white/[0.08] rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 resize-none"
                     />
                   </div>
 
@@ -661,13 +661,13 @@ export function StemDetailClient({
 
           {/* Mixes List */}
           {mixes.length === 0 ? (
-            <div className="bg-[#0f0f10] border border-neutral-800/80 p-6 text-center rounded text-xs text-neutral-400">
+            <div className="bg-[#0f0f10] border border-white/[0.08]/80 p-6 text-center rounded text-xs text-neutral-400">
               No mixes submitted yet for this session.
             </div>
           ) : (
             <div className="space-y-2">
               {mixes.map(mix => (
-                <div key={mix.id} className="bg-[#0f0f10] border border-neutral-800/80 p-3.5 rounded space-y-2">
+                <div key={mix.id} className="bg-[#0f0f10] border border-white/[0.08]/80 p-3.5 rounded space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h4 className="text-xs font-semibold text-white">{mix.title}</h4>
@@ -680,7 +680,7 @@ export function StemDetailClient({
                         'flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border transition-colors',
                         mix.user_has_liked
                           ? 'bg-neutral-800 border-neutral-700 text-white font-semibold'
-                          : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
+                          : 'bg-neutral-900 border-white/[0.08] text-neutral-400 hover:text-white'
                       )}
                     >
                       <Heart className={clsx('w-3 h-3', mix.user_has_liked ? 'fill-white text-white' : 'text-neutral-400')} />
@@ -689,7 +689,7 @@ export function StemDetailClient({
                   </div>
 
                   {mix.description && (
-                    <p className="text-[11px] text-neutral-300 bg-[#121212] p-2 rounded border border-neutral-800 font-mono text-[10px]">{mix.description}</p>
+                    <p className="text-[11px] text-neutral-300 bg-[#121216] p-2 rounded border border-white/[0.08] font-mono text-[10px]">{mix.description}</p>
                   )}
 
                   <a
@@ -708,12 +708,12 @@ export function StemDetailClient({
         </section>
 
         {/* Member Discussions & Comments */}
-        <section className="space-y-3 bg-[#121212] border border-neutral-800/80 rounded-lg p-5">
-          <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+        <section className="space-y-3 rare-card p-5">
+          <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-neutral-400" />
               <h2 className="text-sm font-semibold text-white">Notes & Discussion</h2>
-              <span className="text-[10px] bg-neutral-900 border border-neutral-800 text-neutral-400 px-1.5 py-0.2 rounded font-mono">
+              <span className="text-[10px] bg-neutral-900 border border-white/[0.08] text-neutral-400 px-1.5 py-0.2 rounded font-mono">
                 {comments.length}
               </span>
             </div>
@@ -721,7 +721,7 @@ export function StemDetailClient({
 
           {/* Comment Stream */}
           {comments.length === 0 ? (
-            <div className="bg-[#0f0f10] border border-neutral-800/80 p-6 text-center rounded text-xs text-neutral-400">
+            <div className="bg-[#0f0f10] border border-white/[0.08]/80 p-6 text-center rounded text-xs text-neutral-400">
               No notes posted yet.
             </div>
           ) : (
@@ -729,7 +729,7 @@ export function StemDetailClient({
               {comments.map(c => {
                 const canDelete = isAdmin || (profile && profile.id === c.user_id);
                 return (
-                  <div key={c.id} className="bg-[#0f0f10] border border-neutral-800/80 p-3 rounded space-y-1 group text-xs">
+                  <div key={c.id} className="bg-[#0f0f10] border border-white/[0.08]/80 p-3 rounded space-y-1 group text-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Link
@@ -765,7 +765,7 @@ export function StemDetailClient({
               onChange={e => setCommentInput(e.target.value)}
               placeholder={user ? "Add a note or mixing feedback..." : "Connect Discord to comment..."}
               disabled={!user || commentLoading}
-              className="flex-1 bg-[#0f0f10] border border-neutral-800 rounded px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 placeholder-neutral-500 disabled:opacity-50"
+              className="flex-1 bg-[#0f0f10] border border-white/[0.08] rounded px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 placeholder-neutral-500 disabled:opacity-50"
             />
             <button
               type="submit"
@@ -783,7 +783,7 @@ export function StemDetailClient({
       {/* Mix Submission Success Modal */}
       {mixSuccessData?.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]">
-          <div className="bg-[#121212] border border-neutral-800 rounded-lg w-full max-w-md shadow-2xl p-6 text-center space-y-4">
+          <div className="bg-[#121216] border border-white/[0.08] rounded-lg w-full max-w-md shadow-2xl p-6 text-center space-y-4">
             <div className="w-12 h-12 rounded-full bg-neutral-900 border border-neutral-700 flex items-center justify-center mx-auto text-white">
               <CheckCircle2 className="w-6 h-6" />
             </div>
@@ -809,7 +809,7 @@ export function StemDetailClient({
               )}
               <button
                 onClick={() => setMixSuccessData(null)}
-                className="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs py-2 px-4 rounded transition-colors border border-neutral-800"
+                className="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs py-2 px-4 rounded transition-colors border border-white/[0.08]"
               >
                 Close
               </button>
@@ -819,7 +819,7 @@ export function StemDetailClient({
       )}
 
       {/* Footer */}
-      <footer className="mt-12 pt-6 border-t border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400 max-w-5xl mx-auto w-full px-4 sm:px-6">
+      <footer className="mt-12 pt-6 border-t border-white/[0.08]/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400 max-w-5xl mx-auto w-full px-4 sm:px-6">
         <div className="flex items-center gap-2">
           <span className="text-white font-medium">The Mixing Vault</span>
           <span>•</span>
@@ -842,7 +842,7 @@ export function StemDetailClient({
 
 function SpecField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-[#0f0f10] border border-neutral-800 p-2.5 rounded space-y-0.5 font-mono">
+    <div className="bg-[#0f0f10] border border-white/[0.08] p-2.5 rounded space-y-0.5 font-mono">
       <span className="text-[10px] text-neutral-400 uppercase tracking-wider block">{label}</span>
       <p className="text-xs font-semibold text-white truncate">{value}</p>
     </div>

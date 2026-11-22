@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { Analytics } from '@vercel/analytics/next';
+import { Footer } from '@/components/Footer';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -31,10 +32,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.className}>
-      <body className="antialiased bg-[#0a0a0a] text-neutral-200">
+      <body className="antialiased bg-[#09090b] text-neutral-200 selection:bg-neutral-800 selection:text-white min-h-screen flex flex-col">
         <AuthProvider>
           <ToastProvider>
-            {children}
+            <div className="flex-1 flex flex-col w-full">
+              {children}
+            </div>
+            <Footer />
             <Analytics />
           </ToastProvider>
         </AuthProvider>

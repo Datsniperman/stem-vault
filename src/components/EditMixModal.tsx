@@ -111,9 +111,9 @@ export function EditMixModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-[#121216] border border-white/[0.1] rounded-[28px] w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+        <div className="flex items-center justify-between p-4 border-b border-white/[0.08]">
           <div>
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <Music2 className="w-5 h-5 text-neutral-300" />
@@ -151,7 +151,7 @@ export function EditMixModal({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 disabled={saving}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
@@ -163,7 +163,7 @@ export function EditMixModal({
                 value={selectedMultiId}
                 onChange={e => setSelectedMultiId(e.target.value)}
                 disabled={saving}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
               >
                 <option value="">None (Standalone Mix)</option>
                 {multis.map(m => (
@@ -178,7 +178,7 @@ export function EditMixModal({
             <div className={`p-3 rounded-lg border transition-colors ${
               isSundayReview
                 ? 'bg-purple-950/40 border-purple-800/80'
-                : 'bg-neutral-900/60 border-neutral-800 hover:border-neutral-700'
+                : 'bg-neutral-900/60 border-white/[0.08] hover:border-neutral-700'
             }`}>
               <label className="flex items-start gap-2.5 cursor-pointer">
                 <input
@@ -206,7 +206,7 @@ export function EditMixModal({
 
             {/* Admin Controls */}
             {isAdmin && (
-              <div className="space-y-3 pt-2 border-t border-neutral-800/80">
+              <div className="space-y-3 pt-2 border-t border-white/[0.08]/80">
                 <div className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 font-semibold">
                   Administrator Privileges
                 </div>
@@ -228,7 +228,7 @@ export function EditMixModal({
                     value={ownerId}
                     onChange={e => setOwnerId(e.target.value)}
                     disabled={saving || loadingUsers}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
+                    className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
                   >
                     {users.map(u => {
                       const badge = u.isPro && u.role === 'admin'
@@ -257,7 +257,7 @@ export function EditMixModal({
               </div>
             )}
 
-            <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
+            <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/[0.08]">
               <button
                 type="button"
                 onClick={onClose}

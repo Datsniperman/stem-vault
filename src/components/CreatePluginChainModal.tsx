@@ -190,9 +190,9 @@ export function CreatePluginChainModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div className="bg-[#121216] border border-white/[0.1] rounded-[28px] w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800 sticky top-0 bg-[#121212] z-10">
+        <div className="flex items-center justify-between p-4 border-b border-white/[0.08] sticky top-0 bg-[#121212] z-10">
           <div>
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <Sliders className="w-5 h-5 text-neutral-300" />
@@ -231,7 +231,7 @@ export function CreatePluginChainModal({
                   onChange={e => setName(e.target.value)}
                   placeholder="e.g. Lead Vocal Polish Chain"
                   disabled={saving}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
 
@@ -246,7 +246,7 @@ export function CreatePluginChainModal({
                   onChange={e => setDaw(e.target.value)}
                   placeholder="e.g. Logic Pro, Pro Tools, Ableton..."
                   disabled={saving}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
                 <datalist id="daw-suggestions">
                   {COMMON_DAWS.map(d => (
@@ -257,7 +257,7 @@ export function CreatePluginChainModal({
             </div>
 
             {isAdmin && (
-              <div className="p-3 bg-neutral-900/90 border border-neutral-800 rounded-lg space-y-1.5">
+              <div className="p-3 bg-neutral-900/90 border border-white/[0.08] rounded-lg space-y-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-semibold text-neutral-300">
                   <UserIcon className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Uploader / Owner (Admin Only)</span>
@@ -272,7 +272,7 @@ export function CreatePluginChainModal({
                     value={ownerId}
                     onChange={e => setOwnerId(e.target.value)}
                     disabled={saving}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
+                    className="w-full bg-neutral-950 border border-white/[0.08] rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
                   >
                     <option value="">Current Owner ({chainToEdit?.owner_name || 'Keep current'})</option>
                     {users.map(u => {
@@ -307,7 +307,7 @@ export function CreatePluginChainModal({
                 placeholder="Routing notes, mix context, ideal vocal range, tracking tips..."
                 rows={2}
                 disabled={saving}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
@@ -320,7 +320,7 @@ export function CreatePluginChainModal({
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="flex items-center gap-1 text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-2.5 py-1 rounded transition-colors"
+                  className="flex items-center gap-1 text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-white/[0.08] px-2.5 py-1 rounded transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Plugin</span>
@@ -337,9 +337,9 @@ export function CreatePluginChainModal({
                 {items.map((item, index) => (
                   <div
                     key={index}
-                    className="bg-neutral-900 border border-neutral-800 rounded-lg p-3.5 flex flex-col gap-2.5 relative group"
+                    className="bg-neutral-900 border border-white/[0.08] rounded-lg p-3.5 flex flex-col gap-2.5 relative group"
                   >
-                    <div className="flex items-center justify-between gap-2 border-b border-neutral-800/60 pb-2">
+                    <div className="flex items-center justify-between gap-2 border-b border-white/[0.08]/60 pb-2">
                       <div className="flex items-center gap-2">
                         <span className="w-5 h-5 rounded bg-neutral-800 text-neutral-300 font-mono text-[11px] font-bold flex items-center justify-center">
                           {index + 1}
@@ -386,7 +386,7 @@ export function CreatePluginChainModal({
                           value={item.plugin_name}
                           onChange={e => handleItemChange(index, 'plugin_name', e.target.value)}
                           placeholder="e.g. Pro-Q 3, CLA-76"
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500"
+                          className="w-full bg-neutral-950 border border-white/[0.08] rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500"
                         />
                       </div>
                       <div>
@@ -396,7 +396,7 @@ export function CreatePluginChainModal({
                           value={item.vendor || ''}
                           onChange={e => handleItemChange(index, 'vendor', e.target.value)}
                           placeholder="e.g. FabFilter, Waves"
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500"
+                          className="w-full bg-neutral-950 border border-white/[0.08] rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500"
                         />
                       </div>
                       <div>
@@ -407,7 +407,7 @@ export function CreatePluginChainModal({
                           value={item.category || ''}
                           onChange={e => handleItemChange(index, 'category', e.target.value)}
                           placeholder="e.g. EQ, Compressor"
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500"
+                          className="w-full bg-neutral-950 border border-white/[0.08] rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500"
                         />
                       </div>
                     </div>
@@ -419,7 +419,7 @@ export function CreatePluginChainModal({
                         value={item.notes || ''}
                         onChange={e => handleItemChange(index, 'notes', e.target.value)}
                         placeholder="e.g. HPF at 80Hz, 4:1 ratio, fast attack, 3dB gain reduction"
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-500"
+                        className="w-full bg-neutral-950 border border-white/[0.08] rounded px-2.5 py-1.5 text-xs text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-500"
                       />
                     </div>
                   </div>
@@ -427,7 +427,7 @@ export function CreatePluginChainModal({
               </div>
             </div>
 
-            <div className="pt-3 border-t border-neutral-800 flex items-center justify-between">
+            <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
               <span className="text-[11px] text-neutral-500">
                 DAW plugin support coming later — export/import schema ready.
               </span>

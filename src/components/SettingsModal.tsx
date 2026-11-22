@@ -107,10 +107,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-[fade-in_0.15s_ease-out]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-[#121212] border border-neutral-800 rounded-lg w-full max-w-md max-h-[90vh] shadow-2xl flex flex-col overflow-hidden text-xs">
+      <div className="bg-[#121212] border border-white/[0.08] rounded-lg w-full max-w-md max-h-[90vh] shadow-2xl flex flex-col overflow-hidden text-xs">
 
         {/* Header */}
-        <div className="px-5 py-4 border-b border-neutral-800 flex items-center justify-between shrink-0">
+        <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between shrink-0">
           <div>
             <h2 className="text-sm font-semibold text-white">Settings</h2>
             <p className="text-neutral-400 text-[11px] mt-0.5">Manage handle and password</p>
@@ -123,12 +123,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className="p-5 space-y-5 overflow-y-auto flex-1">
 
           {/* Account Overview Badge */}
-          <div className="bg-[#0d0d0e] border border-neutral-800 rounded p-3 flex items-center justify-between">
+          <div className="bg-[#0d0d0e] border border-white/[0.08] rounded p-3 flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[11px] text-neutral-400">Account Email</p>
               <p className="text-xs text-white font-medium truncate mt-0.5">{user.email}</p>
             </div>
-            <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
+            <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-neutral-900 border border-white/[0.08] text-neutral-300">
               {profile?.role === 'admin' ? 'ADMIN' : profile?.role === 'verified' ? 'VERIFIED' : 'MEMBER'}
             </span>
           </div>
@@ -149,7 +149,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   value={username}
                   onChange={e => setUsername(e.target.value)}
                   placeholder="mixguy"
-                  className="w-full bg-[#0d0d0e] border border-neutral-800 rounded pl-7 pr-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-[#0d0d0e] border border-white/[0.08] rounded pl-7 pr-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
                 />
               </div>
             </div>
@@ -165,7 +165,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </form>
 
-          <hr className="border-neutral-800" />
+          <hr className="border-white/[0.08]" />
 
           {/* Section 2: Change Password */}
           <form onSubmit={handleUpdatePassword} className="space-y-2.5">
@@ -183,7 +183,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Min. 8 characters"
-                  className="w-full bg-[#0d0d0e] border border-neutral-800 rounded pl-3 pr-8 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-[#0d0d0e] border border-white/[0.08] rounded pl-3 pr-8 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
                 />
                 <button
                   type="button"
@@ -203,7 +203,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 placeholder="Repeat password"
-                className="w-full bg-[#0d0d0e] border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-[#0d0d0e] border border-white/[0.08] rounded px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
               />
             </div>
 

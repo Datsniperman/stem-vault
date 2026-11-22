@@ -229,9 +229,9 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-lg bg-neutral-900 border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-neutral-800 bg-neutral-950/60">
+        <div className="flex items-center justify-between p-5 border-b border-white/[0.08] bg-neutral-950/60">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
               <Video className="w-5 h-5" />
@@ -278,7 +278,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
             {!videoFile ? (
               <div
                 onClick={() => videoInputRef.current?.click()}
-                className="border-2 border-dashed border-neutral-800 hover:border-emerald-500/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-neutral-950/40 hover:bg-neutral-950 group"
+                className="border-2 border-dashed border-white/[0.08] hover:border-emerald-500/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-neutral-950/40 hover:bg-neutral-950 group"
               >
                 <Video className="w-8 h-8 text-neutral-600 group-hover:text-emerald-400 mx-auto mb-2 transition-colors" />
                 <div className="text-xs font-medium text-white mb-1">
@@ -289,7 +289,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
                 </div>
               </div>
             ) : (
-              <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-neutral-950 border border-white/[0.08] flex items-center justify-between">
                 <div className="flex items-center gap-3 overflow-hidden">
                   <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
                     <Video className="w-4 h-4" />
@@ -355,7 +355,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
             {!thumbPreviewUrl ? (
               <div
                 onClick={() => thumbInputRef.current?.click()}
-                className="border-2 border-dashed border-neutral-800 hover:border-emerald-500/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-neutral-950/40 hover:bg-neutral-950 group flex items-center justify-center gap-3"
+                className="border-2 border-dashed border-white/[0.08] hover:border-emerald-500/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-neutral-950/40 hover:bg-neutral-950 group flex items-center justify-center gap-3"
               >
                 <ImageIcon className="w-5 h-5 text-neutral-600 group-hover:text-emerald-400 transition-colors" />
                 <span className="text-xs text-neutral-400 group-hover:text-neutral-200">
@@ -363,7 +363,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
                 </span>
               </div>
             ) : (
-              <div className="relative aspect-video rounded-xl overflow-hidden border border-neutral-800 bg-neutral-950 group">
+              <div className="relative aspect-video rounded-xl overflow-hidden border border-white/[0.08] bg-neutral-950 group">
                 <img src={thumbPreviewUrl} alt="Thumbnail preview" className="w-full h-full object-cover" />
                 {!isSubmitting && (
                   <button
@@ -393,7 +393,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Mixing In-Ears & Front-of-House from One Console"
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-neutral-950 border border-white/[0.08] rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -404,7 +404,7 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
               value={presenter}
               onChange={(e) => setPresenter(e.target.value)}
               placeholder="Tyler Kerpsack"
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-neutral-950 border border-white/[0.08] rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -415,12 +415,12 @@ export function UploadSessionModal({ isOpen, onClose, onSuccess }: UploadSession
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Session breakdown, topics covered, routing techniques..."
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500 text-xs"
+              className="w-full bg-neutral-950 border border-white/[0.08] rounded-lg px-3 py-2 text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500 text-xs"
             />
           </div>
 
           {/* Submit Actions */}
-          <div className="pt-3 flex items-center justify-between border-t border-neutral-800">
+          <div className="pt-3 flex items-center justify-between border-t border-white/[0.08]">
             <span className="text-xs text-neutral-500">
               {statusMessage || ''}
             </span>

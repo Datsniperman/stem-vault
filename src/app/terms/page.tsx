@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-200 flex flex-col font-sans">
       <Header />
 
       {/* Main Container */}
@@ -22,10 +22,10 @@ export default function TermsOfServicePage() {
           <span>Back to multitracks</span>
         </Link>
 
-        <div className="bg-[#121212] border border-neutral-800 rounded-lg p-6 sm:p-8 space-y-8 shadow-xs">
+        <div className="rare-card p-6 sm:p-8 space-y-8 shadow-xs">
           {/* Header Banner */}
-          <div className="border-b border-neutral-800 pb-6">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs font-mono uppercase tracking-wider mb-3">
+          <div className="border-b border-white/[0.08] pb-6">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-neutral-900 border border-white/[0.08] text-neutral-300 text-xs font-mono uppercase tracking-wider mb-3">
               <Shield className="w-3.5 h-3.5" />
               Legal Agreement & Binding Terms
             </div>
@@ -38,10 +38,10 @@ export default function TermsOfServicePage() {
           {/* Section 1: Age Gate */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">1</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">1</span>
               Eligibility & Mandatory Age Gate (13+ Requirement)
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs space-y-2">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs space-y-2">
               <div className="flex items-center gap-2 text-white font-semibold">
                 <AlertTriangle className="w-4 h-4 shrink-0 text-neutral-400" />
                 <span>Strict Minimum Age Requirement (COPPA & GDPR Compliance)</span>
@@ -58,7 +58,7 @@ export default function TermsOfServicePage() {
           {/* Section 2: User Accounts & Discord Integration */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">2</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">2</span>
               User Accounts & Discord Community Integration
             </h2>
             <p className="text-xs text-neutral-400 leading-relaxed">
@@ -74,10 +74,10 @@ export default function TermsOfServicePage() {
           {/* Section 3: User Content, Copyright & Indemnification */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">3</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">3</span>
               User Submissions, Educational Use & Copyright Warranties
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs space-y-3">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs space-y-3">
               <p className="text-neutral-300 leading-relaxed">
                 The Mixing Vault is an educational, non-commercial peer-mixing practice exchange. Every user submitting multitrack stems, audio mixes, or DAW templates represents and warrants that:
               </p>
@@ -104,10 +104,10 @@ export default function TermsOfServicePage() {
           {/* Section 4: Subscriptions, Renewals & ROSCA / California ARL Disclosures */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">4</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">4</span>
               Subscriptions, Renewal Terms & Cancellation (FTC ROSCA / California ARL)
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs space-y-3">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs space-y-3">
               <div className="flex items-center gap-2 text-white font-semibold">
                 <RefreshCw className="w-4 h-4 text-neutral-400" />
                 <span>Automatic Renewal & Billing Terms</span>
@@ -135,10 +135,10 @@ export default function TermsOfServicePage() {
           {/* Section 5: Disclaimer of Warranties & Limitation of Liability */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">5</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">5</span>
               Disclaimer of Warranties & Limitation of Liability
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-400 space-y-2 leading-relaxed">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs text-neutral-400 space-y-2 leading-relaxed">
               <p className="uppercase text-[11px] font-mono font-bold text-neutral-200">Provided &quot;AS IS&quot; and &quot;AS AVAILABLE&quot;</p>
               <p>
                 THE SERVICE, INCLUDING ALL MULTITRACKS, MIXES, SOFTWARE, AND DISCORD INTEGRATIONS, IS PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; BASIS WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
@@ -152,10 +152,10 @@ export default function TermsOfServicePage() {
           {/* Section 6: Platform Ownership, Executive Discretion & Content Rights */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">6</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">6</span>
               Platform Ownership, Executive Authority & Content Distribution Rights
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-400 space-y-3 leading-relaxed">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs text-neutral-400 space-y-3 leading-relaxed">
               <p>
                 <strong className="text-white">Sole Ownership & Executive Authority:</strong> The site owner and operator retain exclusive, complete ownership of The Mixing Vault platform, brand, codebase, system features, and infrastructure. The site owner holds absolute and final executive authority over all aspects of the service, including without limitation the unilateral right to make all operational, technical, administrative, and editorial determinations, and the right to add, alter, reclassify, or remove any content, multitrack, mix, feature, or user account at any time at their sole discretion.
               </p>
@@ -171,10 +171,10 @@ export default function TermsOfServicePage() {
           {/* Section 7: Contact Information */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">7</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">7</span>
               Contact & Inquiries
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-400 space-y-1 font-mono">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs text-neutral-400 space-y-1 font-mono">
               <p><strong className="text-white">Operator:</strong> Tyler Kerpsack All Access / The Mixing Vault</p>
               <p><strong className="text-white">Email:</strong> <a href="mailto:support@mixingvault.com" className="text-white underline">support@mixingvault.com</a> or <a href="mailto:connorwbrown07@gmail.com" className="text-white underline">connorwbrown07@gmail.com</a></p>
               <p><strong className="text-white">Physical Address:</strong> P.O. Box 412, Nashville, TN 37203, United States</p>
@@ -182,7 +182,7 @@ export default function TermsOfServicePage() {
           </section>
 
           {/* Footer Navigation */}
-          <div className="border-t border-neutral-800 pt-6 flex flex-wrap items-center justify-between gap-4 text-xs text-neutral-400">
+          <div className="border-t border-white/[0.08] pt-6 flex flex-wrap items-center justify-between gap-4 text-xs text-neutral-400">
             <div className="flex items-center gap-4">
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <span>•</span>

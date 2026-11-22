@@ -21,7 +21,9 @@ import {
   ShieldCheck,
   Pencil,
   Trash2,
+  Video,
 } from 'lucide-react';
+import { FluidOrb } from '@/components/ui/fluid-orb';
 
 export default function SessionDetailPage() {
   const params = useParams();
@@ -96,45 +98,65 @@ export default function SessionDetailPage() {
     'Tyler Kerpsack All Access';
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 flex flex-col font-sans pb-24">
       <Header />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
-        {/* Back Link */}
-        <div className="mb-6">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6">
+        {/* Back Link Bar */}
+        <div className="flex items-center justify-between gap-4 py-2 mb-4">
           <Link
             href="/sessions"
-            className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors font-mono"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Recorded Sessions</span>
           </Link>
+
+          {isAdmin && session && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsEditOpen(true)}
+                className="text-xs text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 font-mono"
+              >
+                <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Edit Session</span>
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-xs text-neutral-400 hover:text-red-400 bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 font-mono"
+              >
+                {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <span>{deleting ? 'Deleting...' : 'Delete'}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (
-          <div className="w-full aspect-video bg-neutral-900 border border-neutral-800 rounded-xl flex items-center justify-center">
+          <div className="w-full aspect-video bg-[#121215] border border-white/[0.08] rounded-3xl flex items-center justify-center">
             <Loader2 className="w-8 h-8 text-neutral-500 animate-spin" />
           </div>
         ) : error ? (
-          <div className="p-8 border border-red-900/60 bg-red-950/20 rounded-xl text-center max-w-md mx-auto space-y-3">
+          <div className="p-8 border border-red-900/40 bg-red-950/20 rounded-3xl text-center max-w-md mx-auto space-y-3">
             <ShieldAlert className="w-10 h-10 text-red-400 mx-auto" />
             <h2 className="text-base font-semibold text-white">{error}</h2>
             <button
               onClick={() => router.push('/sessions')}
-              className="text-xs bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer"
+              className="text-xs bg-white text-black font-semibold px-4 py-2 rounded-full transition-all hover:bg-neutral-200"
             >
               Return to Library
             </button>
           </div>
         ) : isLocked ? (
           /* Locked State for Non-Members */
-          <div className="relative w-full aspect-video bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden flex flex-col items-center justify-center p-8 text-center shadow-2xl">
-            <div className="w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-amber-400 mb-4 shadow-inner">
-              <Lock className="w-8 h-8" />
+          <div className="relative w-full aspect-video bg-[#121215] border border-white/[0.08] rounded-3xl overflow-hidden flex flex-col items-center justify-center p-8 text-center shadow-2xl">
+            <div className="w-16 h-16 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-amber-400 mb-4 shadow-inner">
+              <Lock className="w-7 h-7" />
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-950/60 text-emerald-400 border border-emerald-800/80 mb-3">
-              <ShieldCheck className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono uppercase bg-white/[0.04] text-neutral-300 border border-white/[0.08] mb-3">
+              <ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />
               <span>All Access Exclusive</span>
             </div>
 
@@ -143,23 +165,21 @@ export default function SessionDetailPage() {
             </h2>
 
             <p className="text-xs sm:text-sm text-neutral-400 max-w-md mb-6 leading-relaxed">
-              This session is restricted to paying members. Join Tyler Kerpsack All Access to unlock the complete video archive.
+              This masterclass breakdown is restricted to verified members. Upgrade your vault membership to stream the complete video archive in high definition.
             </p>
 
             <div className="flex items-center gap-3">
-              <a
-                href="https://www.launchpass.com/all-access-by-tyler/plus"
-                target="_blank"
-                rel="noreferrer"
-                className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-lg cursor-pointer"
+              <Link
+                href="/membership"
+                className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-5 py-2.5 rounded-full transition-all flex items-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98]"
               >
-                <span>Join Membership</span>
+                <span>Upgrade Membership</span>
                 <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+              </Link>
 
               <Link
                 href="/sessions"
-                className="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs px-4 py-2.5 rounded-lg transition-colors border border-neutral-800"
+                className="bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs px-5 py-2.5 rounded-full transition-all border border-white/[0.08]"
               >
                 Browse Library
               </Link>
@@ -168,20 +188,22 @@ export default function SessionDetailPage() {
         ) : streamUrl ? (
           /* Secure HLS Video Player */
           <div className="space-y-6">
-            <SecureVideoPlayer
-              src={streamUrl}
-              poster={session?.thumbnail_url || undefined}
-              title={session?.title}
-              userIdentifier={userWatermark}
-            />
+            <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-black shadow-2xl">
+              <SecureVideoPlayer
+                src={streamUrl}
+                poster={session?.thumbnail_url || undefined}
+                title={session?.title}
+                userIdentifier={userWatermark}
+              />
+            </div>
 
             {/* Video Metadata Header */}
-            <div className="space-y-4 border-b border-neutral-800 pb-6">
+            <div className="rare-card p-6 sm:p-8 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    Member Access
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase bg-white/[0.04] text-neutral-300 border border-white/[0.08]">
+                    <ShieldCheck className="w-3 h-3 text-neutral-400" />
+                    <span>Member Unlocked</span>
                   </span>
 
                   <span className="text-xs text-neutral-500 font-mono">
@@ -189,7 +211,7 @@ export default function SessionDetailPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-neutral-400">
+                <div className="flex items-center gap-4 text-xs font-mono text-neutral-400">
                   {session?.duration_seconds && (
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-neutral-500" />
@@ -205,46 +227,19 @@ export default function SessionDetailPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                  {session?.title}
-                </h1>
-                {isAdmin && (
-                  <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-                    <button
-                      onClick={() => setIsEditOpen(true)}
-                      className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
-                      title="Edit session details"
-                    >
-                      <Pencil className="w-3.5 h-3.5 text-neutral-400" />
-                      <span>Edit Session</span>
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      className="text-xs text-red-400 hover:text-red-300 bg-neutral-900 hover:bg-red-950/40 border border-neutral-800 hover:border-red-900/50 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
-                      title="Delete session"
-                    >
-                      {deleting ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3.5 h-3.5" />
-                      )}
-                      <span>{deleting ? 'Deleting...' : 'Delete'}</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                {session?.title}
+              </h1>
 
               {session?.presenter && (
-                <div className="flex items-center gap-2 text-sm text-neutral-300">
-                  <User className="w-4 h-4 text-emerald-400" />
-                  <span>Presented by <strong className="text-white">{session.presenter}</strong></span>
+                <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
+                  <User className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>Presented by <strong className="text-neutral-200">{session.presenter}</strong></span>
                 </div>
               )}
 
               {session?.description && (
-                <p className="text-sm text-neutral-300 leading-relaxed max-w-3xl whitespace-pre-line pt-2">
+                <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-3xl whitespace-pre-line pt-2">
                   {session.description}
                 </p>
               )}
@@ -254,7 +249,7 @@ export default function SessionDetailPage() {
                   {session.tags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="px-2.5 py-1 rounded bg-neutral-900 border border-neutral-800 text-xs text-neutral-400"
+                      className="px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-xs font-mono text-neutral-400"
                     >
                       #{tag}
                     </span>

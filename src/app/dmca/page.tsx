@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function DmcaPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-200 flex flex-col font-sans">
       <Header />
 
       <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 flex-1 space-y-6">
@@ -23,7 +23,7 @@ export default function DmcaPage() {
         </Link>
 
         {/* Page Title Card */}
-        <div className="bg-[#121212] border border-neutral-800 rounded-lg p-6 sm:p-8 shadow-xs space-y-2">
+        <div className="rare-card p-6 sm:p-8 shadow-xs space-y-2">
           <div className="flex items-center gap-2.5">
             <Shield className="w-5 h-5 text-neutral-200" />
             <h1 className="text-xl sm:text-2xl font-semibold text-white">
@@ -37,7 +37,7 @@ export default function DmcaPage() {
         </div>
 
         {/* Policy Content */}
-        <div className="bg-[#121212] border border-neutral-800 rounded-lg p-6 sm:p-8 space-y-6 text-xs text-neutral-300 leading-relaxed">
+        <div className="rare-card p-6 sm:p-8 space-y-6 text-xs text-neutral-300 leading-relaxed">
           
           {/* Section 1: Designated Agent */}
           <section className="space-y-2.5">
@@ -48,7 +48,7 @@ export default function DmcaPage() {
             <p className="text-neutral-400">
               Notifications of claimed infringement must be submitted in writing to our Designated DMCA Copyright Agent:
             </p>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 space-y-1.5 font-mono text-xs">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 space-y-1.5 font-mono text-xs">
               <p><strong className="text-white">Designated Agent:</strong> Connor Brown / Legal Compliance Officer</p>
               <p><strong className="text-white">Platform / Entity:</strong> The Mixing Vault (Tyler Kerpsack All Access)</p>
               <p><strong className="text-white">Email:</strong> <a href="mailto:connorwbrown07@gmail.com" className="text-white hover:underline underline">connorwbrown07@gmail.com</a></p>
@@ -124,7 +124,7 @@ export default function DmcaPage() {
           </section>
 
           {/* Section 5: Repeat Infringer Policy */}
-          <section className="space-y-2.5 bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4">
+          <section className="space-y-2.5 bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4">
             <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
               5. Repeat Infringer Termination Policy
             </h2>
@@ -137,7 +137,7 @@ export default function DmcaPage() {
           </section>
 
           {/* Section 6: Misrepresentation Liability */}
-          <section className="space-y-1.5 text-neutral-400 text-[11px] pt-2 border-t border-neutral-800">
+          <section className="space-y-1.5 text-neutral-400 text-[11px] pt-2 border-t border-white/[0.08]">
             <p>
               <strong>Warning on False Claims:</strong> Under 17 U.S.C. § 512(f), any person who knowingly materially misrepresents that material or activity is infringing, or that material or activity was removed or disabled by mistake or misidentification, shall be liable for damages, including costs and attorneys&apos; fees, incurred by the alleged infringer, copyright owner, or service provider.
             </p>
@@ -147,7 +147,7 @@ export default function DmcaPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-800/80 bg-[#0a0a0a] py-6">
+      <footer className="border-t border-white/[0.08]/80 bg-[#0d0d0e] py-6">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400">
           <span>© {new Date().getFullYear()} The Mixing Vault • Tyler Kerpsack All Access</span>
           <div className="flex items-center gap-4">

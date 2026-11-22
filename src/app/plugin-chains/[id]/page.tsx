@@ -16,11 +16,13 @@ import {
   AlertCircle,
   Loader2,
   Tag,
+  Layers,
 } from 'lucide-react';
 import { PluginChain, PluginChainItem } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { CreatePluginChainModal } from '@/components/CreatePluginChainModal';
 import { Header } from '@/components/Header';
+import { FluidOrb } from '@/components/ui/fluid-orb';
 
 export default function PluginChainDetailPage() {
   const params = useParams();
@@ -81,21 +83,21 @@ export default function PluginChainDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-neutral-400">
+      <div className="min-h-screen bg-[#0d0d0e] flex items-center justify-center text-neutral-400">
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        <span className="text-sm">Loading plugin chain...</span>
+        <span className="text-xs font-mono">Loading signal chain...</span>
       </div>
     );
   }
 
   if (error || !chain) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4">
-        <AlertCircle className="w-10 h-10 text-red-500 mb-2" />
+      <div className="min-h-screen bg-[#0d0d0e] flex flex-col items-center justify-center p-4 text-center">
+        <AlertCircle className="w-10 h-10 text-neutral-500 mb-3" />
         <h2 className="text-base font-semibold text-white">{error || 'Plugin Chain Not Found'}</h2>
         <Link
           href="/plugin-chains"
-          className="mt-4 text-xs text-neutral-400 hover:text-white flex items-center gap-1.5"
+          className="mt-4 text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08]"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Plugin Chains</span>
@@ -105,28 +107,28 @@ export default function PluginChainDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 pb-24">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 pb-24">
       <Header />
-      {/* Top Bar */}
-      <div className="border-b border-neutral-800 bg-[#0d0d0d] px-4 sm:px-6 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+
+      {/* Top Breadcrumb & Action Pill Bar */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6">
+        <div className="flex items-center justify-between gap-4 py-2">
           <Link
             href="/plugin-chains"
-            className="text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors"
+            className="text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors font-mono"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Plugin Chains</span>
           </Link>
 
           <div className="flex items-center gap-2">
-            {/* Export JSON Button */}
             <a
               href={`/api/plugin-chains/${chain.id}/export`}
               download={`${chain.name.replace(/[^\w\-]+/g, '_')}-chain.json`}
-              className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white font-medium text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
+              className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded-full transition-all flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
               title="Download versioned JSON schema"
             >
-              <Download className="w-3.5 h-3.5 text-neutral-400" />
+              <Download className="w-3.5 h-3.5" />
               <span>Export JSON</span>
             </a>
 
@@ -134,7 +136,7 @@ export default function PluginChainDetailPage() {
               <>
                 <button
                   onClick={() => setEditOpen(true)}
-                  className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                  className="text-xs text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] px-3 py-2 rounded-full transition-all flex items-center gap-1.5 font-mono"
                 >
                   <Edit className="w-3.5 h-3.5" />
                   <span>Edit</span>
@@ -142,7 +144,7 @@ export default function PluginChainDetailPage() {
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 border border-red-900/60 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                  className="text-xs text-neutral-400 hover:text-red-400 bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 px-3 py-2 rounded-full transition-all flex items-center gap-1.5 font-mono"
                 >
                   {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                   <span>Delete</span>
@@ -153,68 +155,64 @@ export default function PluginChainDetailPage() {
         </div>
       </div>
 
-      {/* Chain Info Header */}
-      <div className="border-b border-neutral-800 bg-neutral-950/40 py-8 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>PLUGIN CHAIN SPECIFICATION</span>
+      {/* Rare UI Hero Canvas */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-3">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#121215]/80 backdrop-blur-xl p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] space-y-4">
+          <div className="absolute -right-20 -top-20 opacity-20 blur-2xl pointer-events-none">
+            <FluidOrb size={320} color="#352835" />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-              <span>{chain.name}</span>
+          <div className="relative z-10 space-y-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-neutral-300">
+                <Sliders className="w-3.5 h-3.5 text-neutral-400" />
+                <span>SIGNAL ROUTING BLUEPRINT</span>
+              </span>
+              <span className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-neutral-200">
+                DAW: {chain.daw}
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+              {chain.name}
             </h1>
-            <span className="text-xs font-mono px-3 py-1 rounded bg-neutral-800 text-neutral-200 border border-neutral-700 self-start sm:self-auto">
-              DAW: {chain.daw}
-            </span>
-          </div>
 
-          {chain.description && (
-            <p className="text-xs sm:text-sm text-neutral-300 mt-2 max-w-3xl whitespace-pre-line">
-              {chain.description}
-            </p>
-          )}
+            {chain.description && (
+              <p className="text-xs sm:text-sm text-neutral-300 max-w-2xl leading-relaxed whitespace-pre-line">
+                {chain.description}
+              </p>
+            )}
 
-          <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-neutral-400 mt-4">
-            <span className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-neutral-500" />
-              <span>Created by <strong className="text-neutral-200">{chain.owner_name || 'Member'}</strong></span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-neutral-500" />
-              <span>{new Date(chain.created_at).toLocaleDateString()}</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-neutral-500" />
-              <span>{chain.items?.length || 0} plugins</span>
-            </span>
+            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-neutral-400 pt-2">
+              <span className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-neutral-500" />
+                <span>Created by <strong className="text-neutral-200">{chain.owner_name || 'Member'}</strong></span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+                <span>{new Date(chain.created_at).toLocaleDateString()}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-neutral-500" />
+                <span>{chain.items?.length || 0} plugins configured</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
-        {/* Notice Banner */}
-        <div className="p-3.5 bg-neutral-900/80 border border-neutral-800 rounded-lg flex items-start gap-3 text-xs text-neutral-400">
-          <Info className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
-          <div>
-            <span className="text-neutral-200 font-medium">DAW plugin support coming later — export/import schema ready.</span>
-            <p className="text-neutral-400 mt-0.5">
-              This signal chain conforms to the versioned schema documented in <code className="text-neutral-300">PLUGIN-CHAIN-SCHEMA.md</code>. You can export this chain to JSON or import it across user accounts.
-            </p>
+      {/* Main Content: Plugin Slots */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300 flex items-center gap-2 font-mono">
+              <Sliders className="w-4 h-4 text-neutral-400" />
+              <span>Ordered Signal Processing Chain ({chain.items?.length || 0} slots)</span>
+            </h2>
           </div>
-        </div>
-
-        {/* Ordered Plugins List */}
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300 mb-3 flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-neutral-400" />
-            <span>Ordered Signal Chain ({chain.items?.length || 0} slots)</span>
-          </h2>
 
           {!chain.items || chain.items.length === 0 ? (
-            <div className="border border-neutral-800 rounded-lg p-8 text-center text-xs text-neutral-500">
+            <div className="rare-card p-12 text-center text-xs text-neutral-500">
               No plugins configured in this chain.
             </div>
           ) : (
@@ -222,11 +220,11 @@ export default function PluginChainDetailPage() {
               {chain.items.map((plugin: PluginChainItem, idx: number) => (
                 <div
                   key={plugin.id || idx}
-                  className="bg-[#121212] border border-neutral-800 rounded-lg p-4 flex flex-col gap-2 transition-colors hover:border-neutral-700"
+                  className="rare-card p-5 space-y-3"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded bg-neutral-800 text-neutral-200 font-mono text-xs font-bold flex items-center justify-center shrink-0 border border-neutral-700">
+                      <span className="w-7 h-7 rounded-full bg-white/[0.06] border border-white/[0.1] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">
                         {plugin.position || idx + 1}
                       </span>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -234,12 +232,12 @@ export default function PluginChainDetailPage() {
                           {plugin.plugin_name}
                         </span>
                         {plugin.vendor && (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-neutral-300 border border-white/[0.06]">
                             {plugin.vendor}
                           </span>
                         )}
                         {plugin.category && (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800 flex items-center gap-1">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.02] text-neutral-400 border border-white/[0.04] flex items-center gap-1">
                             <Tag className="w-2.5 h-2.5 text-neutral-500" />
                             <span>{plugin.category}</span>
                           </span>
@@ -247,14 +245,16 @@ export default function PluginChainDetailPage() {
                       </div>
                     </div>
 
-                    <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider self-start sm:self-auto">
+                    <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider self-start sm:self-auto">
                       Slot {plugin.position || idx + 1}
                     </span>
                   </div>
 
                   {plugin.notes && (
-                    <div className="mt-1 pl-9 text-xs text-neutral-300 bg-neutral-950/60 border border-neutral-900 rounded p-2.5 font-mono">
-                      <span className="text-[10px] text-neutral-500 uppercase block mb-0.5 font-sans">Settings & Notes:</span>
+                    <div className="mt-2 pl-10 text-xs text-neutral-300 bg-white/[0.02] border border-white/[0.04] rounded-xl p-3 font-mono">
+                      <span className="text-[10px] text-neutral-400 uppercase block mb-1 font-sans font-medium">
+                        Settings & Processing Notes:
+                      </span>
                       {plugin.notes}
                     </div>
                   )}

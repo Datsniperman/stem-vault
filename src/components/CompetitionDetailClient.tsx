@@ -220,7 +220,7 @@ export function CompetitionDetailClient({
 
         {/* Early Access Alert Banner */}
         {userState.isEarlyAccessActive && (
-          <div className="p-4 rounded-xl border border-neutral-800 bg-[#121212] text-xs sm:text-sm text-neutral-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-xl border border-white/[0.08] bg-[#121212] text-xs sm:text-sm text-neutral-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
               <Sparkles className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
               <div>
@@ -248,8 +248,8 @@ export function CompetitionDetailClient({
           {/* Left Column: Multitracks & Rules */}
           <div className="lg:col-span-1 space-y-6">
             {/* Stems Download Card */}
-            <div className="bg-[#121212] border border-neutral-800 rounded-xl p-5 space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-neutral-800">
+            <div className="rare-card p-5 space-y-4">
+              <div className="flex items-center gap-2 pb-3 border-b border-white/[0.08]">
                 <Disc className="w-4 h-4 text-neutral-400" />
                 <h3 className="text-sm font-semibold text-white">Multitrack Session Stems</h3>
               </div>
@@ -284,8 +284,8 @@ export function CompetitionDetailClient({
             </div>
 
             {/* Rules Card */}
-            <div className="bg-[#121212] border border-neutral-800 rounded-xl p-5 space-y-3">
-              <div className="flex items-center gap-2 pb-3 border-b border-neutral-800">
+            <div className="rare-card p-5 space-y-3">
+              <div className="flex items-center gap-2 pb-3 border-b border-white/[0.08]">
                 <ShieldCheck className="w-4 h-4 text-neutral-400" />
                 <h3 className="text-sm font-semibold text-white">Competition Guidelines</h3>
               </div>
@@ -307,8 +307,8 @@ export function CompetitionDetailClient({
           <div className="lg:col-span-2 space-y-6">
             {/* Condition 1: User not logged in */}
             {!user ? (
-              <div className="border border-neutral-800 bg-[#121212] rounded-xl p-8 text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-neutral-900 border border-neutral-800 mx-auto flex items-center justify-center text-neutral-400">
+              <div className="rare-card p-8 text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-neutral-900 border border-white/[0.08] mx-auto flex items-center justify-center text-neutral-400">
                   <User className="w-6 h-6" />
                 </div>
                 <div className="space-y-1">
@@ -329,9 +329,9 @@ export function CompetitionDetailClient({
               </div>
             ) : userState.hasSubmitted || submitSuccess ? (
               /* Condition 2: Already submitted mix */
-              <div className="border border-neutral-800 bg-[#121212] rounded-xl p-6 sm:p-8 space-y-6">
+              <div className="rare-card p-6 sm:p-8 space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-white shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-neutral-900 border border-white/[0.08] flex items-center justify-center text-white shrink-0">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
@@ -349,7 +349,7 @@ export function CompetitionDetailClient({
 
                 {/* Submitted Audio Player */}
                 {userState.submission && (
-                  <div className="bg-[#121212] border border-neutral-800 rounded-lg p-4 space-y-3">
+                  <div className="bg-[#121212] border border-white/[0.08] rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
                       <span className="flex items-center gap-1.5 text-neutral-200">
                         <FileAudio className="w-3.5 h-3.5 text-neutral-400" />
@@ -364,7 +364,7 @@ export function CompetitionDetailClient({
                     />
 
                     {userState.submission.dawOrConsole && (
-                      <div className="text-xs text-neutral-400 pt-2 border-t border-neutral-800 flex items-center gap-2">
+                      <div className="text-xs text-neutral-400 pt-2 border-t border-white/[0.08] flex items-center gap-2">
                         <Sliders className="w-3.5 h-3.5 text-neutral-500" />
                         <span>DAW / Console: <strong className="text-neutral-200">{userState.submission.dawOrConsole}</strong></span>
                       </div>
@@ -375,7 +375,7 @@ export function CompetitionDetailClient({
               </div>
             ) : (
               /* Condition 3: Ready to submit */
-              <form onSubmit={handleSubmitMix} className="border border-neutral-800 bg-[#121212] rounded-xl p-6 sm:p-8 space-y-6">
+              <form onSubmit={handleSubmitMix} className="rare-card p-6 sm:p-8 space-y-6">
                 <div>
                   <h2 className="text-lg font-bold text-white">Submit Your Competition Mix</h2>
                   <p className="text-xs text-neutral-400 mt-0.5">
@@ -431,11 +431,11 @@ export function CompetitionDetailClient({
                     value={dawOrConsole}
                     onChange={(e) => setDawOrConsole(e.target.value)}
                     placeholder="e.g. Pro Tools, Logic Pro, Ableton, Studio One, SSL 4000, etc."
-                    className="w-full bg-[#161616] border border-neutral-800 rounded-lg px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors"
+                    className="w-full bg-[#161616] border border-white/[0.08] rounded-lg px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors"
                   />
                 </div>
 {/* Warning callout */}
-                <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-400 flex items-start gap-2.5">
+                <div className="p-3 rounded-lg bg-neutral-900 border border-white/[0.08] text-[11px] text-neutral-400 flex items-start gap-2.5">
                   <Info className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                   <span>
                     Reminder: Limit is 1 submission per User. Once submitted, your entry will be locked in for competition review.

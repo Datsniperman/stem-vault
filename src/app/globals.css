@@ -2,14 +2,14 @@
 
 /* ── Rare UI / Studio Dark Theme Tokens ────────────────────────────── */
 @theme {
-  --color-bg-base:        #0d0d0e;
-  --color-bg-surface:     #121214;
-  --color-bg-elevated:    #18181b;
-  --color-bg-well:        #0a0a0c;
+  --color-bg-base:        #09090b;
+  --color-bg-surface:     #111114;
+  --color-bg-elevated:    #18181c;
+  --color-bg-well:        #0d0d10;
   
   --color-border-subtle:  rgba(255, 255, 255, 0.06);
   --color-border:         rgba(255, 255, 255, 0.1);
-  --color-border-hover:   rgba(255, 255, 255, 0.2);
+  --color-border-hover:   rgba(255, 255, 255, 0.22);
 
   --color-text-primary:   #fafafa;
   --color-text-secondary: #a1a1aa;
@@ -24,14 +24,19 @@
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; }
+  html { 
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
 
   body {
-    background-color: #0d0d0e;
+    background-color: #09090b;
     color: #e4e4e7;
     font-family: var(--font-body);
     min-height: 100vh;
-    background-image: radial-gradient(120% 75% at 50% -5%, rgba(255, 255, 255, 0.05), transparent 60%);
+    background-image: 
+      radial-gradient(120% 75% at 50% -5%, rgba(255, 255, 255, 0.05), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 100%, rgba(20, 20, 30, 0.35), transparent);
     background-attachment: fixed;
   }
 
@@ -48,36 +53,74 @@
   }
 
   ::-webkit-scrollbar       { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0d0d0e; }
+  ::-webkit-scrollbar-track { background: #09090b; }
   ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
   ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
 }
 
 /* ── Rare UI Utility Layer ────────────────────────────────────────────────── */
 .rare-canvas {
-  background-color: #121214;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background-color: #111114;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 28px;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
 }
 
 .rare-card {
-  background-color: #141416;
+  background-color: #121216;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 18px;
+  border-radius: 20px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
 .rare-card:hover {
   border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.65);
 }
 
 .rare-pill {
   border-radius: 9999px;
-  background-color: rgba(22, 22, 24, 0.85);
+  background-color: rgba(18, 18, 22, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
+
+.rare-glass {
+  background-color: rgba(17, 17, 20, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.studio-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Equalizer keyframe animations */
+@keyframes eqBar1 {
+  0%, 100% { height: 20%; }
+  50% { height: 95%; }
+}
+@keyframes eqBar2 {
+  0%, 100% { height: 75%; }
+  50% { height: 25%; }
+}
+@keyframes eqBar3 {
+  0%, 100% { height: 40%; }
+  50% { height: 85%; }
+}
+@keyframes eqBar4 {
+  0%, 100% { height: 90%; }
+  50% { height: 35%; }
+}
+
+.animate-eq-1 { animation: eqBar1 0.8s ease-in-out infinite; }
+.animate-eq-2 { animation: eqBar2 0.7s ease-in-out infinite 0.15s; }
+.animate-eq-3 { animation: eqBar3 0.9s ease-in-out infinite 0.3s; }
+.animate-eq-4 { animation: eqBar4 0.65s ease-in-out infinite 0.1s; }

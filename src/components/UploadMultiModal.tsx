@@ -518,9 +518,9 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="relative w-full max-w-xl bg-[#121212] border border-neutral-800 rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-xl bg-[#121216] border border-white/[0.1] rounded-[28px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] shrink-0">
           <div>
             <h3 className="text-base font-semibold text-white">Upload Multitrack Song (ZIP)</h3>
             <p className="text-xs text-neutral-400">
@@ -559,7 +559,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 <h4 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2">
                   Track Filename Standardization Report
                 </h4>
-                <div className="bg-neutral-900 border border-neutral-800 rounded-lg max-h-60 overflow-y-auto divide-y divide-neutral-800/60 text-xs font-mono">
+                <div className="bg-neutral-900 border border-white/[0.08] rounded-lg max-h-60 overflow-y-auto divide-y divide-neutral-800/60 text-xs font-mono">
                   {resultMappings.map((m, idx) => (
                     <div key={idx} className="p-2.5 flex items-center justify-between gap-2">
                       <div className="min-w-0 flex-1 flex items-center gap-2">
@@ -629,7 +629,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
               {/* Visual Animated Progress Bar */}
               {uploading && (
-                <div className="space-y-1.5 bg-neutral-900/60 border border-neutral-800 p-3.5 rounded-lg animate-[fade-in_0.15s_ease-out]">
+                <div className="space-y-1.5 bg-neutral-900/60 border border-white/[0.08] p-3.5 rounded-lg animate-[fade-in_0.15s_ease-out]">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-neutral-300 font-mono text-[11px] truncate flex items-center gap-1.5">
                       {uploadProgress === 100 ? (
@@ -663,7 +663,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                   onChange={e => setTitle(e.target.value)}
                   placeholder="e.g. Thank God I'm Free"
                   disabled={uploading}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
 
@@ -678,7 +678,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                   onChange={e => setChurch(e.target.value)}
                   placeholder="e.g. Elevation Church, Bethel Music, Passion, Hillsong"
                   disabled={uploading}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
 
@@ -694,7 +694,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                     onChange={e => setSongKey(e.target.value)}
                     placeholder="e.g. C, Eb, F#m, G"
                     disabled={uploading}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                    className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                   />
                 </div>
                 <div>
@@ -709,7 +709,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                     min="1"
                     max="300"
                     disabled={uploading}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                    className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                   />
                 </div>
               </div>
@@ -725,7 +725,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                   placeholder="Recording notes, microphone setup, arrangement details..."
                   rows={2}
                   disabled={uploading}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
 
@@ -755,14 +755,14 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                     onChange={e => setUserSearch(e.target.value)}
                     placeholder="Search member by name..."
                     disabled={uploading || loadingUsers}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                    className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                   />
 
                   <select
                     value={ownerId}
                     onChange={e => setOwnerId(e.target.value)}
                     disabled={uploading || loadingUsers}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
+                    className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
                   >
                     <option value="">
                       Myself ({user?.user_metadata?.server_display_name || user?.user_metadata?.display_name || user?.email || 'Current User'})
@@ -781,7 +781,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
 
               {/* Pro Multitrack Option */}
               {canSetPro && (
-                <div className="bg-[#141414] border border-neutral-800 p-3 rounded-lg flex items-start gap-3">
+                <div className="bg-[#141414] border border-white/[0.08] p-3 rounded-lg flex items-start gap-3">
                   <input
                     type="checkbox"
                     id="is_pro_toggle"
@@ -804,7 +804,7 @@ export function UploadMultiModal({ isOpen, onClose, onSuccess }: UploadMultiModa
                 </div>
               )}
 
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/[0.08]">
                 <button
                   type="button"
                   onClick={handleCancel}

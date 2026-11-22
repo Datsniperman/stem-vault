@@ -121,9 +121,9 @@ export function EditSessionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="bg-[#121212] border border-neutral-800 rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-[#121216] border border-white/[0.1] rounded-[28px] w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+        <div className="flex items-center justify-between p-4 border-b border-white/[0.08]">
           <div>
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <Video className="w-5 h-5 text-neutral-300" />
@@ -161,7 +161,7 @@ export function EditSessionModal({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 disabled={saving}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
@@ -175,7 +175,7 @@ export function EditSessionModal({
                 onChange={e => setPresenter(e.target.value)}
                 disabled={saving}
                 placeholder="e.g. Tyler Kerpsack, Jared"
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
@@ -188,7 +188,7 @@ export function EditSessionModal({
                 onChange={e => setDescription(e.target.value)}
                 rows={3}
                 disabled={saving}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
@@ -203,7 +203,7 @@ export function EditSessionModal({
                   onChange={e => setVideoAssetId(e.target.value)}
                   disabled={saving}
                   placeholder="e.g. sessions/my-session"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
 
@@ -217,12 +217,12 @@ export function EditSessionModal({
                   onChange={e => setThumbnailUrl(e.target.value)}
                   disabled={saving}
                   placeholder="https://..."
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
             </div>
 
-            <div className="bg-neutral-900/80 border border-neutral-800 p-3 rounded-lg">
+            <div className="bg-neutral-900/80 border border-white/[0.08] p-3 rounded-lg">
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
@@ -238,12 +238,12 @@ export function EditSessionModal({
               </label>
             </div>
 
-            <div className="pt-2 flex items-center justify-between border-t border-neutral-800">
+            <div className="pt-2 flex items-center justify-between border-t border-white/[0.08]">
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={saving || deleting}
-                className="px-3 py-1.5 rounded text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-neutral-800 hover:border-red-900/50 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-white/[0.08] hover:border-red-900/50 transition-colors flex items-center gap-1.5"
               >
                 {deleting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

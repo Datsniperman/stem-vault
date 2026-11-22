@@ -129,9 +129,9 @@ export function EditMultiModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.15s_ease-out]">
-      <div className="relative w-full max-w-lg bg-[#121212] border border-neutral-800 rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-lg bg-[#121216] border border-white/[0.1] rounded-[28px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] shrink-0">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-neutral-400" />
             <h3 className="text-sm font-semibold text-white">Edit Multitrack Details</h3>
@@ -164,7 +164,7 @@ export function EditMultiModal({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 disabled={saving}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
@@ -178,7 +178,7 @@ export function EditMultiModal({
                 onChange={e => setChurch(e.target.value)}
                 placeholder="e.g. Elevation Church, Bethel Music"
                 disabled={saving}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
@@ -193,7 +193,7 @@ export function EditMultiModal({
                   onChange={e => setSongKey(e.target.value)}
                   placeholder="e.g. C, Eb, F#m, G"
                   disabled={saving}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
               <div>
@@ -208,7 +208,7 @@ export function EditMultiModal({
                   min="1"
                   max="300"
                   disabled={saving}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                  className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
                 />
               </div>
             </div>
@@ -222,13 +222,13 @@ export function EditMultiModal({
                 onChange={e => setDescription(e.target.value)}
                 rows={3}
                 disabled={saving}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
+                className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
               />
             </div>
 
             {/* Admin Controls */}
             {isAdmin && (
-              <div className="space-y-3 pt-2 border-t border-neutral-800/80">
+              <div className="space-y-3 pt-2 border-t border-white/[0.08]/80">
                 <div className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 font-semibold">
                   Administrator Privileges
                 </div>
@@ -251,7 +251,7 @@ export function EditMultiModal({
                     value={ownerId}
                     onChange={e => setOwnerId(e.target.value)}
                     disabled={saving || loadingUsers}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
+                    className="w-full bg-neutral-900 border border-white/[0.08] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-neutral-500 cursor-pointer"
                   >
                     {users.map(u => {
                       const badge = u.isPro && u.role === 'admin'
@@ -279,7 +279,7 @@ export function EditMultiModal({
                 </div>
 
                 {/* Pro Multitrack Toggle */}
-                <div className="bg-neutral-900/80 border border-neutral-800 p-3 rounded-lg">
+                <div className="bg-neutral-900/80 border border-white/[0.08] p-3 rounded-lg">
                   <label className="flex items-start gap-2.5 cursor-pointer">
                     <input
                       type="checkbox"
@@ -304,7 +304,7 @@ export function EditMultiModal({
               </div>
             )}
 
-            <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-800">
+            <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/[0.08]">
               <button
                 type="button"
                 onClick={onClose}

@@ -35,7 +35,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         if (e.target === e.currentTarget && !loading) onClose();
       }}
     >
-      <div className="relative w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-xl p-6 sm:p-7 shadow-2xl text-center space-y-6">
+      <div className="relative w-full max-w-sm bg-[#121216] border border-white/[0.1] rounded-[28px] p-6 sm:p-7 shadow-2xl text-center space-y-6">
         {/* Close Button */}
         <button
           onClick={onClose}

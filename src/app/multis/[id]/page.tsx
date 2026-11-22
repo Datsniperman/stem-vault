@@ -18,10 +18,11 @@ import {
   Download,
   Sliders,
   ChevronDown,
-  FileCode,
   Sparkles,
   Lock,
   Pencil,
+  Disc,
+  ExternalLink,
 } from 'lucide-react';
 import { Multi, MultiTrack, Mix } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -32,6 +33,7 @@ import { UploadMixModal } from '@/components/UploadMixModal';
 import { EditMultiModal } from '@/components/EditMultiModal';
 import { EditMixModal } from '@/components/EditMixModal';
 import { Header } from '@/components/Header';
+import { FluidOrb } from '@/components/ui/fluid-orb';
 
 export default function MultiDetailPage() {
   const params = useParams();
@@ -99,7 +101,7 @@ export default function MultiDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to publish to Discord');
       setMulti({ ...multi, discord_message_id: data.messageId, discord_thread_id: data.threadId });
-      alert('Successfully announced multitrack to Discord!');
+      alert('Successfully announced multitrack to Discord.');
     } catch (err: any) {
       alert(err.message || 'Error publishing to Discord');
     } finally {
@@ -159,136 +161,130 @@ export default function MultiDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-neutral-400">
+      <div className="min-h-screen bg-[#0d0d0e] flex items-center justify-center text-neutral-400">
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        <span className="text-sm">Loading stem preview files...</span>
+        <span className="text-xs font-mono">Loading multitrack session...</span>
       </div>
     );
   }
 
   if (error || !multi) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4">
-        <AlertCircle className="w-10 h-10 text-red-500 mb-2" />
+      <div className="min-h-screen bg-[#0d0d0e] flex flex-col items-center justify-center p-4 text-center">
+        <AlertCircle className="w-10 h-10 text-neutral-500 mb-3" />
         <h2 className="text-base font-semibold text-white">{error || 'Multi Not Found'}</h2>
         <Link
-          href="/multis"
-          className="mt-4 text-xs text-neutral-400 hover:text-white flex items-center gap-1.5"
+          href="/"
+          className="mt-4 text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08]"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Multis</span>
+          <span>Back to Multitracks</span>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 pb-24">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 pb-24">
       <Header />
-      {/* Top Breadcrumb & Actions Bar */}
-      <div className="border-b border-neutral-800 bg-[#0d0d0d] px-4 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+
+      {/* Top Breadcrumb & Action Pill Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 py-2">
           <Link
-            href="/multis"
-            className="text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors"
+            href="/"
+            className="text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors font-mono"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Multitracks</span>
           </Link>
 
           {canManage && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handlePublishDiscord}
                 disabled={publishingDiscord}
-                className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/80 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
-                title="Announce or re-announce this multitrack to Discord"
+                className="text-xs text-neutral-200 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 font-mono"
               >
                 {publishingDiscord ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Music2 className="w-3.5 h-3.5" />}
-                <span>{multi?.discord_message_id ? 'Re-publish to Discord' : 'Publish to Discord'}</span>
+                <span>{multi?.discord_message_id ? 'Re-publish Discord' : 'Publish Discord'}</span>
               </button>
-              {multi?.discord_thread_id && (
-                <a
-                  href={`https://discord.com/channels/${process.env.NEXT_PUBLIC_DISCORD_GUILD_ID || '1488266305743360252'}/${multi.discord_thread_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
-                  title="Open Discord discussion thread"
-                >
-                  <Music2 className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Discord Thread</span>
-                </a>
-              )}
+
               <button
                 onClick={() => setEditMultiOpen(true)}
-                className="text-xs text-neutral-300 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
-                title="Edit multi details or reassign uploader"
+                className="text-xs text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 font-mono"
               >
                 <Pencil className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Edit Multi</span>
+                <span>Edit</span>
               </button>
+
               <button
                 onClick={handleDeleteMulti}
                 disabled={deletingMulti}
-                className="text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 border border-red-900/60 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1.5"
-                title="Delete this entire multi pack"
+                className="text-xs text-neutral-400 hover:text-red-400 bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 font-mono"
               >
                 {deletingMulti ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                <span>Delete Multi</span>
+                <span>Delete</span>
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Multi Info Header */}
-      <div className="border-b border-neutral-800 bg-neutral-950/40 py-8 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 mb-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span>MULTITRACK PREVIEW PACK</span>
+      {/* Rare UI Hero Canvas */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#121215]/80 backdrop-blur-xl p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]">
+          <div className="absolute -right-20 -top-20 opacity-20 blur-2xl pointer-events-none">
+            <FluidOrb size={340} color="#2b2d38" />
+          </div>
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="space-y-3 max-w-3xl">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-neutral-300">
+                  <Disc className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>MULTITRACK MASTER SESSION</span>
+                </span>
+
                 {multi.is_pro && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 bg-amber-950/50 border border-amber-600/50 px-2 py-0.5 rounded">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/30 font-medium">
                     <Sparkles className="w-3 h-3 text-amber-400" />
-                    <span>PRO MULTITRACK (PREMIUM EXCLUSIVE)</span>
+                    <span>PRO MULTITRACK</span>
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
                 {multi.title}
               </h1>
 
               {multi.church && (
-                <div className="text-sm font-semibold text-emerald-400 mt-1">
+                <div className="text-sm font-semibold text-emerald-400/90">
                   {multi.church}
                 </div>
               )}
 
               {multi.description && (
-                <p className="text-xs sm:text-sm text-neutral-300 mt-2 max-w-3xl whitespace-pre-line">
+                <p className="text-xs sm:text-sm text-neutral-300 max-w-2xl leading-relaxed whitespace-pre-line">
                   {multi.description}
                 </p>
               )}
 
-              {/* Meta pills */}
-              <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-neutral-400 mt-4">
+              {/* Meta Pills */}
+              <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-neutral-400 pt-2">
                 {multi.song_key && (
-                  <span className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded text-neutral-300">
-                    <Music2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Key: {multi.song_key}</span>
+                  <span className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-neutral-200">
+                    Key: {multi.song_key}
                   </span>
                 )}
                 {multi.bpm && (
-                  <span className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded text-neutral-300">
-                    <Sliders className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>{multi.bpm} BPM</span>
+                  <span className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-neutral-200">
+                    {multi.bpm} BPM
                   </span>
                 )}
                 <span className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-neutral-500" />
-                  <strong className="text-neutral-200">{multi.uploader_name || 'Member'}</strong>
+                  <span className="text-neutral-300">{multi.uploader_name || 'Member'}</span>
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-neutral-500" />
@@ -305,34 +301,44 @@ export default function MultiDetailPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {/* Quick Actions Panel */}
+            <div className="flex flex-col sm:flex-row md:flex-col items-stretch gap-2.5 shrink-0 pt-2">
               {hasProAccess ? (
                 <a
                   href={`/api/multis/${multi.id}/download`}
                   download
-                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-2 shadow-xs"
+                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-5 py-2.5 rounded-full transition-all flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98]"
                   title="Download all stems bundled as a single ZIP file"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download Zip</span>
+                  <Download className="w-4 h-4" />
+                  <span>Download Stems (ZIP)</span>
                 </a>
               ) : (
                 <Link
                   href="/membership"
-                  className="bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-2 shadow-xs"
+                  className="bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs px-5 py-2.5 rounded-full transition-all flex items-center justify-center gap-2 shadow-md"
                 >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Upgrade to Premium to Download</span>
+                  <Lock className="w-4 h-4" />
+                  <span>Upgrade to Download</span>
                 </Link>
               )}
+
+              <Link
+                href="/daw-converter"
+                className="bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white font-medium text-xs px-5 py-2.5 rounded-full transition-all flex items-center justify-center gap-2"
+                title="Convert this structure into a DAW project"
+              >
+                <Sliders className="w-3.5 h-3.5 text-neutral-400" />
+                <span>DAW Session Utility</span>
+              </Link>
 
               {user && (
                 <button
                   onClick={() => setMixModalOpen(true)}
-                  className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white font-medium text-xs px-3.5 py-2 rounded transition-colors flex items-center gap-2 shadow-xs"
+                  className="bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white font-medium text-xs px-5 py-2.5 rounded-full transition-all flex items-center justify-center gap-2"
                 >
                   <Music2 className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Submit a Mix for this Song</span>
+                  <span>Submit a Mix</span>
                 </button>
               )}
             </div>
@@ -340,30 +346,19 @@ export default function MultiDetailPage() {
         </div>
       </div>
 
-      {/* Main Content: Stems and Mixes */}
+      {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 space-y-10">
         {/* Isolated Stem Tracks Section */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300 flex items-center gap-2 font-mono">
               <FileAudio className="w-4 h-4 text-neutral-400" />
-              <span>Preview Files & Audio Stems ({multi.tracks?.length || 0})</span>
+              <span>Isolated Audio Stems ({multi.tracks?.length || 0})</span>
             </h2>
-            {!hasProAccess && (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/membership"
-                  className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1.5 font-medium"
-                >
-                  <Lock className="w-3 h-3" />
-                  <span>Premium Required to Download Full Stems</span>
-                </Link>
-              </div>
-            )}
           </div>
 
           {!multi.tracks || multi.tracks.length === 0 ? (
-            <div className="border border-neutral-800 rounded-lg p-8 text-center text-xs text-neutral-500">
+            <div className="rare-card p-12 text-center text-xs text-neutral-500">
               No audio stem files in this pack.
             </div>
           ) : (
@@ -374,20 +369,19 @@ export default function MultiDetailPage() {
                 return (
                   <div
                     key={track.id}
-                    className="bg-[#121212] border border-neutral-800 rounded-lg p-3.5 flex flex-col gap-2.5 transition-colors hover:border-neutral-700"
+                    className="rare-card p-4 space-y-3"
                   >
-                    {/* Metadata line */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-semibold text-white font-mono truncate">
                             {track.stored_filename}
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-neutral-300 border border-white/[0.06]">
                             {track.format}
                           </span>
                           {isDifferent && (
-                            <span className="text-[10px] font-mono text-neutral-400 bg-neutral-900 border border-neutral-800 px-1.5 py-0.2 rounded truncate max-w-xs" title={`Original: ${track.original_filename}`}>
+                            <span className="text-[10px] font-mono text-neutral-400 bg-white/[0.02] border border-white/[0.04] px-2 py-0.5 rounded-full truncate max-w-xs" title={`Original: ${track.original_filename}`}>
                               (from: {track.original_filename})
                             </span>
                           )}
@@ -405,7 +399,7 @@ export default function MultiDetailPage() {
                           <button
                             onClick={() => handleDeleteTrack(track.id, track.stored_filename)}
                             disabled={deletingTrackId === track.id}
-                            className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-neutral-800 transition-colors ml-1"
+                            className="p-1.5 rounded-full text-neutral-500 hover:text-red-400 hover:bg-red-950/20 transition-colors ml-1"
                             title="Delete this stem track"
                           >
                             {deletingTrackId === track.id ? (
@@ -418,12 +412,12 @@ export default function MultiDetailPage() {
                       </div>
                     </div>
 
-                    {/* Native HTML Audio Player with Range/Streaming Support */}
                     <AudioPlayer
                       src={track.public_url}
                       downloadFilename={track.original_filename || track.stored_filename}
                       format={track.format}
                       sizeBytes={track.size_bytes}
+                      showDownload={hasProAccess}
                     />
                   </div>
                 );
@@ -433,22 +427,22 @@ export default function MultiDetailPage() {
         </div>
 
         {/* Community Mixes for this Multi Section */}
-        <div className="pt-6 border-t border-neutral-800/80">
-          <div className="flex items-center justify-between mb-4">
+        <div className="pt-8 border-t border-white/[0.06] space-y-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300 flex items-center gap-2 font-mono">
                 <Music2 className="w-4 h-4 text-neutral-400" />
-                <span>Mixes for this Song ({multi.mixes?.length || 0})</span>
+                <span>Finished Mixes for this Song ({multi.mixes?.length || 0})</span>
               </h2>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Community submissions mixed using this stem pack.
+                Community submissions mixed using this stem session.
               </p>
             </div>
 
             {user && (
               <button
                 onClick={() => setMixModalOpen(true)}
-                className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 shadow-xs"
+                className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded-full transition-all flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Upload Mix</span>
@@ -457,24 +451,24 @@ export default function MultiDetailPage() {
           </div>
 
           {!multi.mixes || multi.mixes.length === 0 ? (
-            <div className="border border-neutral-800 rounded-lg p-8 text-center text-xs text-neutral-500">
-              No mixes uploaded for this song yet. Be the first to upload your mix!
+            <div className="rare-card p-12 text-center text-xs text-neutral-500">
+              No mixes uploaded for this song yet. Be the first to balance and submit your mix.
             </div>
           ) : (
             <div className="space-y-3">
               {multi.mixes.map((mix: Mix) => (
                 <div
                   key={mix.id}
-                  className="bg-[#121212] border border-neutral-800 rounded-lg p-3.5 flex flex-col gap-2.5 transition-colors hover:border-neutral-700"
+                  className="rare-card p-4 space-y-3"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-semibold text-white">{mix.title}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-neutral-300 border border-white/[0.06]">
                         {mix.format}
                       </span>
                       {mix.is_sunday_review && (
-                        <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 border border-purple-600/40">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-950/40 text-purple-300 border border-purple-600/40">
                           SUNDAY REVIEW
                         </span>
                       )}
@@ -486,8 +480,8 @@ export default function MultiDetailPage() {
                       {(isAdmin || (user && user.id === mix.owner_id)) && (
                         <button
                           onClick={() => setEditingMix(mix)}
-                          className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors ml-1"
-                          title="Edit mix details or reassign uploader"
+                          className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors ml-1"
+                          title="Edit mix details"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>

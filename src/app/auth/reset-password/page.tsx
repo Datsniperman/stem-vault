@@ -55,8 +55,8 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-obsidian text-warm-white flex items-center justify-center p-4">
-      <div className="bg-surface border border-border rounded-sm w-full max-w-md shadow-2xl p-6 space-y-6">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-100 flex items-center justify-center p-4">
+      <div className="rare-card w-full max-w-md shadow-2xl p-6 space-y-6">
 
         {/* Brand Header */}
         <div className="flex items-center gap-2.5 pb-4 border-b border-border">

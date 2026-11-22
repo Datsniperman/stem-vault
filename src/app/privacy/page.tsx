@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0d0d0e] text-neutral-200 flex flex-col font-sans">
       <Header />
 
       {/* Main Container */}
@@ -23,10 +23,10 @@ export default function PrivacyPolicyPage() {
           <span>Back to multitracks</span>
         </Link>
 
-        <div className="bg-[#121212] border border-neutral-800 rounded-lg p-6 sm:p-8 space-y-8 shadow-xs">
+        <div className="rare-card p-6 sm:p-8 space-y-8 shadow-xs">
           {/* Header Banner */}
-          <div className="border-b border-neutral-800 pb-6">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs font-mono uppercase tracking-wider mb-3">
+          <div className="border-b border-white/[0.08] pb-6">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-neutral-900 border border-white/[0.08] text-neutral-300 text-xs font-mono uppercase tracking-wider mb-3">
               <Shield className="w-3.5 h-3.5" />
               Privacy & Legal Governance
             </div>
@@ -39,10 +39,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 1: Affirmative Disclosure - Zero Session Replay */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">1</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">1</span>
               Affirmative Disclosure: Zero Session Replay or Wiretapping
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs space-y-2">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs space-y-2">
               <div className="flex items-center gap-2 text-white font-semibold">
                 <EyeOff className="w-4 h-4 shrink-0 text-neutral-400" />
                 <span>Zero Invasive Session Recording (California CIPA Compliance)</span>
@@ -59,32 +59,32 @@ export default function PrivacyPolicyPage() {
           {/* Section 2: Categories of Information Collected */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">2</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">2</span>
               Categories of Information We Collect
             </h2>
             <div className="space-y-3 text-xs text-neutral-400 leading-relaxed">
-              <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-3.5 space-y-1">
+              <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-3.5 space-y-1">
                 <p className="font-semibold text-white">A. Discord Account & Identity Data</p>
                 <p>
                   When you authenticate via Discord OAuth 2.0, we receive and store your public Discord User ID, username, global display name, server nickname, avatar URL, verified email address, and guild role affiliations. We do not access, view, or store Discord account passwords or private direct messages.
                 </p>
               </div>
 
-              <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-3.5 space-y-1">
+              <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-3.5 space-y-1">
                 <p className="font-semibold text-white">B. Uploaded Content, Audio & Technical Metadata</p>
                 <p>
                   When you upload or share multitrack archives, isolated audio stems, stereo mix entries, DAW session templates, or comments, we process and store the uploaded binary files, original filenames, file formats, duration, size metrics, song key, tempo (BPM), church/artist attribution, and descriptive notes.
                 </p>
               </div>
 
-              <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-3.5 space-y-1">
+              <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-3.5 space-y-1">
                 <p className="font-semibold text-white">C. Network, Security & System Logs</p>
                 <p>
                   For infrastructure integrity, abuse prevention, and rate-limiting, our web application firewalls log IP addresses, browser user agents, request headers, and timestamps. These logs are maintained exclusively for security defense, DDoS mitigation, and diagnostic auditing.
                 </p>
               </div>
 
-              <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-3.5 space-y-1">
+              <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-3.5 space-y-1">
                 <p className="font-semibold text-white">D. Billing & Subscription Records</p>
                 <p>
                   Subscription transactions (such as Plus and Premium tier memberships) are processed through accredited PCI-DSS compliant payment gateways (such as LaunchPass, Stripe, or Discord). We do not collect or store full credit card numbers or financial account details on our servers.
@@ -96,7 +96,7 @@ export default function PrivacyPolicyPage() {
           {/* Section 3: Legal Bases for Processing (GDPR) */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">3</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">3</span>
               Legal Bases for Processing (GDPR Article 6)
             </h2>
             <ul className="list-disc pl-5 text-xs text-neutral-400 space-y-1.5 leading-relaxed">
@@ -110,10 +110,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 4: Data Storage, Retention & Security */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">4</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">4</span>
               Data Storage, Cloud Infrastructure & Retention
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs space-y-2 leading-relaxed">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs space-y-2 leading-relaxed">
               <p className="text-neutral-300">
                 User accounts and database records are housed in secure, isolated PostgreSQL databases. Audio stems, bundled ZIP archives, and uploaded mix entries are distributed and protected across high-durability Cloudflare R2 object storage with Transport Layer Security (TLS 1.3) encryption in transit and AES-256 encryption at rest.
               </p>
@@ -126,7 +126,7 @@ export default function PrivacyPolicyPage() {
           {/* Section 5: Cookies & Local Storage */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">5</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">5</span>
               Cookies & Local Storage Disclosures
             </h2>
             <p className="text-xs text-neutral-400 leading-relaxed">
@@ -137,10 +137,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 6: Children's Online Privacy Protection (COPPA) */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">6</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">6</span>
               Children&apos;s Online Privacy (Strict 13+ Age Gate)
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs space-y-2">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs space-y-2">
               <p className="text-neutral-300 leading-relaxed">
                 The Service is strictly restricted to individuals who are at least thirteen (13) years of age (or sixteen in jurisdictions where required by local statute). In accordance with the Children&apos;s Online Privacy Protection Act (COPPA, 15 U.S.C. §§ 6501-6506), we do not knowingly collect, solicit, or maintain personal information from minors under 13.
               </p>
@@ -153,7 +153,7 @@ export default function PrivacyPolicyPage() {
           {/* Section 7: User Rights (CCPA/CPRA & GDPR) */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">7</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">7</span>
               Your Privacy Rights (GDPR & CCPA/CPRA)
             </h2>
             <div className="space-y-2 text-xs text-neutral-400 leading-relaxed">
@@ -174,10 +174,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 8: Platform Ownership, Executive Discretion & Content Rights */}
           <section className="space-y-3 pt-2">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">8</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">8</span>
               Platform Ownership, Executive Authority & Content Distribution Rights
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800/80 rounded-lg p-4 text-xs text-neutral-400 space-y-3 leading-relaxed">
+            <div className="bg-[#0d0d0e] border border-white/[0.08]/80 rounded-2xl p-4 text-xs text-neutral-400 space-y-3 leading-relaxed">
               <p>
                 <strong className="text-neutral-200">Sole Platform Ownership & Executive Authority:</strong> The website, platform, underlying software codebase, architecture, design assets, branding, and related services are the sole and exclusive proprietary property of the site owner and operator. The site owner retains full, absolute, and unreviewable executive authority and discretion over all operational, administrative, editorial, membership, and content decisions. This includes the unilateral right to approve, reject, reclassify, modify, feature, restrict, or remove any content, multitrack, mix, plugin chain, or user account at any time and for any reason without prior notice or liability.
               </p>
@@ -193,10 +193,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 9: Official Contact & Legal Inquiries */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center text-xs font-mono">9</span>
+              <span className="w-5 h-5 rounded bg-neutral-900 border border-white/[0.08] text-white flex items-center justify-center text-xs font-mono">9</span>
               Contact Information & Communications
             </h2>
-            <div className="bg-[#0d0d0e] border border-neutral-800 rounded-lg p-4 text-xs text-neutral-400 space-y-1 font-mono">
+            <div className="bg-[#0d0d0e] border border-white/[0.08] rounded-2xl p-4 text-xs text-neutral-400 space-y-1 font-mono">
               <p><strong className="text-white">Platform Owner & Operator:</strong> The Mixing Vault / Tyler Kerpsack All Access</p>
               <p><strong className="text-white">Lead Administrator:</strong> Connor Brown</p>
               <p><strong className="text-white">Privacy Inquiries:</strong> <a href="mailto:privacy@mixingvault.com" className="text-white underline">privacy@mixingvault.com</a></p>
@@ -206,7 +206,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           {/* Footer Navigation */}
-          <div className="border-t border-neutral-800 pt-6 flex flex-wrap items-center justify-between gap-4 text-xs text-neutral-400">
+          <div className="border-t border-white/[0.08] pt-6 flex flex-wrap items-center justify-between gap-4 text-xs text-neutral-400">
             <div className="flex items-center gap-4">
               <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
               <span>•</span>
