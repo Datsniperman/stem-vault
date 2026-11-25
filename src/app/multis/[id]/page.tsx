@@ -48,6 +48,8 @@ export default function MultiDetailPage() {
   const [editingMix, setEditingMix] = useState<Mix | null>(null);
   const [deletingMulti, setDeletingMulti] = useState(false);
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
+  const [downloadingZip, setDownloadingZip] = useState(false);
+  const [zipNotice, setZipNotice] = useState<string | null>(null);
 
   const fetchMultiData = async () => {
     try {
@@ -90,6 +92,42 @@ export default function MultiDetailPage() {
   );
   const canManage = isOwner || isAdmin;
   const hasProAccess = !multi?.is_pro || canAccessProMultitracks(user);
+
+  const handleDownloadZip = async () => {
+    if (downloadingZip) return;
+    setDownloadingZip(true);
+    setZipNotice(null);
+
+    try {
+      const res = await fetch(`/api/multis/${multiId}/download`, {
+        method: 'GET',
+        headers: { Accept: 'application/json, application/zip' },
+        redirect: 'manual',
+      });
+
+      if (res.type === 'opaqueredirect' || res.status === 302 || res.status === 307) {
+        window.location.href = `/api/multis/${multiId}/download`;
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 202 || data.status === 'generating') {
+          setZipNotice(data.error || 'The ZIP archive is currently being generated. Please wait 1 to 2 minutes and click Download again.');
+          fetchMultiData();
+        } else {
+          alert(data.error || 'Download failed. Please check your membership or try again.');
+        }
+        return;
+      }
+
+      window.location.href = `/api/multis/${multiId}/download`;
+    } catch {
+      window.location.href = `/api/multis/${multiId}/download`;
+    } finally {
+      setTimeout(() => setDownloadingZip(false), 2500);
+    }
+  };
 
   const handlePublishDiscord = async () => {
     if (!multi) return;
@@ -307,15 +345,31 @@ export default function MultiDetailPage() {
 
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               {hasProAccess ? (
-                <a
-                  href={`/api/multis/${multi.id}/download`}
-                  download
-                  className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-2 shadow-xs"
-                  title="Download all stems bundled as a single ZIP file"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download Zip</span>
-                </a>
+                <div className="flex flex-col items-start gap-1">
+                  <button
+                    onClick={handleDownloadZip}
+                    disabled={downloadingZip}
+                    className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs px-4 py-2 rounded transition-colors flex items-center gap-2 shadow-xs disabled:opacity-75 cursor-pointer"
+                    title="Download all stems bundled as a single ZIP file"
+                  >
+                    {downloadingZip ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Starting Download...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download Zip</span>
+                      </>
+                    )}
+                  </button>
+                  {zipNotice && (
+                    <span className="text-[11px] text-amber-400 font-medium">
+                      {zipNotice}
+                    </span>
+                  )}
+                </div>
               ) : (
                 <Link
                   href="/membership"

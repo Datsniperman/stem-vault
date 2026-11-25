@@ -5,9 +5,8 @@ import { deleteBlob } from '@/lib/storage';
 export const dynamic = 'force-dynamic';
 
 /**
- * Retention Policy: 7 Days from last download.
- * Deletes cached ZIP archives from Cloudflare R2 when they haven't been downloaded in 7 days.
- * When requested again, the ZIP will be generated on-demand and cached for another 7 days.
+ * Retention Policy: Safe archive preservation (365 days rolling retention).
+ * Preserves pre-packaged multi ZIPs to ensure instantaneous direct CDN downloads.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -19,14 +18,14 @@ export async function GET(request: NextRequest) {
 
     const pool = getDbPool();
 
-    // Find all multis where ZIP is present in R2 and hasn't been downloaded in the last 7 days
+    // Only clean up archives that have not been downloaded in 365 days
     const expiredRes = await pool.query(
       `SELECT id, title, zip_r2_key, zip_size_bytes, zip_last_downloaded_at, created_at
        FROM public.multis
        WHERE zip_r2_key IS NOT NULL
          AND (
-           zip_last_downloaded_at < NOW() - INTERVAL '7 days'
-           OR (zip_last_downloaded_at IS NULL AND created_at < NOW() - INTERVAL '7 days')
+           zip_last_downloaded_at < NOW() - INTERVAL '365 days'
+           OR (zip_last_downloaded_at IS NULL AND created_at < NOW() - INTERVAL '365 days')
          )`
     );
 
