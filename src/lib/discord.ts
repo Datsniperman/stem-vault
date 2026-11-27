@@ -199,8 +199,8 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
   const client = getDiscordClient();
   const engineerMention = payload.discordId ? `<@${payload.discordId}>` : `**${payload.uploaderName}**`;
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.mixingvault.com').trim().replace(/\/+$/, '').replace(/^["']|["']$/g, '');
-
-  const targetChannelOrThread = payload.threadId || channelId;
+  const guildId = (GUILD_ID || process.env.NEXT_PUBLIC_DISCORD_GUILD_ID || '1488266305743360252').trim().replace(/^["']|["']$/g, '');
+  const threadUrl = payload.threadId ? `https://discord.com/channels/${guildId}/${payload.threadId}` : null;
 
   // If posting to a thread, ensure it's not archived
   if (payload.threadId) {
@@ -210,7 +210,7 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
   }
 
   try {
-    const actionButtons: any[] = [
+    const baseButtons: any[] = [
       {
         type: 2, // Button
         style: 5, // Link
@@ -219,20 +219,44 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
       },
     ];
 
-    const fields: any[] = [
+    const channelButtons: any[] = threadUrl
+      ? [
+          ...baseButtons,
+          {
+            type: 2, // Button
+            style: 5, // Link
+            label: 'View Song Thread',
+            url: threadUrl,
+          },
+        ]
+      : baseButtons;
+
+    const baseFields: any[] = [
       { name: 'Uploaded by', value: engineerMention, inline: true },
       { name: 'Format', value: payload.format || 'WAV', inline: true },
     ];
     if (payload.multiTitle) {
-      fields.push({ name: 'Multitrack Song', value: payload.multiTitle, inline: true });
+      baseFields.push({ name: 'Multitrack Song', value: payload.multiTitle, inline: true });
     }
     if (payload.isSundayReview) {
-      fields.push({
+      baseFields.push({
         name: 'Review Status',
         value: 'Sunday Mix Review (Requested personalized feedback from Jared & pros)',
         inline: false,
       });
     }
+
+    const channelFields: any[] =
+      payload.threadId && threadUrl
+        ? [
+            ...baseFields,
+            {
+              name: 'Song Thread',
+              value: `<#${payload.threadId}> ([Open Thread](${threadUrl}))`,
+              inline: false,
+            },
+          ]
+        : baseFields;
 
     // 1. Fetch audio file from R2 so Discord can render its native waveform player
     const files: any[] = [];
@@ -259,35 +283,49 @@ export async function announceMix(payload: MixAnnouncementPayload): Promise<stri
       ? `[Sunday Mix Review] ${payload.title}`
       : `Mix: ${payload.title}`;
 
-    const message = (await client.post(Routes.channelMessages(targetChannelOrThread), {
-      body: {
-        content: payload.isSundayReview ? 'New Sunday Mix Review Submitted' : 'New Mix',
-        embeds: [
-          {
-            title: embedTitle,
-            description: payload.multiTitle
-              ? `Song: **${payload.multiTitle}**\nUploaded by: ${engineerMention}`
-              : `Uploaded by: ${engineerMention}`,
-            color: payload.isSundayReview ? 0xa855f7 : 0x5865f2,
-            fields,
-            footer: {
-              text: payload.isSundayReview
-                ? 'The Mixing Vault - Sunday Mix Review Queue'
-                : 'The Mixing Vault - Listen and leave your critique!',
-            },
+    const buildBody = (fields: any[], components: any[]) => ({
+      content: payload.isSundayReview ? 'New Sunday Mix Review Submitted' : 'New Mix',
+      embeds: [
+        {
+          title: embedTitle,
+          description: payload.multiTitle
+            ? `Song: **${payload.multiTitle}**\nUploaded by: ${engineerMention}`
+            : `Uploaded by: ${engineerMention}`,
+          color: payload.isSundayReview ? 0xa855f7 : 0x5865f2,
+          fields,
+          footer: {
+            text: payload.isSundayReview
+              ? 'The Mixing Vault - Sunday Mix Review Queue'
+              : 'The Mixing Vault - Listen and leave your critique!',
           },
-        ],
-        components: [
-          {
-            type: 1,
-            components: actionButtons,
-          },
-        ],
-      },
+        },
+      ],
+      components: [
+        {
+          type: 1,
+          components,
+        },
+      ],
+    });
+
+    let primaryMessageId: string | null = null;
+
+    // Post to song-specific thread if provided
+    if (payload.threadId && payload.threadId !== channelId) {
+      const threadMsg = (await client.post(Routes.channelMessages(payload.threadId), {
+        body: buildBody(baseFields, baseButtons),
+        files,
+      })) as { id: string };
+      primaryMessageId = threadMsg.id;
+    }
+
+    // Always post to the main mixes channel (1566216856115609610), including thread link if song-specific
+    const channelMsg = (await client.post(Routes.channelMessages(channelId), {
+      body: buildBody(channelFields, channelButtons),
       files,
     })) as { id: string };
 
-    return message.id;
+    return primaryMessageId || channelMsg.id;
   } catch (error: any) {
     console.error('[Discord] Error in announceMix:', error);
     return null;
